@@ -4,7 +4,9 @@
 
 TypeScript transformer that converts JSX syntax into direct DOM manipulation at compile-time for the Pulsar framework.
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue)](https://www.linkedin.com/in/tadeopiana/)
+<p align="center">
+  <strong><a href="https://www.linkedin.com/in/tadeopiana/">follow me</a></strong>
+</p>
 
 ## Features
 
