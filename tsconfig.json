@@ -6,15 +6,15 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "outDir": "../../dist/transformer",
+    "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
     "moduleResolution": "bundler",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "composite": true,
-    "typeRoots": ["../../types", "../../node_modules/@types"]
+    "isolatedModules": true
   },
-  "include": ["./**/*", "../../types/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
