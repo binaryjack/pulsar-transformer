@@ -1,5 +1,5 @@
 {
-  "name": "@pulsar/transformer",
+  "name": "@pulsar-framework/transformer",
   "version": "0.1.0",
   "description": "TypeScript transformer for Pulsar JSX",
   "type": "module",
@@ -10,5 +10,26 @@
   "dependencies": {},
   "devDependencies": {
     "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "pulsar",
+    "typescript",
+    "transformer",
+    "jsx",
+    "compiler"
+  ],
+  "author": "Tadeo Piana <https://www.linkedin.com/in/tadeopiana/>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/binaryjack/pulsar-transformer.git"
+  },
+  "homepage": "https://github.com/binaryjack/pulsar-transformer#readme",
+  "bugs": {
+    "url": "https://github.com/binaryjack/pulsar-transformer/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
