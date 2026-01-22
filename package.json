@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "description": "TypeScript transformer for Pulsar JSX",
   "type": "module",
-  "main": "./index.ts",
+  "main": "./src/index.ts",
   "exports": {
-    ".": "./index.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {},
   "devDependencies": {
