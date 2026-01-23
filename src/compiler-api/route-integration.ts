@@ -4,7 +4,7 @@
  */
 
 import * as ts from 'typescript';
-import type { ITransformationContext } from '../context'
+import type { ITransformationContext } from '../context';
 
 /**
  * Detect Route component usage and extract path patterns
