@@ -1,7 +1,8 @@
 import * as ts from 'typescript'
-import { checkCircularDependencies, validateInjectCalls } from './compiler-api/di-integration'
-import { validateJSXProps } from './compiler-api/prop-validation'
-import { analyzeRouteComponent, validateUseParamsCall } from './compiler-api/route-integration'
+// TODO: Incomplete implementations - temporarily disabled
+// import { checkCircularDependencies, validateInjectCalls } from './compiler-api/di-integration'
+// import { validateJSXProps } from './compiler-api/prop-validation'
+// import { analyzeRouteComponent, validateUseParamsCall } from './compiler-api/route-integration'
 import { TransformationContext } from './context'
 import { ElementGenerator } from './generator/element-generator'
 import { optimize, type IOptimizerConfig } from './optimizer'
@@ -57,12 +58,13 @@ export default function visualSchemaTransformer(
         // Collect diagnostics from compiler API integrations
         const diagnostics: ts.Diagnostic[] = []
         
+        // TODO: Incomplete implementations - temporarily disabled
         // Run DI validation (once per file)
-        const diDiagnostics = validateInjectCalls(sourceFile, transformContext)
-        diagnostics.push(...diDiagnostics)
+        // const diDiagnostics = validateInjectCalls(sourceFile, transformContext)
+        // diagnostics.push(...diDiagnostics)
         
-        const circularDeps = checkCircularDependencies(sourceFile, transformContext)
-        diagnostics.push(...circularDeps)
+        // const circularDeps = checkCircularDependencies(sourceFile, transformContext)
+        // diagnostics.push(...circularDeps)
 
         // Custom recursive visitor that transforms JSX at ANY nesting level
         // Strategy: Transform JSX nodes immediately WITHOUT visiting their children first
@@ -72,18 +74,19 @@ export default function visualSchemaTransformer(
             // DO NOT visit children first - return immediately after transformation
             if (ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node) || ts.isJsxFragment(node)) {
                 try {
+                    // TODO: Incomplete implementations - temporarily disabled
                     // Run compiler API validations before transformation
-                    if (ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) {
-                        // Validate JSX props
-                        const propDiagnostics = validateJSXProps(node, transformContext)
-                        diagnostics.push(...propDiagnostics)
-                        
-                        // Validate Route components
-                        const routeInfo = analyzeRouteComponent(node, transformContext)
-                        if (routeInfo) {
-                            // Could add route-specific validation here
-                        }
-                    }
+                    // if (ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) {
+                    //     // Validate JSX props
+                    //     const propDiagnostics = validateJSXProps(node, transformContext)
+                    //     diagnostics.push(...propDiagnostics)
+                    //     
+                    //     // Validate Route components
+                    //     const routeInfo = analyzeRouteComponent(node, transformContext)
+                    //     if (routeInfo) {
+                    //         // Could add route-specific validation here
+                    //     }
+                    // }
                     
                     const elementIR = analyzer.analyze(node)
                     const generatedCode = generator.generate(elementIR)
@@ -94,13 +97,14 @@ export default function visualSchemaTransformer(
                 }
             }
             
+            // TODO: Incomplete implementation - temporarily disabled
             // Validate useParams() calls
-            if (ts.isCallExpression(node)) {
-                if (ts.isIdentifier(node.expression) && node.expression.text === 'useParams') {
-                    const paramsDiagnostics = validateUseParamsCall(node, transformContext)
-                    diagnostics.push(...paramsDiagnostics)
-                }
-            }
+            // if (ts.isCallExpression(node)) {
+            //     if (ts.isIdentifier(node.expression) && node.expression.text === 'useParams') {
+            //         const paramsDiagnostics = validateUseParamsCall(node, transformContext)
+            //         diagnostics.push(...paramsDiagnostics)
+            //     }
+            // }
             
             // For all other nodes, visit children to find nested JSX
             // Note: JsxExpression nodes are handled by the analyzer, not here

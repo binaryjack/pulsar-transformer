@@ -4,13 +4,14 @@
  */
 
 import * as ts from 'typescript';
+import type { ITransformationContext } from '../context'
 
 /**
  * Detect Route component usage and extract path patterns
  */
 export function analyzeRouteComponent(
     node: ts.JsxElement | ts.JsxSelfClosingElement,
-    context: TransformationContext
+    context: ITransformationContext
 ): { path?: string; hasParams: boolean } | null {
     const tagName = ts.isJsxElement(node) 
         ? node.openingElement.tagName
@@ -58,7 +59,7 @@ export function analyzeRouteComponent(
  */
 export function validateUseParamsCall(
     callExpr: ts.CallExpression,
-    context: TransformationContext
+    context: ITransformationContext
 ): ts.Diagnostic[] {
     const diagnostics: ts.Diagnostic[] = []
     

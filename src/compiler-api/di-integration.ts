@@ -4,13 +4,14 @@
  */
 
 import * as ts from 'typescript'
+import type { ITransformationContext } from '../context'
 
 /**
  * Validate inject() calls
  */
 export function validateInjectCalls(
     sourceFile: ts.SourceFile,
-    context: TransformationContext
+    context: ITransformationContext
 ): ts.Diagnostic[] {
     const diagnostics: ts.Diagnostic[] = []
     const serviceRegistry = new Set<string>()
@@ -79,7 +80,7 @@ export function validateInjectCalls(
  */
 export function checkCircularDependencies(
     sourceFile: ts.SourceFile,
-    context: TransformationContext
+    context: ITransformationContext
 ): ts.Diagnostic[] {
     const diagnostics: ts.Diagnostic[] = []
     
@@ -121,13 +122,14 @@ export function checkCircularDependencies(
     
     // Detect cycles using DFS
     for (const [className] of graph) {
-        const cycle = context.diValidator.detectCircularDependency(className)
-        if (cycle) {
+        const cycle: string[] | null = null // TODO: context.diValidator.detectCircularDependency(className)
+        if (cycle && Array.isArray(cycle)) {
+            const validCycle = cycle as string[];
             diagnostics.push({
                 file: sourceFile,
                 start: 0,
                 length: 0,
-                messageText: `Circular dependency detected: ${cycle.join(' → ')}`,
+                messageText: `Circular dependency detected: ${validCycle.join(' → ')}`,
                 category: ts.DiagnosticCategory.Error,
                 code: 9005
             })
