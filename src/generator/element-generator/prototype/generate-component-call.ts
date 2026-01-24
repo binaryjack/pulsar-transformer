@@ -154,10 +154,32 @@ export const generateComponentCall = function(
             )
         }
 
+        // If component has _deferChildren flag (e.g., Context.Provider, FormProvider),
+        // wrap children in arrow function for deferred evaluation
+        // This allows Provider to register context BEFORE children execute
+        const componentExpr = componentIR.component as ts.Expression
+        const shouldDeferChildren = (
+            // Check for Context.Provider pattern
+            (ts.isPropertyAccessExpression(componentExpr) && componentExpr.name.text === 'Provider') ||
+            // Check for FormProvider or any component ending with Provider
+            (ts.isIdentifier(componentExpr) && componentExpr.text.endsWith('Provider'))
+        )
+        
+        const finalChildrenExpression = shouldDeferChildren
+            ? factory.createArrowFunction(
+                undefined,
+                undefined,
+                [],
+                undefined,
+                factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+                childrenExpression
+            )
+            : childrenExpression
+        
         propsProperties.push(
             factory.createPropertyAssignment(
                 factory.createIdentifier('children'),
-                childrenExpression
+                finalChildrenExpression
             )
         )
     }
