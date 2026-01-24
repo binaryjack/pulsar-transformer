@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
-import { ITransformationContext } from '../../context/transformation-context.types'
-import { IJSXElementIR } from '../../ir/types'
+import { ITransformationContext } from '../../context/transformation-context.types.js'
+import { IJSXElementIR } from '../../ir/types/index.js'
 
 /**
  * Generates TypeScript AST nodes from JSX IR

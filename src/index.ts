@@ -1,12 +1,12 @@
 import * as ts from 'typescript'
 // TODO: Incomplete implementations - temporarily disabled
-// import { checkCircularDependencies, validateInjectCalls } from './compiler-api/di-integration'
-// import { validateJSXProps } from './compiler-api/prop-validation'
-// import { analyzeRouteComponent, validateUseParamsCall } from './compiler-api/route-integration'
-import { TransformationContext } from './context'
-import { ElementGenerator } from './generator/element-generator'
-import { optimize, type IOptimizerConfig } from './optimizer'
-import { JSXAnalyzer } from './parser/jsx-analyzer'
+// import { checkCircularDependencies, validateInjectCalls } from './compiler-api/di-integration.js'
+// import { validateJSXProps } from './compiler-api/prop-validation.js'
+// import { analyzeRouteComponent, validateUseParamsCall } from './compiler-api/route-integration.js'
+import { TransformationContext } from './context/index.js'
+import { ElementGenerator } from './generator/element-generator/index.js'
+import { optimize, type IOptimizerConfig } from './optimizer/index.js'
+import { JSXAnalyzer } from './parser/jsx-analyzer/index.js'
 
 /**
  * Main TypeScript transformer for pulsar

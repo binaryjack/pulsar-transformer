@@ -4,8 +4,8 @@
 
 import * as ts from 'typescript'
 import { describe, expect, it } from 'vitest'
-import { extractConstantValue, isConstant } from '../optimizer/analyzers/constant-analyzer'
-import { foldConstants } from '../optimizer/optimizers/constant-folder'
+import { extractConstantValue, isConstant } from '../optimizer/analyzers/constant-analyzer.js'
+import { foldConstants } from '../optimizer/optimizers/constant-folder.js'
 
 describe('Constant Folding', () => {
     function createProgram(source: string) {

@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import { IElementGeneratorInternal } from '../element-generator.types'
+import { IElementGeneratorInternal } from '../element-generator.types.js'
 
 /**
  * Generates a function call for component elements (e.g., <Counter initialCount={0} />)

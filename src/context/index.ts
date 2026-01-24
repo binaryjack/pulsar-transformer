@@ -1,6 +1,6 @@
-export { TransformationContext } from './transformation-context'
+export { TransformationContext } from './transformation-context.js'
 export type {
     ITransformationContext,
     STransformationContext
-} from './transformation-context.types'
+} from './transformation-context.types.js'
 

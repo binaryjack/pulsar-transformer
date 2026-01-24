@@ -4,7 +4,7 @@
  */
 
 import * as ts from 'typescript'
-import visualSchemaTransformer from '../index'
+import visualSchemaTransformer from '../index.js'
 
 /**
  * Helper to transform code and check if it contains JSX syntax

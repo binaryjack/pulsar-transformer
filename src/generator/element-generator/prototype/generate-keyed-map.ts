@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import { IArrayMapPattern } from '../../../parser/jsx-analyzer/prototype/map-pattern-detector'
+import { IArrayMapPattern } from '../../../parser/jsx-analyzer/prototype/map-pattern-detector.js'
 
 /**
  * Generates TypeScript code for keyed reconciliation of array.map() calls

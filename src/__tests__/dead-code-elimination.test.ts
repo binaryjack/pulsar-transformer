@@ -4,8 +4,8 @@
 
 import * as ts from 'typescript'
 import { describe, expect, it } from 'vitest'
-import { analyzeDeadCode } from '../optimizer/analyzers/dead-code-analyzer'
-import { eliminateDeadCode } from '../optimizer/optimizers/dead-code-eliminator'
+import { analyzeDeadCode } from '../optimizer/analyzers/dead-code-analyzer.js'
+import { eliminateDeadCode } from '../optimizer/optimizers/dead-code-eliminator.js'
 
 describe('Dead Code Elimination', () => {
     function createProgram(source: string) {

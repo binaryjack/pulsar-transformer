@@ -1,9 +1,9 @@
 import * as ts from 'typescript'
-import { DIValidator, ErrorEnhancer, PropValidator, RouteTypeExtractor, TypeAnalyzer } from '../compiler-api'
-import { addImport } from './prototype/add-import'
-import { getDependencies } from './prototype/get-dependencies'
-import { isStateAccess } from './prototype/is-state-access'
-import { ITransformationContext } from './transformation-context.types'
+import { DIValidator, ErrorEnhancer, PropValidator, RouteTypeExtractor, TypeAnalyzer } from '../compiler-api/index.js'
+import { addImport } from './prototype/add-import.js'
+import { getDependencies } from './prototype/get-dependencies.js'
+import { isStateAccess } from './prototype/is-state-access.js'
+import { ITransformationContext } from './transformation-context.types.js'
 
 /**
  * Transformation context implementation

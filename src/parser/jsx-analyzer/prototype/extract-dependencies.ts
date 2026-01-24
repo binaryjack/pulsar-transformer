@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import { IJSXAnalyzer } from '../jsx-analyzer.types'
+import { IJSXAnalyzer } from '../jsx-analyzer.types.js'
 
 /**
  * Extracts signal/state dependencies from an expression

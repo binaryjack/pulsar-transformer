@@ -1,6 +1,6 @@
 import * as ts from 'typescript'
-import { IJSXElementIR } from '../../../ir/types'
-import { IElementGenerator } from '../element-generator.types'
+import { IJSXElementIR } from '../../../ir/types/index.js'
+import { IElementGenerator } from '../element-generator.types.js'
 
 /**
  * Generates code for attaching event listeners

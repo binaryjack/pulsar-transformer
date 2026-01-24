@@ -4,10 +4,10 @@
  */
 
 import * as ts from 'typescript';
-import { foldConstants, type IFoldingResult } from './optimizers/constant-folder';
-import { eliminateDeadCode, type IEliminationResult } from './optimizers/dead-code-eliminator';
-import { logReport, type IOptimizationReport } from './reporters/optimization-reporter';
-import { generateBundleSizeReport, type IBundleSizeReport, type ISizeWarning } from './warnings/bundle-size-warner';
+import { foldConstants, type IFoldingResult } from './optimizers/constant-folder.js';
+import { eliminateDeadCode, type IEliminationResult } from './optimizers/dead-code-eliminator.js';
+import { logReport, type IOptimizationReport } from './reporters/optimization-reporter.js';
+import { generateBundleSizeReport, type IBundleSizeReport, type ISizeWarning } from './warnings/bundle-size-warner.js';
 
 export interface IOptimizerConfig {
     constantFolding?: boolean;

@@ -4,7 +4,7 @@
  */
 
 import * as ts from 'typescript';
-import { analyzeDeadCode, type IDeadCode } from '../analyzers/dead-code-analyzer';
+import { analyzeDeadCode, type IDeadCode } from '../analyzers/dead-code-analyzer.js';
 
 export interface IEliminationResult {
     removedCount: number;

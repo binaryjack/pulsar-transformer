@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import { IElementGenerator } from '../element-generator.types'
+import { IElementGenerator } from '../element-generator.types.js'
 
 /**
  * Main entry point for generating code from JSX element IR

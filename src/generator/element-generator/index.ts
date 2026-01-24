@@ -1,7 +1,7 @@
-export { ElementGenerator } from './element-generator'
-export type { IElementGenerator, SElementGenerator } from './element-generator.types'
+export { ElementGenerator } from './element-generator.js'
+export type { IElementGenerator, SElementGenerator } from './element-generator.types.js'
 
 // Export keyed map reconciliation
-export { generateKeyedReconciliation } from './prototype/generate-keyed-map'
-export type { IKeyedReconciliationOptions } from './prototype/generate-keyed-map'
+export { generateKeyedReconciliation } from './prototype/generate-keyed-map.js'
+export type { IKeyedReconciliationOptions } from './prototype/generate-keyed-map.js'
 

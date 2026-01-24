@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import { ITransformationContext } from '../transformation-context.types'
+import { ITransformationContext } from '../transformation-context.types.js'
 
 /**
  * Check if a node represents a state/signal access (function call)

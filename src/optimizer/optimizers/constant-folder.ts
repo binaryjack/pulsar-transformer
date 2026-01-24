@@ -4,7 +4,7 @@
  */
 
 import * as ts from 'typescript';
-import { extractConstantValue } from '../analyzers/constant-analyzer';
+import { extractConstantValue } from '../analyzers/constant-analyzer.js';
 
 export interface IFoldingResult {
     foldedCount: number;

@@ -1,4 +1,4 @@
-import { ITransformationContext } from '../transformation-context.types'
+import { ITransformationContext } from '../transformation-context.types.js'
 
 /**
  * Add an import to the import tracker

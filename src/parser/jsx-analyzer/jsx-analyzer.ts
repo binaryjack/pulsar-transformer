@@ -1,15 +1,15 @@
-import { ITransformationContext } from '../../context/transformation-context.types'
-import { IJSXAnalyzer } from './jsx-analyzer.types'
+import { ITransformationContext } from '../../context/transformation-context.types.js'
+import { IJSXAnalyzer } from './jsx-analyzer.types.js'
 
 // Import prototype methods
-import { analyze } from './prototype/analyze'
-import { analyzeChildren } from './prototype/analyze-children'
-import { analyzeProps } from './prototype/analyze-props'
-import { extractDependencies } from './prototype/extract-dependencies'
-import { extractEvents } from './prototype/extract-events'
+import { analyze } from './prototype/analyze.js'
+import { analyzeChildren } from './prototype/analyze-children.js'
+import { analyzeProps } from './prototype/analyze-props.js'
+import { extractDependencies } from './prototype/extract-dependencies.js'
+import { extractEvents } from './prototype/extract-events.js'
 
-import { isStaticElement } from './prototype/is-static-element'
-import { isStaticValue } from './prototype/is-static-value'
+import { isStaticElement } from './prototype/is-static-element.js'
+import { isStaticValue } from './prototype/is-static-value.js'
 
 /**
  * JSXAnalyzer constructor function (prototype-based class)

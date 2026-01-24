@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
-import { TransformationContext } from '../context'
-import { ElementGenerator } from '../generator/element-generator'
-import { IJSXElementIR, IPropIR } from '../ir/types'
+import { TransformationContext } from '../context/index.js'
+import { ElementGenerator } from '../generator/element-generator/index.js'
+import { IJSXElementIR, IPropIR } from '../ir/types/index.js'
 
 describe('ElementGenerator', () => {
     let generator: any

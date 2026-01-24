@@ -3,8 +3,8 @@
  * Exports all TypeScript Compiler API utilities
  */
 
-export * from './di-integration';
-export * from './prop-validation';
-export * from './route-integration';
-export * from './type-analyzer';
+export * from './di-integration.js';
+export * from './prop-validation.js';
+export * from './route-integration.js';
+export * from './type-analyzer.js';
 

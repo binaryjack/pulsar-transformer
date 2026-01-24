@@ -3,9 +3,9 @@
  * Reports optimization results and statistics
  */
 
-import type { IFoldingResult } from '../optimizers/constant-folder';
-import type { IEliminationResult } from '../optimizers/dead-code-eliminator';
-import type { IBundleSizeReport, ISizeWarning } from '../warnings/bundle-size-warner';
+import type { IFoldingResult } from '../optimizers/constant-folder.js';
+import type { IEliminationResult } from '../optimizers/dead-code-eliminator.js';
+import type { IBundleSizeReport, ISizeWarning } from '../warnings/bundle-size-warner.js';
 
 export interface IOptimizationReport {
     timestamp: number;

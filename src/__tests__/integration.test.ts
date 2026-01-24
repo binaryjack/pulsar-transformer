@@ -4,9 +4,9 @@
  */
 
 import * as ts from 'typescript'
-import { TransformationContext } from '../context'
-import { ElementGenerator } from '../generator/element-generator'
-import { JSXAnalyzer } from '../parser/jsx-analyzer'
+import { TransformationContext } from '../context/index.js'
+import { ElementGenerator } from '../generator/element-generator/index.js'
+import { JSXAnalyzer } from '../parser/jsx-analyzer/index.js'
 
 describe('Transformer Integration', () => {
     let analyzer: any

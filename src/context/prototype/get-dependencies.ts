@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import { ITransformationContext } from '../transformation-context.types'
+import { ITransformationContext } from '../transformation-context.types.js'
 
 /**
  * Extract signal/state dependencies from an expression

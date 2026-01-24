@@ -1,5 +1,5 @@
 import * as ts from 'typescript'
-import { ITransformationContext } from '../../context/transformation-context.types'
+import { ITransformationContext } from '../../context/transformation-context.types.js'
 
 export const SJSXAnalyzer = Symbol.for('IJSXAnalyzer')
 

@@ -1,7 +1,7 @@
 import * as ts from 'typescript'
-import { detectArrayMapPattern } from '../../../parser/jsx-analyzer/prototype/map-pattern-detector'
-import { IElementGeneratorInternal } from '../element-generator.types'
-import { generateKeyedReconciliation } from './generate-keyed-map'
+import { detectArrayMapPattern } from '../../../parser/jsx-analyzer/prototype/map-pattern-detector.js'
+import { IElementGeneratorInternal } from '../element-generator.types.js'
+import { generateKeyedReconciliation } from './generate-keyed-map.js'
 
 /**
  * Generates code for appending children to an element

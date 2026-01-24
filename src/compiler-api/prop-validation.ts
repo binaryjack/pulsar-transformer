@@ -4,7 +4,7 @@
  */
 
 import * as ts from 'typescript'
-import type { ITransformationContext } from '../context'
+import type { ITransformationContext } from '../context/index.js'
 
 /**
  * Validate JSX element props against component prop types
