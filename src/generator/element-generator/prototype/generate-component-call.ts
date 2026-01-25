@@ -1,193 +1,192 @@
-import * as ts from 'typescript'
-import { IElementGeneratorInternal } from '../element-generator.types.js'
+import * as ts from 'typescript';
+import { IElementGeneratorInternal } from '../element-generator.types.js';
 
 /**
  * Generates a function call for component elements (e.g., <Counter initialCount={0} />)
  * Transforms into: Counter({ initialCount: 0, children: childrenElement })
  */
-export const generateComponentCall = function(
-    this: IElementGeneratorInternal,
-    componentIR: any
+export const generateComponentCall = function (
+  this: IElementGeneratorInternal,
+  componentIR: any
 ): ts.Expression {
-    const factory = ts.factory
+  const factory = ts.factory;
 
-    // Build props object
-    const propsProperties: ts.ObjectLiteralElementLike[] = []
+  // Build props object
+  const propsProperties: ts.ObjectLiteralElementLike[] = [];
 
-    // Add regular props
-    componentIR.props.forEach((prop: any) => {
-        try {
-            // Skip props without values or expressions
-            if (!prop.value && prop.value !== false && prop.value !== 0) {
-                return
-            }
-            
-            // Strict validation - ensure we have a valid TypeScript expression node
-            const valueExpr = prop.value
-            if (!valueExpr || typeof valueExpr !== 'object') {
-                console.warn(`[generateComponentCall] Prop ${prop.name} has invalid value type:`, typeof valueExpr)
-                return
-            }
-            
-            // Check for .kind property which all TS nodes must have
-            if (!('kind' in valueExpr) || typeof (valueExpr as any).kind !== 'number') {
-                console.warn(`[generateComponentCall] Prop ${prop.name} missing or invalid .kind property`)
-                return
-            }
-            
-            // Wrap in try-catch to handle any edge cases
-            const propAssignment = factory.createPropertyAssignment(
-                factory.createIdentifier(prop.name),
-                valueExpr as ts.Expression
-            )
-            propsProperties.push(propAssignment)
-        } catch (error) {
-            console.error(`[generateComponentCall] Error creating property assignment for ${prop.name}:`, error)
-            // Skip this prop and continue
-        }
-    })
+  // Add regular props
+  componentIR.props.forEach((prop: any) => {
+    try {
+      // Skip props without values or expressions
+      if (!prop.value && prop.value !== false && prop.value !== 0) {
+        return;
+      }
 
-    // Add children if present
-    if (componentIR.children && componentIR.children.length > 0) {
-        // For a single child, pass it directly
-        // For multiple children, wrap in a container
-        let childrenExpression: ts.Expression
+      // Strict validation - ensure we have a valid TypeScript expression node
+      const valueExpr = prop.value;
+      if (!valueExpr || typeof valueExpr !== 'object') {
+        console.warn(
+          `[generateComponentCall] Prop ${prop.name} has invalid value type:`,
+          typeof valueExpr
+        );
+        return;
+      }
 
-        if (componentIR.children.length === 1) {
-            const child = componentIR.children[0]
-            if (child.type === 'text') {
-                childrenExpression = factory.createStringLiteral(child.content)
-            } else if (child.type === 'expression') {
-                // Visit the expression to transform any nested JSX
-                const expr = child.expression as ts.Expression
-                childrenExpression = this.context.jsxVisitor 
-                    ? ts.visitNode(expr, this.context.jsxVisitor) as ts.Expression
-                    : expr
-            } else {
-                // Recursively generate child element
-                childrenExpression = this.generate(child)
-            }
+      // Check for .kind property which all TS nodes must have
+      if (!('kind' in valueExpr) || typeof (valueExpr as any).kind !== 'number') {
+        console.warn(`[generateComponentCall] Prop ${prop.name} missing or invalid .kind property`);
+        return;
+      }
+
+      // Wrap in try-catch to handle any edge cases
+      const propAssignment = factory.createPropertyAssignment(
+        factory.createIdentifier(prop.name),
+        valueExpr as ts.Expression
+      );
+      propsProperties.push(propAssignment);
+    } catch (error) {
+      console.error(
+        `[generateComponentCall] Error creating property assignment for ${prop.name}:`,
+        error
+      );
+      // Skip this prop and continue
+    }
+  });
+
+  // Add children if present
+  if (componentIR.children && componentIR.children.length > 0) {
+    // For a single child, pass it directly
+    // For multiple children, wrap in a container
+    let childrenExpression: ts.Expression;
+
+    if (componentIR.children.length === 1) {
+      const child = componentIR.children[0];
+      if (child.type === 'text') {
+        childrenExpression = factory.createStringLiteral(child.content);
+      } else if (child.type === 'expression') {
+        // Visit the expression to transform any nested JSX
+        const expr = child.expression as ts.Expression;
+        childrenExpression = this.context.jsxVisitor
+          ? (ts.visitNode(expr, this.context.jsxVisitor) as ts.Expression)
+          : expr;
+      } else {
+        // Recursively generate child element
+        childrenExpression = this.generate(child);
+      }
+    } else {
+      // Multiple children - create a container div
+      const statements: ts.Statement[] = [];
+      const containerVar = `container${(this as any).varCounter++}`;
+
+      statements.push(
+        factory.createVariableStatement(
+          undefined,
+          factory.createVariableDeclarationList(
+            [
+              factory.createVariableDeclaration(
+                factory.createIdentifier(containerVar),
+                undefined,
+                undefined,
+                factory.createCallExpression(
+                  factory.createPropertyAccessExpression(
+                    factory.createIdentifier('document'),
+                    factory.createIdentifier('createElement')
+                  ),
+                  undefined,
+                  [factory.createStringLiteral('div')]
+                )
+              ),
+            ],
+            ts.NodeFlags.Const
+          )
+        )
+      );
+
+      // Append each child
+      componentIR.children.forEach((child: any) => {
+        let childExpr: ts.Expression;
+        if (child.type === 'text') {
+          childExpr = factory.createCallExpression(
+            factory.createPropertyAccessExpression(
+              factory.createIdentifier('document'),
+              factory.createIdentifier('createTextNode')
+            ),
+            undefined,
+            [factory.createStringLiteral(child.content)]
+          );
+        } else if (child.type === 'expression') {
+          // Visit the expression to transform any nested JSX
+          const expr = child.expression as ts.Expression;
+          childExpr = this.context.jsxVisitor
+            ? (ts.visitNode(expr, this.context.jsxVisitor) as ts.Expression)
+            : expr;
         } else {
-            // Multiple children - create a container div
-            const statements: ts.Statement[] = []
-            const containerVar = `container${(this as any).varCounter++}`
-
-            statements.push(
-                factory.createVariableStatement(
-                    undefined,
-                    factory.createVariableDeclarationList(
-                        [
-                            factory.createVariableDeclaration(
-                                factory.createIdentifier(containerVar),
-                                undefined,
-                                undefined,
-                                factory.createCallExpression(
-                                    factory.createPropertyAccessExpression(
-                                        factory.createIdentifier('document'),
-                                        factory.createIdentifier('createElement')
-                                    ),
-                                    undefined,
-                                    [factory.createStringLiteral('div')]
-                                )
-                            )
-                        ],
-                        ts.NodeFlags.Const
-                    )
-                )
-            )
-
-            // Append each child
-            componentIR.children.forEach((child: any) => {
-                let childExpr: ts.Expression
-                if (child.type === 'text') {
-                    childExpr = factory.createCallExpression(
-                        factory.createPropertyAccessExpression(
-                            factory.createIdentifier('document'),
-                            factory.createIdentifier('createTextNode')
-                        ),
-                        undefined,
-                        [factory.createStringLiteral(child.content)]
-                    )
-                } else if (child.type === 'expression') {
-                    // Visit the expression to transform any nested JSX
-                    const expr = child.expression as ts.Expression
-                    childExpr = this.context.jsxVisitor 
-                        ? ts.visitNode(expr, this.context.jsxVisitor) as ts.Expression
-                        : expr
-                } else {
-                    childExpr = this.generate(child)
-                }
-
-                statements.push(
-                    factory.createExpressionStatement(
-                        factory.createCallExpression(
-                            factory.createPropertyAccessExpression(
-                                factory.createIdentifier(containerVar),
-                                factory.createIdentifier('appendChild')
-                            ),
-                            undefined,
-                            [childExpr]
-                        )
-                    )
-                )
-            })
-
-            statements.push(
-                factory.createReturnStatement(
-                    factory.createIdentifier(containerVar)
-                )
-            )
-
-            childrenExpression = factory.createCallExpression(
-                factory.createParenthesizedExpression(
-                    factory.createArrowFunction(
-                        undefined,
-                        undefined,
-                        [],
-                        undefined,
-                        factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-                        factory.createBlock(statements, true)
-                    )
-                ),
-                undefined,
-                []
-            )
+          childExpr = this.generate(child);
         }
 
-        // If component has _deferChildren flag (e.g., Context.Provider, FormProvider),
-        // wrap children in arrow function for deferred evaluation
-        // This allows Provider to register context BEFORE children execute
-        const componentExpr = componentIR.component as ts.Expression
-        const shouldDeferChildren = (
-            // Check for Context.Provider pattern
-            (ts.isPropertyAccessExpression(componentExpr) && componentExpr.name.text === 'Provider') ||
-            // Check for FormProvider or any component ending with Provider
-            (ts.isIdentifier(componentExpr) && componentExpr.text.endsWith('Provider'))
-        )
-        
-        const finalChildrenExpression = shouldDeferChildren
-            ? factory.createArrowFunction(
-                undefined,
-                undefined,
-                [],
-                undefined,
-                factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-                childrenExpression
+        statements.push(
+          factory.createExpressionStatement(
+            factory.createCallExpression(
+              factory.createPropertyAccessExpression(
+                factory.createIdentifier(containerVar),
+                factory.createIdentifier('appendChild')
+              ),
+              undefined,
+              [childExpr]
             )
-            : childrenExpression
-        
-        propsProperties.push(
-            factory.createPropertyAssignment(
-                factory.createIdentifier('children'),
-                finalChildrenExpression
+          )
+        );
+      });
+
+      statements.push(factory.createReturnStatement(factory.createIdentifier(containerVar)));
+
+      // Check if we need to defer children (for Providers)
+      const componentExpr = componentIR.component as ts.Expression;
+      const shouldDeferChildren =
+        // Check for Context.Provider pattern
+        (ts.isPropertyAccessExpression(componentExpr) && componentExpr.name.text === 'Provider') ||
+        // Check for FormProvider or any component ending with Provider
+        (ts.isIdentifier(componentExpr) && componentExpr.text.endsWith('Provider'));
+
+      if (shouldDeferChildren) {
+        // For deferred children, create arrow function directly without IIFE
+        childrenExpression = factory.createArrowFunction(
+          undefined,
+          undefined,
+          [],
+          undefined,
+          factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+          factory.createBlock(statements, true)
+        );
+      } else {
+        // For non-deferred children, use IIFE pattern
+        childrenExpression = factory.createCallExpression(
+          factory.createParenthesizedExpression(
+            factory.createArrowFunction(
+              undefined,
+              undefined,
+              [],
+              undefined,
+              factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+              factory.createBlock(statements, true)
             )
-        )
+          ),
+          undefined,
+          []
+        );
+      }
     }
 
-    // Generate component call: ComponentName({ prop1: value1, ... })
-    return factory.createCallExpression(
-        componentIR.component as ts.Expression,
-        undefined,
-        [factory.createObjectLiteralExpression(propsProperties, propsProperties.length > 1)]
-    )
-}
+    // Children expression is already wrapped if shouldDeferChildren
+    // No need to wrap again
+
+    propsProperties.push(
+      factory.createPropertyAssignment(factory.createIdentifier('children'), childrenExpression)
+    );
+  }
+
+  // Generate component call: ComponentName({ prop1: value1, ... })
+  return factory.createCallExpression(componentIR.component as ts.Expression, undefined, [
+    factory.createObjectLiteralExpression(propsProperties, propsProperties.length > 1),
+  ]);
+};
