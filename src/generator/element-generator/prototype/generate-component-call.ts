@@ -2,6 +2,84 @@ import * as ts from 'typescript';
 import { IElementGeneratorInternal } from '../element-generator.types.js';
 
 /**
+ * Helper: Check if a component uses/wraps Context.Provider
+ * Analyzes the component to see if it returns or uses a Provider component
+ */
+function componentUsesProvider(
+  componentExpr: ts.Expression,
+  typeChecker: ts.TypeChecker,
+  sourceFile: ts.SourceFile
+): boolean {
+  // Pattern 1: Direct Context.Provider (e.g., FormContext.Provider)
+  if (ts.isPropertyAccessExpression(componentExpr) && componentExpr.name.text === 'Provider') {
+    return true;
+  }
+
+  // Pattern 2: Component name ends with "Provider" (e.g., FormProvider, AppContextProvider)
+  if (ts.isIdentifier(componentExpr) && componentExpr.text.endsWith('Provider')) {
+    // Try to find the component declaration in the source file
+    const symbol = typeChecker.getSymbolAtLocation(componentExpr);
+    if (symbol && symbol.declarations && symbol.declarations.length > 0) {
+      const declaration = symbol.declarations[0];
+
+      // Check if it's a function/arrow function component
+      if (
+        ts.isFunctionDeclaration(declaration) ||
+        ts.isVariableDeclaration(declaration) ||
+        ts.isArrowFunction(declaration)
+      ) {
+        // Check the function body for Context.Provider usage
+        const body = ts.isFunctionDeclaration(declaration)
+          ? declaration.body
+          : ts.isVariableDeclaration(declaration) &&
+              declaration.initializer &&
+              ts.isArrowFunction(declaration.initializer)
+            ? declaration.initializer.body
+            : null;
+
+        if (body) {
+          // Look for JSX elements with .Provider in the return statement
+          let hasProviderInReturn = false;
+
+          const visitNode = (node: ts.Node): void => {
+            if (ts.isReturnStatement(node) && node.expression) {
+              const checkForProvider = (expr: ts.Node): void => {
+                if (ts.isJsxElement(expr)) {
+                  const tagName = expr.openingElement.tagName;
+                  if (ts.isPropertyAccessExpression(tagName) && tagName.name.text === 'Provider') {
+                    hasProviderInReturn = true;
+                  }
+                }
+                if (
+                  ts.isJsxSelfClosingElement(expr) &&
+                  ts.isPropertyAccessExpression(expr.tagName)
+                ) {
+                  if (expr.tagName.name.text === 'Provider') {
+                    hasProviderInReturn = true;
+                  }
+                }
+                ts.forEachChild(expr, checkForProvider);
+              };
+              checkForProvider(node.expression);
+            }
+            ts.forEachChild(node, visitNode);
+          };
+
+          visitNode(body);
+          return hasProviderInReturn;
+        }
+      }
+    }
+
+    // Fallback: If we can't analyze the body, defer children for safety
+    // Any component ending with "Provider" likely needs deferred children
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Generates a function call for component elements (e.g., <Counter initialCount={0} />)
  * Transforms into: Counter({ initialCount: 0, children: childrenElement })
  */
@@ -55,11 +133,17 @@ export const generateComponentCall = function (
 
   // Add children if present
   if (componentIR.children && componentIR.children.length > 0) {
-    // For a single child, pass it directly
-    // For multiple children, wrap in a container
     let childrenExpression: ts.Expression;
 
-    if (componentIR.children.length === 1) {
+    // Check if we need to defer children (for Providers)
+    const componentExpr = componentIR.component as ts.Expression;
+    const shouldDeferChildren = componentUsesProvider(
+      componentExpr,
+      this.context.typeChecker,
+      this.context.sourceFile
+    );
+
+    if (componentIR.children.length === 1 && !shouldDeferChildren) {
       const child = componentIR.children[0];
       if (child.type === 'text') {
         childrenExpression = factory.createStringLiteral(child.content);
@@ -74,48 +158,82 @@ export const generateComponentCall = function (
         childrenExpression = this.generate(child);
       }
     } else {
-      // Multiple children - create a container div
+      // Multiple children OR single child that needs deferral
+      const needsContainer = componentIR.children.length > 1;
       const statements: ts.Statement[] = [];
-      const containerVar = `container${(this as any).varCounter++}`;
 
-      statements.push(
-        factory.createVariableStatement(
-          undefined,
-          factory.createVariableDeclarationList(
-            [
-              factory.createVariableDeclaration(
-                factory.createIdentifier(containerVar),
-                undefined,
-                undefined,
-                factory.createCallExpression(
-                  factory.createPropertyAccessExpression(
-                    factory.createIdentifier('document'),
-                    factory.createIdentifier('createElement')
-                  ),
-                  undefined,
-                  [factory.createStringLiteral('div')]
-                )
-              ),
-            ],
-            ts.NodeFlags.Const
-          )
-        )
-      );
+      if (needsContainer) {
+        // Create container for multiple children
+        const containerVar = `container${(this as any).varCounter++}`;
 
-      // Append each child
-      componentIR.children.forEach((child: any) => {
-        let childExpr: ts.Expression;
-        if (child.type === 'text') {
-          childExpr = factory.createCallExpression(
-            factory.createPropertyAccessExpression(
-              factory.createIdentifier('document'),
-              factory.createIdentifier('createTextNode')
-            ),
+        statements.push(
+          factory.createVariableStatement(
             undefined,
-            [factory.createStringLiteral(child.content)]
+            factory.createVariableDeclarationList(
+              [
+                factory.createVariableDeclaration(
+                  factory.createIdentifier(containerVar),
+                  undefined,
+                  undefined,
+                  factory.createCallExpression(
+                    factory.createPropertyAccessExpression(
+                      factory.createIdentifier('document'),
+                      factory.createIdentifier('createElement')
+                    ),
+                    undefined,
+                    [factory.createStringLiteral('div')]
+                  )
+                ),
+              ],
+              ts.NodeFlags.Const
+            )
+          )
+        );
+
+        // Append each child to container
+        componentIR.children.forEach((child: any) => {
+          let childExpr: ts.Expression;
+          if (child.type === 'text') {
+            childExpr = factory.createCallExpression(
+              factory.createPropertyAccessExpression(
+                factory.createIdentifier('document'),
+                factory.createIdentifier('createTextNode')
+              ),
+              undefined,
+              [factory.createStringLiteral(child.content)]
+            );
+          } else if (child.type === 'expression') {
+            const expr = child.expression as ts.Expression;
+            childExpr = this.context.jsxVisitor
+              ? (ts.visitNode(expr, this.context.jsxVisitor) as ts.Expression)
+              : expr;
+          } else {
+            childExpr = this.generate(child);
+          }
+
+          statements.push(
+            factory.createExpressionStatement(
+              factory.createCallExpression(
+                factory.createPropertyAccessExpression(
+                  factory.createIdentifier(containerVar),
+                  factory.createIdentifier('appendChild')
+                ),
+                undefined,
+                [childExpr]
+              )
+            )
           );
+        });
+
+        statements.push(factory.createReturnStatement(factory.createIdentifier(containerVar)));
+      } else {
+        // Single child that needs deferral
+        const child = componentIR.children[0];
+        let childExpr: ts.Expression;
+
+        if (child.type === 'text') {
+          childExpr = factory.createStringLiteral(child.content);
         } else if (child.type === 'expression') {
-          // Visit the expression to transform any nested JSX
           const expr = child.expression as ts.Expression;
           childExpr = this.context.jsxVisitor
             ? (ts.visitNode(expr, this.context.jsxVisitor) as ts.Expression)
@@ -124,32 +242,11 @@ export const generateComponentCall = function (
           childExpr = this.generate(child);
         }
 
-        statements.push(
-          factory.createExpressionStatement(
-            factory.createCallExpression(
-              factory.createPropertyAccessExpression(
-                factory.createIdentifier(containerVar),
-                factory.createIdentifier('appendChild')
-              ),
-              undefined,
-              [childExpr]
-            )
-          )
-        );
-      });
-
-      statements.push(factory.createReturnStatement(factory.createIdentifier(containerVar)));
-
-      // Check if we need to defer children (for Providers)
-      const componentExpr = componentIR.component as ts.Expression;
-      const shouldDeferChildren =
-        // Check for Context.Provider pattern
-        (ts.isPropertyAccessExpression(componentExpr) && componentExpr.name.text === 'Provider') ||
-        // Check for FormProvider or any component ending with Provider
-        (ts.isIdentifier(componentExpr) && componentExpr.text.endsWith('Provider'));
+        statements.push(factory.createReturnStatement(childExpr));
+      }
 
       if (shouldDeferChildren) {
-        // For deferred children, create arrow function directly without IIFE
+        // Defer children for Provider components
         childrenExpression = factory.createArrowFunction(
           undefined,
           undefined,
@@ -159,7 +256,7 @@ export const generateComponentCall = function (
           factory.createBlock(statements, true)
         );
       } else {
-        // For non-deferred children, use IIFE pattern
+        // Non-provider with multiple children - use IIFE
         childrenExpression = factory.createCallExpression(
           factory.createParenthesizedExpression(
             factory.createArrowFunction(
@@ -176,9 +273,6 @@ export const generateComponentCall = function (
         );
       }
     }
-
-    // Children expression is already wrapped if shouldDeferChildren
-    // No need to wrap again
 
     propsProperties.push(
       factory.createPropertyAssignment(factory.createIdentifier('children'), childrenExpression)
