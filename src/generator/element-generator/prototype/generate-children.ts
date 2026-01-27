@@ -161,13 +161,36 @@ export const generateChildren = function (
                         ],
                         undefined,
                         factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-                        factory.createCallExpression(
-                          factory.createPropertyAccessExpression(
-                            factory.createIdentifier(parentVar),
-                            factory.createIdentifier('appendChild')
-                          ),
-                          undefined,
-                          [factory.createIdentifier('el')]
+                        factory.createBlock(
+                          [
+                            // Check if el is not null/undefined before appendChild
+                            factory.createIfStatement(
+                              factory.createBinaryExpression(
+                                factory.createBinaryExpression(
+                                  factory.createIdentifier('el'),
+                                  factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+                                  factory.createNull()
+                                ),
+                                factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+                                factory.createBinaryExpression(
+                                  factory.createIdentifier('el'),
+                                  factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+                                  factory.createIdentifier('undefined')
+                                )
+                              ),
+                              factory.createExpressionStatement(
+                                factory.createCallExpression(
+                                  factory.createPropertyAccessExpression(
+                                    factory.createIdentifier(parentVar),
+                                    factory.createIdentifier('appendChild')
+                                  ),
+                                  undefined,
+                                  [factory.createIdentifier('el')]
+                                )
+                              )
+                            ),
+                          ],
+                          true
                         )
                       ),
                     ]
@@ -418,26 +441,53 @@ export const generateChildren = function (
                                   factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
                                   factory.createBlock(
                                     [
-                                      // parent.appendChild(el)
-                                      factory.createExpressionStatement(
-                                        factory.createCallExpression(
-                                          factory.createPropertyAccessExpression(
-                                            factory.createIdentifier(parentVar),
-                                            factory.createIdentifier('appendChild')
+                                      // Check if el is not null/undefined before appendChild
+                                      factory.createIfStatement(
+                                        factory.createBinaryExpression(
+                                          factory.createBinaryExpression(
+                                            factory.createIdentifier('el'),
+                                            factory.createToken(
+                                              ts.SyntaxKind.ExclamationEqualsEqualsToken
+                                            ),
+                                            factory.createNull()
                                           ),
-                                          undefined,
-                                          [factory.createIdentifier('el')]
-                                        )
-                                      ),
-                                      // currentElements.push(el)
-                                      factory.createExpressionStatement(
-                                        factory.createCallExpression(
-                                          factory.createPropertyAccessExpression(
-                                            factory.createIdentifier(currentElementsVar),
-                                            factory.createIdentifier('push')
+                                          factory.createToken(
+                                            ts.SyntaxKind.AmpersandAmpersandToken
                                           ),
-                                          undefined,
-                                          [factory.createIdentifier('el')]
+                                          factory.createBinaryExpression(
+                                            factory.createIdentifier('el'),
+                                            factory.createToken(
+                                              ts.SyntaxKind.ExclamationEqualsEqualsToken
+                                            ),
+                                            factory.createIdentifier('undefined')
+                                          )
+                                        ),
+                                        factory.createBlock(
+                                          [
+                                            // parent.appendChild(el)
+                                            factory.createExpressionStatement(
+                                              factory.createCallExpression(
+                                                factory.createPropertyAccessExpression(
+                                                  factory.createIdentifier(parentVar),
+                                                  factory.createIdentifier('appendChild')
+                                                ),
+                                                undefined,
+                                                [factory.createIdentifier('el')]
+                                              )
+                                            ),
+                                            // currentElements.push(el)
+                                            factory.createExpressionStatement(
+                                              factory.createCallExpression(
+                                                factory.createPropertyAccessExpression(
+                                                  factory.createIdentifier(currentElementsVar),
+                                                  factory.createIdentifier('push')
+                                                ),
+                                                undefined,
+                                                [factory.createIdentifier('el')]
+                                              )
+                                            ),
+                                          ],
+                                          true
                                         )
                                       ),
                                     ],
@@ -556,30 +606,94 @@ export const generateChildren = function (
     } else if (child.type === 'element') {
       // Nested element: recursively generate and append
       const childElement = this.generate(child);
+      const childVar = `child${(this as any).varCounter++}`;
+
+      // Check for null/undefined before appendChild
       statements.push(
-        factory.createExpressionStatement(
-          factory.createCallExpression(
-            factory.createPropertyAccessExpression(
-              factory.createIdentifier(parentVar),
-              factory.createIdentifier('appendChild')
+        factory.createVariableStatement(
+          undefined,
+          factory.createVariableDeclarationList(
+            [
+              factory.createVariableDeclaration(
+                factory.createIdentifier(childVar),
+                undefined,
+                undefined,
+                childElement
+              ),
+            ],
+            ts.NodeFlags.Const
+          )
+        ),
+        factory.createIfStatement(
+          factory.createBinaryExpression(
+            factory.createBinaryExpression(
+              factory.createIdentifier(childVar),
+              factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+              factory.createNull()
             ),
-            undefined,
-            [childElement]
+            factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+            factory.createBinaryExpression(
+              factory.createIdentifier(childVar),
+              factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+              factory.createIdentifier('undefined')
+            )
+          ),
+          factory.createExpressionStatement(
+            factory.createCallExpression(
+              factory.createPropertyAccessExpression(
+                factory.createIdentifier(parentVar),
+                factory.createIdentifier('appendChild')
+              ),
+              undefined,
+              [factory.createIdentifier(childVar)]
+            )
           )
         )
       );
     } else if (child.type === 'component') {
       // Component child: generate component call and append
       const componentCall = this.generate(child);
+      const childVar = `child${(this as any).varCounter++}`;
+
+      // Check for null/undefined before appendChild
       statements.push(
-        factory.createExpressionStatement(
-          factory.createCallExpression(
-            factory.createPropertyAccessExpression(
-              factory.createIdentifier(parentVar),
-              factory.createIdentifier('appendChild')
+        factory.createVariableStatement(
+          undefined,
+          factory.createVariableDeclarationList(
+            [
+              factory.createVariableDeclaration(
+                factory.createIdentifier(childVar),
+                undefined,
+                undefined,
+                componentCall
+              ),
+            ],
+            ts.NodeFlags.Const
+          )
+        ),
+        factory.createIfStatement(
+          factory.createBinaryExpression(
+            factory.createBinaryExpression(
+              factory.createIdentifier(childVar),
+              factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+              factory.createNull()
             ),
-            undefined,
-            [componentCall]
+            factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+            factory.createBinaryExpression(
+              factory.createIdentifier(childVar),
+              factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+              factory.createIdentifier('undefined')
+            )
+          ),
+          factory.createExpressionStatement(
+            factory.createCallExpression(
+              factory.createPropertyAccessExpression(
+                factory.createIdentifier(parentVar),
+                factory.createIdentifier('appendChild')
+              ),
+              undefined,
+              [factory.createIdentifier(childVar)]
+            )
           )
         )
       );
