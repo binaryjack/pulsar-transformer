@@ -245,19 +245,46 @@ export const generateChildren = function (
         );
       } else {
         // Dynamic expression: wrap in createEffect
-        // For array expressions (like .map()) or function expressions (deferred children), we need special handling
+        // Track previous elements to avoid clearing siblings
+        // let currentElements = []
         // createEffect(() => {
         //     const rawResult = expr
         //     const result = typeof rawResult === 'function' ? rawResult() : rawResult
+        //     // Remove previous elements
+        //     currentElements.forEach(el => parent.removeChild(el))
+        //     currentElements = []
+        //     // Add new elements
         //     if (Array.isArray(result)) {
-        //         parent.innerHTML = ''
-        //         result.forEach(el => parent.appendChild(el))
+        //         result.forEach(el => { parent.appendChild(el); currentElements.push(el) })
         //     } else if (result instanceof HTMLElement) {
         //         parent.appendChild(result)
-        //     } else {
-        //         parent.textContent = result
+        //         currentElements.push(result)
+        //     } else if (result != null && result !== false && result !== undefined) {
+        //         const textNode = document.createTextNode(String(result))
+        //         parent.appendChild(textNode)
+        //         currentElements.push(textNode)
         //     }
         // })
+        const currentElementsVar = `_currentElements${(this as any).varCounter++}`;
+
+        // let currentElements = []
+        statements.push(
+          factory.createVariableStatement(
+            undefined,
+            factory.createVariableDeclarationList(
+              [
+                factory.createVariableDeclaration(
+                  factory.createIdentifier(currentElementsVar),
+                  undefined,
+                  undefined,
+                  factory.createArrayLiteralExpression([], false)
+                ),
+              ],
+              ts.NodeFlags.Let
+            )
+          )
+        );
+
         statements.push(
           factory.createExpressionStatement(
             factory.createCallExpression(factory.createIdentifier('createEffect'), undefined, [
@@ -315,6 +342,47 @@ export const generateChildren = function (
                         ts.NodeFlags.Const
                       )
                     ),
+                    // Remove previous elements: currentElements.forEach(el => parent.removeChild(el))
+                    factory.createExpressionStatement(
+                      factory.createCallExpression(
+                        factory.createPropertyAccessExpression(
+                          factory.createIdentifier(currentElementsVar),
+                          factory.createIdentifier('forEach')
+                        ),
+                        undefined,
+                        [
+                          factory.createArrowFunction(
+                            undefined,
+                            undefined,
+                            [
+                              factory.createParameterDeclaration(
+                                undefined,
+                                undefined,
+                                factory.createIdentifier('el')
+                              ),
+                            ],
+                            undefined,
+                            factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+                            factory.createCallExpression(
+                              factory.createPropertyAccessExpression(
+                                factory.createIdentifier(parentVar),
+                                factory.createIdentifier('removeChild')
+                              ),
+                              undefined,
+                              [factory.createIdentifier('el')]
+                            )
+                          ),
+                        ]
+                      )
+                    ),
+                    // currentElements = []
+                    factory.createExpressionStatement(
+                      factory.createBinaryExpression(
+                        factory.createIdentifier(currentElementsVar),
+                        factory.createToken(ts.SyntaxKind.EqualsToken),
+                        factory.createArrayLiteralExpression([], false)
+                      )
+                    ),
                     // if (Array.isArray(result))
                     factory.createIfStatement(
                       factory.createCallExpression(
@@ -325,19 +393,9 @@ export const generateChildren = function (
                         undefined,
                         [factory.createIdentifier('result')]
                       ),
-                      // then: clear and append each
+                      // then: append each element and track it
                       factory.createBlock(
                         [
-                          factory.createExpressionStatement(
-                            factory.createBinaryExpression(
-                              factory.createPropertyAccessExpression(
-                                factory.createIdentifier(parentVar),
-                                factory.createIdentifier('innerHTML')
-                              ),
-                              factory.createToken(ts.SyntaxKind.EqualsToken),
-                              factory.createStringLiteral('')
-                            )
-                          ),
                           factory.createExpressionStatement(
                             factory.createCallExpression(
                               factory.createPropertyAccessExpression(
@@ -358,13 +416,32 @@ export const generateChildren = function (
                                   ],
                                   undefined,
                                   factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-                                  factory.createCallExpression(
-                                    factory.createPropertyAccessExpression(
-                                      factory.createIdentifier(parentVar),
-                                      factory.createIdentifier('appendChild')
-                                    ),
-                                    undefined,
-                                    [factory.createIdentifier('el')]
+                                  factory.createBlock(
+                                    [
+                                      // parent.appendChild(el)
+                                      factory.createExpressionStatement(
+                                        factory.createCallExpression(
+                                          factory.createPropertyAccessExpression(
+                                            factory.createIdentifier(parentVar),
+                                            factory.createIdentifier('appendChild')
+                                          ),
+                                          undefined,
+                                          [factory.createIdentifier('el')]
+                                        )
+                                      ),
+                                      // currentElements.push(el)
+                                      factory.createExpressionStatement(
+                                        factory.createCallExpression(
+                                          factory.createPropertyAccessExpression(
+                                            factory.createIdentifier(currentElementsVar),
+                                            factory.createIdentifier('push')
+                                          ),
+                                          undefined,
+                                          [factory.createIdentifier('el')]
+                                        )
+                                      ),
+                                    ],
+                                    true
                                   )
                                 ),
                               ]
@@ -398,40 +475,70 @@ export const generateChildren = function (
                                 factory.createFalse()
                               )
                             ),
-                            factory.createExpressionStatement(
-                              factory.createCallExpression(
-                                factory.createPropertyAccessExpression(
-                                  factory.createIdentifier(parentVar),
-                                  factory.createIdentifier('appendChild')
-                                ),
-                                undefined,
-                                [
-                                  factory.createConditionalExpression(
-                                    factory.createBinaryExpression(
-                                      factory.createIdentifier('result'),
-                                      factory.createToken(ts.SyntaxKind.InstanceOfKeyword),
-                                      factory.createIdentifier('HTMLElement')
-                                    ),
-                                    factory.createToken(ts.SyntaxKind.QuestionToken),
-                                    factory.createIdentifier('result'),
-                                    factory.createToken(ts.SyntaxKind.ColonToken),
-                                    factory.createCallExpression(
-                                      factory.createPropertyAccessExpression(
-                                        factory.createIdentifier('document'),
-                                        factory.createIdentifier('createTextNode')
+                            factory.createBlock(
+                              [
+                                // const newElement = result instanceof HTMLElement ? result : document.createTextNode(String(result))
+                                factory.createVariableStatement(
+                                  undefined,
+                                  factory.createVariableDeclarationList(
+                                    [
+                                      factory.createVariableDeclaration(
+                                        factory.createIdentifier('newElement'),
+                                        undefined,
+                                        undefined,
+                                        factory.createConditionalExpression(
+                                          factory.createBinaryExpression(
+                                            factory.createIdentifier('result'),
+                                            factory.createToken(ts.SyntaxKind.InstanceOfKeyword),
+                                            factory.createIdentifier('HTMLElement')
+                                          ),
+                                          factory.createToken(ts.SyntaxKind.QuestionToken),
+                                          factory.createIdentifier('result'),
+                                          factory.createToken(ts.SyntaxKind.ColonToken),
+                                          factory.createCallExpression(
+                                            factory.createPropertyAccessExpression(
+                                              factory.createIdentifier('document'),
+                                              factory.createIdentifier('createTextNode')
+                                            ),
+                                            undefined,
+                                            [
+                                              factory.createCallExpression(
+                                                factory.createIdentifier('String'),
+                                                undefined,
+                                                [factory.createIdentifier('result')]
+                                              ),
+                                            ]
+                                          )
+                                        )
                                       ),
-                                      undefined,
-                                      [
-                                        factory.createCallExpression(
-                                          factory.createIdentifier('String'),
-                                          undefined,
-                                          [factory.createIdentifier('result')]
-                                        ),
-                                      ]
-                                    )
-                                  ),
-                                ]
-                              )
+                                    ],
+                                    ts.NodeFlags.Const
+                                  )
+                                ),
+                                // parent.appendChild(newElement)
+                                factory.createExpressionStatement(
+                                  factory.createCallExpression(
+                                    factory.createPropertyAccessExpression(
+                                      factory.createIdentifier(parentVar),
+                                      factory.createIdentifier('appendChild')
+                                    ),
+                                    undefined,
+                                    [factory.createIdentifier('newElement')]
+                                  )
+                                ),
+                                // currentElements.push(newElement)
+                                factory.createExpressionStatement(
+                                  factory.createCallExpression(
+                                    factory.createPropertyAccessExpression(
+                                      factory.createIdentifier(currentElementsVar),
+                                      factory.createIdentifier('push')
+                                    ),
+                                    undefined,
+                                    [factory.createIdentifier('newElement')]
+                                  )
+                                ),
+                              ],
+                              true
                             )
                           ),
                         ],
