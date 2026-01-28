@@ -188,7 +188,7 @@ export default function visualSchemaTransformer(
               ),
             ])
           ),
-          ts.factory.createStringLiteral('pulsar/hooks')
+          ts.factory.createStringLiteral('@pulsar-framework/pulsar.dev/hooks')
         ),
       ];
 

@@ -59,8 +59,8 @@ describe('Transformer Registry Integration', () => {
       expect(output).toContain('createElementWithRegistry');
       expect(output).toContain('appendChildren');
       expect(output).toContain('ElementType');
-      expect(output).toContain("from 'pulsar/jsx-runtime'");
-      expect(output).toContain("from 'pulsar/registry'");
+      expect(output).toContain("from '@pulsar-framework/pulsar.dev/jsx-runtime'");
+      expect(output).toContain("from '@pulsar-framework/pulsar.dev/registry'");
     });
 
     it('should not add imports for files without JSX', () => {
@@ -71,12 +71,12 @@ describe('Transformer Registry Integration', () => {
       const output = transform(source);
 
       expect(output).not.toContain('createElementWithRegistry');
-      expect(output).not.toContain('pulsar/jsx-runtime');
+      expect(output).not.toContain('@pulsar-framework/pulsar.dev/jsx-runtime');
     });
 
     it('should not duplicate imports if already present', () => {
       const source = `
-                import { createElementWithRegistry } from 'pulsar/jsx-runtime'
+                import { createElementWithRegistry } from '@pulsar-framework/pulsar.dev/jsx-runtime'
                 
                 export const Button = () => {
                     return <button>Click</button>

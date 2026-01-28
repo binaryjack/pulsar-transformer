@@ -18,8 +18,8 @@ export function addRegistryImports(sourceFile: ts.SourceFile): ts.SourceFile {
       const moduleSpecifier = stmt.moduleSpecifier;
       if (ts.isStringLiteral(moduleSpecifier)) {
         return (
-          moduleSpecifier.text.includes('pulsar/jsx-runtime') ||
-          moduleSpecifier.text.includes('pulsar/registry')
+          moduleSpecifier.text.includes('@pulsar-framework/pulsar.dev/jsx-runtime') ||
+          moduleSpecifier.text.includes('@pulsar-framework/pulsar.dev/registry')
         );
       }
     }
@@ -45,7 +45,7 @@ export function addRegistryImports(sourceFile: ts.SourceFile): ts.SourceFile {
         factory.createImportSpecifier(false, undefined, factory.createIdentifier('appendChildren')),
       ])
     ),
-    factory.createStringLiteral('pulsar/jsx-runtime')
+    factory.createStringLiteral('@pulsar-framework/pulsar.dev/jsx-runtime')
   );
 
   // Create import for ElementType
@@ -58,7 +58,7 @@ export function addRegistryImports(sourceFile: ts.SourceFile): ts.SourceFile {
         factory.createImportSpecifier(false, undefined, factory.createIdentifier('ElementType')),
       ])
     ),
-    factory.createStringLiteral('pulsar/registry')
+    factory.createStringLiteral('@pulsar-framework/pulsar.dev/registry')
   );
 
   // Add imports at the beginning of the file

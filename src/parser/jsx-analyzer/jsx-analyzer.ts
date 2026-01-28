@@ -7,6 +7,7 @@ import { analyzeChildren } from './prototype/analyze-children.js'
 import { analyzeProps } from './prototype/analyze-props.js'
 import { extractDependencies } from './prototype/extract-dependencies.js'
 import { extractEvents } from './prototype/extract-events.js'
+import { analyzeElementUnified } from './prototype/analyze-unified.js'
 
 import { isStaticElement } from './prototype/is-static-element.js'
 import { isStaticValue } from './prototype/is-static-value.js'
@@ -35,5 +36,6 @@ Object.assign(JSXAnalyzer.prototype, {
     isStaticElement,
     isStaticValue,
     extractDependencies,
-    extractEvents
+    extractEvents,
+    analyzeElementUnified
 })
