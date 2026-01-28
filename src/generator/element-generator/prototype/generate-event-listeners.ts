@@ -16,19 +16,10 @@ export const generateEventListeners = function (
   const statements: ts.Statement[] = [];
 
   if (!elementIR.events || elementIR.events.length === 0) {
-    console.log('-----[PULSAR] generateEventListeners: No events for element:', elementVar);
     return statements;
   }
 
-  console.log(
-    '-----[PULSAR] generateEventListeners: Generating for',
-    elementVar,
-    'events:',
-    elementIR.events.length
-  );
-
   elementIR.events.forEach((event) => {
-    console.log('-----[PULSAR] generateEventListeners: Adding addEventListener for', event.type);
     // el.addEventListener('click', handler)
     statements.push(
       factory.createExpressionStatement(
@@ -47,10 +38,5 @@ export const generateEventListeners = function (
     // if (event.modifiers) { ... }
   });
 
-  console.log(
-    '-----[PULSAR] generateEventListeners: Generated',
-    statements.length,
-    'addEventListener calls'
-  );
   return statements;
 };

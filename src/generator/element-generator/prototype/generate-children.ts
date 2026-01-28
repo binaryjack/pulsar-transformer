@@ -608,7 +608,7 @@ export const generateChildren = function (
       const childElement = this.generate(child);
       const childVar = `child${(this as any).varCounter++}`;
 
-      // Check for null/undefined before appendChild
+      // Check for null/undefined and empty DocumentFragment before appendChild
       statements.push(
         factory.createVariableStatement(
           undefined,
@@ -627,15 +627,45 @@ export const generateChildren = function (
         factory.createIfStatement(
           factory.createBinaryExpression(
             factory.createBinaryExpression(
-              factory.createIdentifier(childVar),
-              factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-              factory.createNull()
+              factory.createBinaryExpression(
+                factory.createIdentifier(childVar),
+                factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+                factory.createNull()
+              ),
+              factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+              factory.createBinaryExpression(
+                factory.createIdentifier(childVar),
+                factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+                factory.createIdentifier('undefined')
+              )
             ),
             factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
-            factory.createBinaryExpression(
-              factory.createIdentifier(childVar),
-              factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-              factory.createIdentifier('undefined')
+            // Check if it's NOT an empty DocumentFragment
+            factory.createParenthesizedExpression(
+              factory.createBinaryExpression(
+                factory.createPrefixUnaryExpression(
+                  ts.SyntaxKind.ExclamationToken,
+                  factory.createParenthesizedExpression(
+                    factory.createBinaryExpression(
+                      factory.createIdentifier(childVar),
+                      factory.createToken(ts.SyntaxKind.InstanceOfKeyword),
+                      factory.createIdentifier('DocumentFragment')
+                    )
+                  )
+                ),
+                factory.createToken(ts.SyntaxKind.BarBarToken),
+                factory.createBinaryExpression(
+                  factory.createPropertyAccessExpression(
+                    factory.createPropertyAccessExpression(
+                      factory.createIdentifier(childVar),
+                      factory.createIdentifier('childNodes')
+                    ),
+                    factory.createIdentifier('length')
+                  ),
+                  factory.createToken(ts.SyntaxKind.GreaterThanToken),
+                  factory.createNumericLiteral('0')
+                )
+              )
             )
           ),
           factory.createExpressionStatement(
@@ -655,7 +685,7 @@ export const generateChildren = function (
       const componentCall = this.generate(child);
       const childVar = `child${(this as any).varCounter++}`;
 
-      // Check for null/undefined before appendChild
+      // Check for null/undefined and empty DocumentFragment before appendChild
       statements.push(
         factory.createVariableStatement(
           undefined,
@@ -674,15 +704,45 @@ export const generateChildren = function (
         factory.createIfStatement(
           factory.createBinaryExpression(
             factory.createBinaryExpression(
-              factory.createIdentifier(childVar),
-              factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-              factory.createNull()
+              factory.createBinaryExpression(
+                factory.createIdentifier(childVar),
+                factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+                factory.createNull()
+              ),
+              factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+              factory.createBinaryExpression(
+                factory.createIdentifier(childVar),
+                factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+                factory.createIdentifier('undefined')
+              )
             ),
             factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
-            factory.createBinaryExpression(
-              factory.createIdentifier(childVar),
-              factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-              factory.createIdentifier('undefined')
+            // Check if it's NOT an empty DocumentFragment
+            factory.createParenthesizedExpression(
+              factory.createBinaryExpression(
+                factory.createPrefixUnaryExpression(
+                  ts.SyntaxKind.ExclamationToken,
+                  factory.createParenthesizedExpression(
+                    factory.createBinaryExpression(
+                      factory.createIdentifier(childVar),
+                      factory.createToken(ts.SyntaxKind.InstanceOfKeyword),
+                      factory.createIdentifier('DocumentFragment')
+                    )
+                  )
+                ),
+                factory.createToken(ts.SyntaxKind.BarBarToken),
+                factory.createBinaryExpression(
+                  factory.createPropertyAccessExpression(
+                    factory.createPropertyAccessExpression(
+                      factory.createIdentifier(childVar),
+                      factory.createIdentifier('childNodes')
+                    ),
+                    factory.createIdentifier('length')
+                  ),
+                  factory.createToken(ts.SyntaxKind.GreaterThanToken),
+                  factory.createNumericLiteral('0')
+                )
+              )
             )
           ),
           factory.createExpressionStatement(
