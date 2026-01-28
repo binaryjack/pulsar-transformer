@@ -29,11 +29,13 @@ export const generateStaticElementWithRegistry = function (
   // Add static properties
   elementIR.props.forEach((prop) => {
     if (prop.isStatic && prop.value) {
+      // Use string literal for hyphenated property names, otherwise use identifier
+      const propNameNode = prop.name.includes('-')
+        ? factory.createStringLiteral(prop.name)
+        : factory.createIdentifier(prop.name);
+
       propsProperties.push(
-        factory.createPropertyAssignment(
-          factory.createIdentifier(prop.name),
-          prop.value as ts.Expression
-        )
+        factory.createPropertyAssignment(propNameNode, prop.value as ts.Expression)
       );
     }
   });
@@ -161,11 +163,13 @@ export const generateComponentCallWithRegistry = function (
   // Add regular props
   componentIR.props.forEach((prop: any) => {
     if (prop.value || prop.value === false || prop.value === 0) {
+      // Use string literal for hyphenated property names, otherwise use identifier
+      const propNameNode = prop.name.includes('-')
+        ? factory.createStringLiteral(prop.name)
+        : factory.createIdentifier(prop.name);
+
       propsProperties.push(
-        factory.createPropertyAssignment(
-          factory.createIdentifier(prop.name),
-          prop.value as ts.Expression
-        )
+        factory.createPropertyAssignment(propNameNode, prop.value as ts.Expression)
       );
     }
   });

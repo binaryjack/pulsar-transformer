@@ -117,8 +117,13 @@ export const generateComponentCall = function (
       }
 
       // Wrap in try-catch to handle any edge cases
+      // Use string literal for hyphenated property names, otherwise use identifier
+      const propNameNode = prop.name.includes('-')
+        ? factory.createStringLiteral(prop.name)
+        : factory.createIdentifier(prop.name);
+
       const propAssignment = factory.createPropertyAssignment(
-        factory.createIdentifier(prop.name),
+        propNameNode,
         valueExpr as ts.Expression
       );
       propsProperties.push(propAssignment);

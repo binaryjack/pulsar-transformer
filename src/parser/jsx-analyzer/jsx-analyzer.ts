@@ -4,7 +4,6 @@ import { IJSXAnalyzer } from './jsx-analyzer.types.js';
 // Import prototype methods
 import { analyzeChildren } from './prototype/analyze-children.js';
 import { analyzeProps } from './prototype/analyze-props.js';
-import { analyzeElementUnified } from './prototype/analyze-unified.js';
 import { analyze } from './prototype/analyze.js';
 import { extractDependencies } from './prototype/extract-dependencies.js';
 import { extractEvents } from './prototype/extract-events.js';
@@ -34,5 +33,4 @@ Object.assign(JSXAnalyzer.prototype, {
   isStaticValue,
   extractDependencies,
   extractEvents,
-  analyzeElementUnified,
 });

@@ -15,7 +15,7 @@ import { IJSXAnalyzer } from '../jsx-analyzer.types.js';
  */
 
 interface UnifiedAnalysisResult {
-  props: any;
+  props: any[];
   events: any;
   isStatic: boolean;
   staticnessReason?: string;
@@ -24,7 +24,7 @@ interface UnifiedAnalysisResult {
 
 /**
  * Single unified pass that analyzes an element and collects:
- * - Props (with dependency tracking)
+ * - Props (with dependency tracking) - returns array like analyzeProps()
  * - Events (extracted from props)
  * - Staticness determination
  * - Child dynamicity detection
@@ -35,7 +35,7 @@ export const analyzeElementUnified = function (
   this: IJSXAnalyzer,
   node: ts.Node
 ): UnifiedAnalysisResult {
-  let props: any = {};
+  let props: any[] = [];
   let events: any = {};
   let isStatic = true;
   let staticnessReason = '';
@@ -56,6 +56,15 @@ export const analyzeElementUnified = function (
     for (const attr of attributes.properties) {
       // === Check for spread attributes ===
       if (ts.isJsxSpreadAttribute(attr)) {
+        // Handle spread attributes like {...field.register()}
+        props.push({
+          name: '__spread',
+          value: attr.expression,
+          isStatic: false,
+          isDynamic: true,
+          isSpread: true,
+          dependsOn: this.extractDependencies(attr.expression),
+        });
         isStatic = false;
         staticnessReason = 'Spread attributes';
         continue;
@@ -99,13 +108,17 @@ export const analyzeElementUnified = function (
       // === Props analysis (with integrated dependency extraction) ===
       let propValue: any = undefined;
       let isDynamic = false;
+      let isStatic_prop = false;
+      let dependsOn: any[] = [];
 
       if (!initializer) {
         // Boolean attribute like `disabled`
         propValue = true;
+        isStatic_prop = true;
       } else if (ts.isStringLiteral(initializer)) {
         // Static string value
-        propValue = initializer.text;
+        propValue = initializer;
+        isStatic_prop = true;
       } else if (ts.isJsxExpression(initializer)) {
         if (!initializer.expression) {
           // Empty expression {}
@@ -117,27 +130,31 @@ export const analyzeElementUnified = function (
         // check for staticness inline
         if (this.isStaticValue(initializer.expression)) {
           propValue = initializer.expression;
+          isStatic_prop = true;
         } else {
           // Dynamic expression - collect dependencies in same pass
-          propValue = {
-            type: 'dynamic',
-            expression: initializer.expression,
-            dependencies: this.extractDependencies(initializer.expression), // Only call if dynamic
-          };
+          propValue = initializer.expression;
           isDynamic = true;
+          isStatic_prop = false;
+          dependsOn = this.extractDependencies(initializer.expression);
           isStatic = false;
         }
       } else {
-        // Other JSX expressions
+        // Other JSX expressions (including numeric literals, etc.)
         propValue = initializer;
         isDynamic = true;
+        isStatic_prop = false;
         isStatic = false;
       }
 
-      props[attrName] = {
+      // Push to props array in same format as analyzeProps()
+      props.push({
+        name: attrName,
         value: propValue,
-        isDynamic,
-      };
+        isStatic: isStatic_prop,
+        isDynamic: isDynamic,
+        dependsOn: dependsOn,
+      });
     }
   }
 

@@ -2,13 +2,6 @@ import * as ts from 'typescript';
 import { IJSXAnalyzer } from '../jsx-analyzer.types.js';
 
 /**
- * OPTIMIZATION: Using unified analyzer pattern from pulsar-formular-ui
- * Instead of separate function calls that each do their own AST traversal,
- * we now import the unified analyzer that does everything in one pass.
- */
-import { analyzeElementUnified } from './analyze-unified.js';
-
-/**
  * Determines if a tag name represents a component (starts with uppercase)
  */
 function isComponentTag(tagName: string): boolean {
@@ -35,9 +28,7 @@ function getTagName(tagName: ts.JsxTagNameExpression): {
 }
 
 /**
- * OPTIMIZED: Analyzes a JSX node using unified single-pass analyzer
- * Previously called analyzeProps, isStaticElement, and extractEvents separately (3+ AST walks)
- * Now uses unified analyzer (1 AST walk) - reduces transform time by ~3-4x
+ * Analyzes a JSX node and returns its intermediate representation
  */
 export const analyze = function (this: IJSXAnalyzer, node: ts.Node): any {
   // Handle JSX Fragments (<></>)
@@ -54,27 +45,24 @@ export const analyze = function (this: IJSXAnalyzer, node: ts.Node): any {
 
     // If it's a component (starts with uppercase), return function call
     if (isComponentTag(tagName)) {
-      // Use unified analyzer for props collection
-      const unified = analyzeElementUnified.call(this, node);
       return {
         type: 'component',
         component: tagExpression,
-        props: unified.props,
+        props: this.analyzeProps(openingElement.attributes),
         children: this.analyzeChildren(node.children),
       };
     }
 
-    // Use unified analyzer (single pass instead of 3 separate passes)
-    const unified = analyzeElementUnified.call(this, node);
-
     return {
       type: 'element',
       tag: tagName,
-      props: unified.props,
+      props: this.analyzeProps(openingElement.attributes),
       children: this.analyzeChildren(node.children),
-      isStatic: unified.isStatic,
-      hasDynamicChildren: unified.hasDynamicChildren,
-      events: unified.events,
+      isStatic: this.isStaticElement(node),
+      hasDynamicChildren: node.children.some(
+        (child) => ts.isJsxExpression(child) && child.expression
+      ),
+      events: this.extractEvents(openingElement.attributes),
       key: null,
     };
   }
@@ -84,27 +72,22 @@ export const analyze = function (this: IJSXAnalyzer, node: ts.Node): any {
 
     // If it's a component (starts with uppercase), return function call
     if (isComponentTag(tagName)) {
-      // Use unified analyzer for props collection
-      const unified = analyzeElementUnified.call(this, node);
       return {
         type: 'component',
         component: tagExpression,
-        props: unified.props,
+        props: this.analyzeProps(node.attributes),
         children: [],
       };
     }
 
-    // Use unified analyzer (single pass instead of 3 separate passes)
-    const unified = analyzeElementUnified.call(this, node);
-
     return {
       type: 'element',
       tag: tagName,
-      props: unified.props,
+      props: this.analyzeProps(node.attributes),
       children: [],
-      isStatic: unified.isStatic,
-      hasDynamicChildren: unified.hasDynamicChildren,
-      events: unified.events,
+      isStatic: this.isStaticElement(node),
+      hasDynamicChildren: false,
+      events: this.extractEvents(node.attributes),
       key: null,
     };
   }
