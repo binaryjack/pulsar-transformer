@@ -34,16 +34,6 @@ export function isComponentDefinition(
     if (node.initializer && ts.isArrowFunction(node.initializer)) {
       const hasReturn = hasHtmlElementReturn(node.initializer);
       const hasJsx = hasJSXInBody(node.initializer.body);
-
-      // DEBUG: Log detection details
-      const componentName = node.name.getText();
-      console.log(
-        `[component-detector] Checking ${componentName}: hasReturn=${hasReturn}, hasJSX=${hasJsx}`
-      );
-
-      if (hasReturn && hasJsx) {
-        console.log(`[component-detector] ✓ Found component: ${componentName}`);
-      }
       return hasReturn && hasJsx;
     }
   }

@@ -25,10 +25,12 @@ ProviderComponentStrategy.prototype.canHandle = function (
   this: IProviderComponentStrategyInternal,
   context: IComponentCallContext
 ): boolean {
+  const typeChecker = context.typeChecker!;
+  const sourceFile = context.sourceFile!;
   return componentUsesProvider(
     context.componentIR.component as ts.Expression,
-    context.typeChecker!,
-    context.sourceFile!
+    typeChecker,
+    sourceFile
   );
 };
 

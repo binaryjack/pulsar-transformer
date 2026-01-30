@@ -25,10 +25,12 @@ SimpleComponentStrategy.prototype.canHandle = function (
   this: ISimpleComponentStrategyInternal,
   context: IComponentCallContext
 ): boolean {
+  const typeChecker = context.typeChecker!;
+  const sourceFile = context.sourceFile!;
   const usesProvider = componentUsesProvider(
     context.componentIR.component as ts.Expression,
-    context.typeChecker!,
-    context.sourceFile!
+    typeChecker,
+    sourceFile
   );
 
   return !usesProvider && context.componentIR.children.length === 1;
