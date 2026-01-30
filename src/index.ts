@@ -8,6 +8,7 @@ import { TransformationContext } from './context/index.js';
 import { ElementGenerator } from './generator/element-generator/index.js';
 import { addRegistryImports, needsRegistryTransformation } from './generator/registry-imports.js';
 import { optimize } from './optimizer/index.js';
+import { isComponentDefinition } from './parser/component-detector.js';
 import { JSXAnalyzer } from './parser/jsx-analyzer/index.js';
 
 // Export configuration types
@@ -68,14 +69,49 @@ export default function visualSchemaTransformer(
     // const circularDeps = checkCircularDependencies(sourceFile, transformContext)
     // diagnostics.push(...circularDeps)
 
+    // Track if we've found any components
+    let foundComponents = false;
+
     // Custom recursive visitor that transforms JSX at ANY nesting level
-    // Strategy: Transform JSX nodes immediately WITHOUT visiting their children first
-    // The analyzer will handle nested JSX during analysis
+    // Strategy: For components, visit children to transform JSX in their bodies
+    // For regular JSX, transform immediately
+    //
+    // IMPORTANT: Detects component definitions and transforms JSX inside their bodies
+    // This ensures components that return JSX work correctly
     const transformVisitor: ts.Visitor = (node: ts.Node): ts.VisitResult<ts.Node> => {
-      // Transform JSX nodes immediately - the analyzer handles all nested JSX and attributes
-      // DO NOT visit children first - return immediately after transformation
+      // Check if this is a component definition (VariableDeclaration or FunctionDeclaration)
+      // If so, visit its children to transform JSX inside the function body
+      if (isComponentDefinition(node)) {
+        // Debug: Log component detection
+        if (!foundComponents) {
+          foundComponents = true;
+          const componentName = ts.isVariableDeclaration(node)
+            ? node.name.getText()
+            : ts.isFunctionDeclaration(node) && node.name
+              ? node.name.getText()
+              : 'anonymous';
+          console.log(
+            `[pulsar-transformer] Found component: ${componentName} in ${sourceFile.fileName}`
+          );
+        }
+        // Don't transform the component node itself, but DO visit its children
+        // This allows JSX inside the component body to be transformed
+        return ts.visitEachChild(node, transformVisitor, context);
+      }
+
+      // Transform JSX nodes - the analyzer recursively analyzes nested JSX
       if (ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node) || ts.isJsxFragment(node)) {
         try {
+          // Debug: Log JSX transformation
+          const tagName = ts.isJsxElement(node)
+            ? node.openingElement.tagName.getText()
+            : ts.isJsxSelfClosingElement(node)
+              ? node.tagName.getText()
+              : 'Fragment';
+          console.log(
+            `[jsx-transform] Transforming <${tagName}> in ${sourceFile.fileName.split('/').pop()}`
+          );
+
           // TODO: Incomplete implementations - temporarily disabled
           // Run compiler API validations before transformation
           // if (ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) {
@@ -95,6 +131,16 @@ export default function visualSchemaTransformer(
             return node; // Return original node if analysis fails
           }
           const generatedCode = generator.generate(elementIR);
+
+          // DEBUG: Print ALL generated code in label.tsx
+          if (sourceFile.fileName.includes('label.tsx')) {
+            const printer = ts.createPrinter();
+            const printed = printer.printNode(ts.EmitHint.Unspecified, generatedCode, sourceFile);
+            console.log(
+              `[DEBUG] Generated ${elementIR.type} "${tagName}" in label.tsx (${elementIR.children?.length || 0} children):\n${printed.substring(0, 200)}...\n`
+            );
+          }
+
           return generatedCode;
         } catch (error) {
           console.error('Error transforming JSX:', error);
@@ -113,6 +159,13 @@ export default function visualSchemaTransformer(
 
       // For all other nodes, visit children to find nested JSX
       // Note: JsxExpression nodes are handled by the analyzer, not here
+      // Debug: Log BinaryExpression/LogicalExpression nodes that might contain JSX
+      if (ts.isBinaryExpression(node)) {
+        const fileName = sourceFile.fileName.split('/').pop();
+        console.log(
+          `[visitor] Visiting BinaryExpression in ${fileName}, operator: ${ts.tokenToString(node.operatorToken.kind)}`
+        );
+      }
       return ts.visitEachChild(node, transformVisitor, context);
     };
 

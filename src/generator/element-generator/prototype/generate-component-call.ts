@@ -1,84 +1,8 @@
 import * as ts from 'typescript';
 import { IJSXElementIR, IPropIR } from '../../../ir/types/index.js';
+import { elementOrTextNode, notNullUndefinedFalse } from '../../ast-builder/index.js';
+import { componentUsesProvider } from '../../utils/provider-detector.js';
 import { IElementGeneratorInternal } from '../element-generator.types.js';
-
-/**
- * Helper: Check if a component uses/wraps Context.Provider
- * Analyzes the component to see if it returns or uses a Provider component
- */
-function componentUsesProvider(
-  componentExpr: ts.Expression,
-  typeChecker: ts.TypeChecker,
-  sourceFile: ts.SourceFile
-): boolean {
-  // Pattern 1: Direct Context.Provider (e.g., FormContext.Provider)
-  if (ts.isPropertyAccessExpression(componentExpr) && componentExpr.name.text === 'Provider') {
-    return true;
-  }
-
-  // Pattern 2: Component name ends with "Provider" (e.g., FormProvider, AppContextProvider)
-  if (ts.isIdentifier(componentExpr) && componentExpr.text.endsWith('Provider')) {
-    // Try to find the component declaration in the source file
-    const symbol = typeChecker.getSymbolAtLocation(componentExpr);
-    if (symbol && symbol.declarations && symbol.declarations.length > 0) {
-      const declaration = symbol.declarations[0];
-
-      // Check if it's a function/arrow function component
-      if (
-        ts.isFunctionDeclaration(declaration) ||
-        ts.isVariableDeclaration(declaration) ||
-        ts.isArrowFunction(declaration)
-      ) {
-        // Check the function body for Context.Provider usage
-        const body = ts.isFunctionDeclaration(declaration)
-          ? declaration.body
-          : ts.isVariableDeclaration(declaration) &&
-              declaration.initializer &&
-              ts.isArrowFunction(declaration.initializer)
-            ? declaration.initializer.body
-            : null;
-
-        if (body) {
-          // Look for JSX elements with .Provider in the return statement
-          let hasProviderInReturn = false;
-
-          const visitNode = (node: ts.Node): void => {
-            if (ts.isReturnStatement(node) && node.expression) {
-              const checkForProvider = (expr: ts.Node): void => {
-                if (ts.isJsxElement(expr)) {
-                  const tagName = expr.openingElement.tagName;
-                  if (ts.isPropertyAccessExpression(tagName) && tagName.name.text === 'Provider') {
-                    hasProviderInReturn = true;
-                  }
-                }
-                if (
-                  ts.isJsxSelfClosingElement(expr) &&
-                  ts.isPropertyAccessExpression(expr.tagName)
-                ) {
-                  if (expr.tagName.name.text === 'Provider') {
-                    hasProviderInReturn = true;
-                  }
-                }
-                ts.forEachChild(expr, checkForProvider);
-              };
-              checkForProvider(node.expression);
-            }
-            ts.forEachChild(node, visitNode);
-          };
-
-          visitNode(body);
-          return hasProviderInReturn;
-        }
-      }
-    }
-
-    // Fallback: If we can't analyze the body, defer children for safety
-    // Any component ending with "Provider" likely needs deferred children
-    return true;
-  }
-
-  return false;
-}
 
 /**
  * Generates a function call for component elements (e.g., <Counter initialCount={0} />)
@@ -198,6 +122,8 @@ export const generateComponentCall = function (
         // Append each child to container
         componentIR.children.forEach((child) => {
           let childExpr: ts.Expression;
+          let needsNullCheck = false;
+
           if (child.type === 'text') {
             childExpr = factory.createCallExpression(
               factory.createPropertyAccessExpression(
@@ -212,22 +138,68 @@ export const generateComponentCall = function (
             childExpr = this.context.jsxVisitor
               ? (ts.visitNode(expr, this.context.jsxVisitor) as ts.Expression)
               : expr;
+            // Expression children might evaluate to false/null/undefined (e.g., {condition && <element>})
+            // We need to check before appendChild to avoid TypeError
+            needsNullCheck = true;
           } else {
             childExpr = this.generate(child);
           }
 
-          statements.push(
-            factory.createExpressionStatement(
-              factory.createCallExpression(
-                factory.createPropertyAccessExpression(
-                  factory.createIdentifier(containerVar),
-                  factory.createIdentifier('appendChild')
-                ),
+          // If it's an expression child, wrap in null/false check
+          if (needsNullCheck) {
+            // Generate: if (childExpr !== null && childExpr !== undefined && childExpr !== false) { container.appendChild(childExpr) }
+            const tempVar = `_child${(this as any).varCounter++}`;
+            statements.push(
+              factory.createVariableStatement(
                 undefined,
-                [childExpr]
+                factory.createVariableDeclarationList(
+                  [
+                    factory.createVariableDeclaration(
+                      factory.createIdentifier(tempVar),
+                      undefined,
+                      undefined,
+                      childExpr
+                    ),
+                  ],
+                  ts.NodeFlags.Const
+                )
               )
-            )
-          );
+            );
+            statements.push(
+              factory.createIfStatement(
+                notNullUndefinedFalse(tempVar),
+                factory.createBlock(
+                  [
+                    factory.createExpressionStatement(
+                      factory.createCallExpression(
+                        factory.createPropertyAccessExpression(
+                          factory.createIdentifier(containerVar),
+                          factory.createIdentifier('appendChild')
+                        ),
+                        undefined,
+                        [elementOrTextNode(tempVar)]
+                      )
+                    ),
+                  ],
+                  true
+                )
+              )
+            );
+          } else {
+            // Static child or element - safe to append directly
+            statements.push(
+              factory.createExpressionStatement(
+                factory.createCallExpression(
+                  factory.createPropertyAccessExpression(
+                    factory.createIdentifier(containerVar),
+                    factory.createIdentifier('appendChild')
+                  ),
+                  undefined,
+                  [childExpr]
+                )
+              )
+            );
+          }
         });
 
         statements.push(factory.createReturnStatement(factory.createIdentifier(containerVar)));
