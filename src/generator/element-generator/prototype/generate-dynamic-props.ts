@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import { IJSXElementIR } from '../../../ir/types/index.js';
+import { IJSXElementIR, IPropIR } from '../../../ir/types/index.js';
 import { IElementGenerator } from '../element-generator.types.js';
 
 /**
@@ -18,9 +18,9 @@ export const generateDynamicProps = function (
   const statements: ts.Statement[] = [];
 
   // Handle spread props first (like {...field.register()})
-  const spreadProps = elementIR.props.filter((prop) => (prop as any).isSpread);
+  const spreadProps = elementIR.props.filter((prop: IPropIR) => prop.isSpread);
 
-  spreadProps.forEach((prop) => {
+  spreadProps.forEach((prop: IPropIR) => {
     // Generate code to spread properties, using setAttribute for hyphenated props like aria-*
     // const _spread = spreadExpression;
     // for (const key in _spread) {

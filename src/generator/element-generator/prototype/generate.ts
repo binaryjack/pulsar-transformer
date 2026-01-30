@@ -1,5 +1,6 @@
 import * as ts from 'typescript'
 import { IElementGenerator } from '../element-generator.types.js'
+import { IJSXElementIR, IPropIR } from '../../../ir/types/index.js'
 
 /**
  * Main entry point for generating code from JSX element IR
@@ -7,7 +8,7 @@ import { IElementGenerator } from '../element-generator.types.js'
  */
 export const generate = function(
     this: IElementGenerator,
-    elementIR: any
+    elementIR: IJSXElementIR
 ): ts.Expression {
     // Handle fragments (<></>)
     if (elementIR.type === 'fragment') {
@@ -20,7 +21,7 @@ export const generate = function(
     }
 
     // Check if element has any dynamic aspects
-    const hasDynamicProps = elementIR.props.some((prop: any) => prop.isDynamic)
+    const hasDynamicProps = elementIR.props.some((prop: IPropIR) => prop.isDynamic)
     const hasDynamicChildren = elementIR.hasDynamicChildren
     const hasEvents = elementIR.events && elementIR.events.length > 0
 

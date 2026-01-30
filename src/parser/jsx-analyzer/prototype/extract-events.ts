@@ -1,11 +1,15 @@
 import * as ts from 'typescript';
+import { IEventIR } from '../../../ir/types/index.js';
 import { IJSXAnalyzer } from '../jsx-analyzer.types.js';
 
 /**
  * Extracts event handlers from JSX attributes
  */
-export const extractEvents = function (this: IJSXAnalyzer, attributes: ts.JsxAttributes): any[] {
-  const events: any[] = [];
+export const extractEvents = function (
+  this: IJSXAnalyzer,
+  attributes: ts.JsxAttributes
+): IEventIR[] {
+  const events: IEventIR[] = [];
 
   attributes.properties.forEach((prop) => {
     if (ts.isJsxAttribute(prop)) {

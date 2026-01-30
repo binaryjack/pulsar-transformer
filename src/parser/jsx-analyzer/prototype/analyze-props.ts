@@ -1,11 +1,12 @@
 import * as ts from 'typescript';
+import { IPropIR } from '../../../ir/types/index.js';
 import { IJSXAnalyzer } from '../jsx-analyzer.types.js';
 
 /**
- * Analyzes JSX attributes and returns prop IR
+ * Analyzes JSX attributes and returns property IR
  */
-export const analyzeProps = function (this: IJSXAnalyzer, attributes: ts.JsxAttributes): any[] {
-  const props: any[] = [];
+export const analyzeProps = function (this: IJSXAnalyzer, attributes: ts.JsxAttributes): IPropIR[] {
+  const props: IPropIR[] = [];
 
   attributes.properties.forEach((prop) => {
     if (ts.isJsxAttribute(prop)) {

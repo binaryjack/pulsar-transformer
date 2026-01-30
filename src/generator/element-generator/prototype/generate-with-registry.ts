@@ -4,7 +4,7 @@
  */
 
 import * as ts from 'typescript';
-import { IJSXElementIR } from '../../../ir/types/index.js';
+import { IJSXElementIR, IPropIR } from '../../../ir/types/index.js';
 import { IElementGenerator } from '../element-generator.types.js';
 
 /**
@@ -27,7 +27,7 @@ export const generateStaticElementWithRegistry = function (
   const propsProperties: ts.ObjectLiteralElementLike[] = [];
 
   // Add static properties
-  elementIR.props.forEach((prop) => {
+  elementIR.props.forEach((prop: IPropIR) => {
     if (prop.isStatic && prop.value) {
       // Use string literal for hyphenated property names, otherwise use identifier
       const propNameNode = prop.name.includes('-')
@@ -153,7 +153,7 @@ export const generateStaticElementWithRegistry = function (
  */
 export const generateComponentCallWithRegistry = function (
   this: IElementGenerator,
-  componentIR: any
+  componentIR: IJSXElementIR
 ): ts.Expression {
   const factory = ts.factory;
 
@@ -161,7 +161,7 @@ export const generateComponentCallWithRegistry = function (
   const propsProperties: ts.ObjectLiteralElementLike[] = [];
 
   // Add regular props
-  componentIR.props.forEach((prop: any) => {
+  componentIR.props.forEach((prop: IPropIR) => {
     if (prop.value || prop.value === false || prop.value === 0) {
       // Use string literal for hyphenated property names, otherwise use identifier
       const propNameNode = prop.name.includes('-')
@@ -177,11 +177,13 @@ export const generateComponentCallWithRegistry = function (
   // Add children if present
   if (componentIR.children && componentIR.children.length > 0) {
     // Generate children elements
-    const childElements = componentIR.children.map((child: any, index: number) => {
-      if (child.type === 'text' && child.isStatic) {
+    const childElements = componentIR.children.map((child, index: number) => {
+      if (child.type === 'text') {
         return factory.createStringLiteral(child.content);
+      } else if (child.type === 'expression') {
+        return child.expression;
       } else {
-        return this.generate(child);
+        return this.generate(child as IJSXElementIR);
       }
     });
 
@@ -224,7 +226,7 @@ export const generateComponentCallWithRegistry = function (
     factory.createIdentifier('createElementWithRegistry'),
     undefined,
     [
-      componentIR.component, // Component function reference
+      componentIR.component as ts.Expression, // Component function reference
       propsObject,
       registryCtxObject,
     ]

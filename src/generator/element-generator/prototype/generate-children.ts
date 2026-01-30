@@ -1,13 +1,75 @@
 import * as ts from 'typescript';
-import { detectArrayMapPattern } from '../../../parser/jsx-analyzer/prototype/map-pattern-detector.js';
 import { IElementGeneratorInternal } from '../element-generator.types.js';
-import { generateKeyedReconciliation } from './generate-keyed-map.js';
+import { IChildRenderStrategy } from './child-render-strategy.types.js';
+import { IAnalyzedChild } from './child-render-utils.js';
+
+// Import all strategy implementations
+import { ArrayMapRenderer } from './strategies/array-map-renderer.js';
+import { ComponentRenderer } from './strategies/component-renderer.js';
+import { DynamicExpressionRenderer } from './strategies/dynamic-expression-renderer.js';
+import { ElementRenderer } from './strategies/element-renderer.js';
+import { StaticExpressionRenderer } from './strategies/static-expression-renderer.js';
+import { TextNodeRenderer } from './strategies/text-node-renderer.js';
 
 /**
- * Generates code for appending children to an element
- * Handles text nodes, static elements, and dynamic expressions
+ * Child rendering strategy registry
+ * Order matters: ArrayMapRenderer must check before StaticExpressionRenderer/DynamicExpressionRenderer
+ * to detect array.map() patterns first
+ */
+const CHILD_RENDER_STRATEGIES: readonly IChildRenderStrategy[] = [
+  TextNodeRenderer,
+  ArrayMapRenderer, // Check map patterns first
+  StaticExpressionRenderer,
+  DynamicExpressionRenderer,
+  ElementRenderer,
+  ComponentRenderer,
+] as const;
+
+/**
+ * Generates code for appending children to an element using Strategy Pattern
+ * Delegates to specialized renderers based on child type
+ *
+ * Architecture:
+ * - Uses prototype pattern as per architecture requirements
+ * - Strategy pattern eliminates 777-line monolithic function
+ * - Each strategy handles one child type with proper null/false filtering
+ * - No duplication between static/dynamic paths (extracted to utilities)
+ *
+ * Performance:
+ * - O(1) strategy selection (early return on first match)
+ * - Minimal overhead from delegation
+ * - Same generated code as before
  */
 export const generateChildren = function (
+  this: IElementGeneratorInternal,
+  children: IAnalyzedChild[],
+  parentVar: string
+): ts.Statement[] {
+  const statements: ts.Statement[] = [];
+
+  children.forEach((child) => {
+    // Find the appropriate strategy for this child type
+    const strategy = CHILD_RENDER_STRATEGIES.find((s) => s.canHandle(child));
+
+    if (strategy) {
+      // Delegate rendering to the strategy
+      const childStatements = strategy.render.call(this, child, parentVar);
+      statements.push(...childStatements);
+    } else {
+      // Fallback: unknown child type (should never happen if strategies cover all cases)
+      console.warn(`[Pulsar Transformer] Unknown child type: ${child.type}`);
+    }
+  });
+
+  return statements;
+};
+
+// Legacy code below preserved for reference during migration
+// TODO: Remove after testing confirms strategy pattern works correctly
+
+/*
+// OLD MONOLITHIC IMPLEMENTATION (777 lines)
+export const generateChildren_OLD = function (
   this: IElementGeneratorInternal,
   children: any[],
   parentVar: string
@@ -163,19 +225,27 @@ export const generateChildren = function (
                         factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
                         factory.createBlock(
                           [
-                            // Check if el is not null/undefined before appendChild
+                            // Check if el is not null/undefined/false before appendChild
                             factory.createIfStatement(
                               factory.createBinaryExpression(
                                 factory.createBinaryExpression(
-                                  factory.createIdentifier('el'),
-                                  factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-                                  factory.createNull()
+                                  factory.createBinaryExpression(
+                                    factory.createIdentifier('el'),
+                                    factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+                                    factory.createNull()
+                                  ),
+                                  factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
+                                  factory.createBinaryExpression(
+                                    factory.createIdentifier('el'),
+                                    factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
+                                    factory.createIdentifier('undefined')
+                                  )
                                 ),
                                 factory.createToken(ts.SyntaxKind.AmpersandAmpersandToken),
                                 factory.createBinaryExpression(
                                   factory.createIdentifier('el'),
                                   factory.createToken(ts.SyntaxKind.ExclamationEqualsEqualsToken),
-                                  factory.createIdentifier('undefined')
+                                  factory.createFalse()
                                 )
                               ),
                               factory.createExpressionStatement(
@@ -441,15 +511,27 @@ export const generateChildren = function (
                                   factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
                                   factory.createBlock(
                                     [
-                                      // Check if el is not null/undefined before appendChild
+                                      // Check if el is not null/undefined/false before appendChild
                                       factory.createIfStatement(
                                         factory.createBinaryExpression(
                                           factory.createBinaryExpression(
-                                            factory.createIdentifier('el'),
-                                            factory.createToken(
-                                              ts.SyntaxKind.ExclamationEqualsEqualsToken
+                                            factory.createBinaryExpression(
+                                              factory.createIdentifier('el'),
+                                              factory.createToken(
+                                                ts.SyntaxKind.ExclamationEqualsEqualsToken
+                                              ),
+                                              factory.createNull()
                                             ),
-                                            factory.createNull()
+                                            factory.createToken(
+                                              ts.SyntaxKind.AmpersandAmpersandToken
+                                            ),
+                                            factory.createBinaryExpression(
+                                              factory.createIdentifier('el'),
+                                              factory.createToken(
+                                                ts.SyntaxKind.ExclamationEqualsEqualsToken
+                                              ),
+                                              factory.createIdentifier('undefined')
+                                            )
                                           ),
                                           factory.createToken(
                                             ts.SyntaxKind.AmpersandAmpersandToken
@@ -459,7 +541,7 @@ export const generateChildren = function (
                                             factory.createToken(
                                               ts.SyntaxKind.ExclamationEqualsEqualsToken
                                             ),
-                                            factory.createIdentifier('undefined')
+                                            factory.createFalse()
                                           )
                                         ),
                                         factory.createBlock(
@@ -762,3 +844,4 @@ export const generateChildren = function (
 
   return statements;
 };
+*/

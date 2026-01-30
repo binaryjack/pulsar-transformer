@@ -1,5 +1,6 @@
 import * as ts from 'typescript';
 import { IElementGeneratorInternal } from '../element-generator.types.js';
+import { IJSXElementIR, IPropIR } from '../../../ir/types/index.js';
 
 /**
  * Helper: Check if a component uses/wraps Context.Provider
@@ -85,7 +86,7 @@ function componentUsesProvider(
  */
 export const generateComponentCall = function (
   this: IElementGeneratorInternal,
-  componentIR: any
+  componentIR: IJSXElementIR
 ): ts.Expression {
   const factory = ts.factory;
 
@@ -93,7 +94,7 @@ export const generateComponentCall = function (
   const propsProperties: ts.ObjectLiteralElementLike[] = [];
 
   // Add regular props
-  componentIR.props.forEach((prop: any) => {
+  componentIR.props.forEach((prop: IPropIR) => {
     try {
       // Skip props without values or expressions
       if (!prop.value && prop.value !== false && prop.value !== 0) {
@@ -154,13 +155,12 @@ export const generateComponentCall = function (
         childrenExpression = factory.createStringLiteral(child.content);
       } else if (child.type === 'expression') {
         // Visit the expression to transform any nested JSX
-        const expr = child.expression as ts.Expression;
         childrenExpression = this.context.jsxVisitor
-          ? (ts.visitNode(expr, this.context.jsxVisitor) as ts.Expression)
-          : expr;
+          ? (ts.visitNode(child.expression, this.context.jsxVisitor) as ts.Expression)
+          : child.expression;
       } else {
-        // Recursively generate child element
-        childrenExpression = this.generate(child);
+        // Recursively generate child element (IJSXElementIR type)
+        childrenExpression = this.generate(child as IJSXElementIR);
       }
     } else {
       // Multiple children OR single child that needs deferral
@@ -196,7 +196,7 @@ export const generateComponentCall = function (
         );
 
         // Append each child to container
-        componentIR.children.forEach((child: any) => {
+        componentIR.children.forEach((child) => {
           let childExpr: ts.Expression;
           if (child.type === 'text') {
             childExpr = factory.createCallExpression(
@@ -239,12 +239,11 @@ export const generateComponentCall = function (
         if (child.type === 'text') {
           childExpr = factory.createStringLiteral(child.content);
         } else if (child.type === 'expression') {
-          const expr = child.expression as ts.Expression;
           childExpr = this.context.jsxVisitor
-            ? (ts.visitNode(expr, this.context.jsxVisitor) as ts.Expression)
-            : expr;
+            ? (ts.visitNode(child.expression, this.context.jsxVisitor) as ts.Expression)
+            : child.expression;
         } else {
-          childExpr = this.generate(child);
+          childExpr = this.generate(child as IJSXElementIR);
         }
 
         statements.push(factory.createReturnStatement(childExpr));

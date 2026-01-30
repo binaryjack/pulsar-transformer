@@ -1,5 +1,6 @@
 import * as ts from 'typescript'
 import { IArrayMapPattern } from '../../../parser/jsx-analyzer/prototype/map-pattern-detector.js'
+import { IElementGeneratorInternal } from '../element-generator.types.js'
 
 /**
  * Generates TypeScript code for keyed reconciliation of array.map() calls
@@ -10,7 +11,7 @@ export interface IKeyedReconciliationOptions {
     mapPattern: IArrayMapPattern
     parentVar: string
     varCounter: number
-    elementGenerator: any // IElementGenerator instance
+    elementGenerator: IElementGeneratorInternal
 }
 
 /**

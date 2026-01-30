@@ -1,5 +1,6 @@
 import * as ts from 'typescript'
 import { IElementGenerator } from '../element-generator.types.js'
+import { IJSXElementIR } from '../../../ir/types/index.js'
 
 /**
  * Generates code for JSX fragments (<></>)
@@ -13,7 +14,7 @@ import { IElementGenerator } from '../element-generator.types.js'
  */
 export const generateFragment = function(
     this: IElementGenerator,
-    fragmentIR: any
+    fragmentIR: IJSXElementIR
 ): ts.Expression {
     const factory = ts.factory
 

@@ -1,24 +1,26 @@
 import * as ts from 'typescript';
-import { IJSXAnalyzer } from '../jsx-analyzer.types.js';
+import { IAnalyzedChildNode, IJSXAnalyzer } from '../jsx-analyzer.types.js';
 
 /**
- * Analyzes JSX children and returns child IR
+ * Analyzes children of JSX elements
  */
 export const analyzeChildren = function (
   this: IJSXAnalyzer,
   children: ts.NodeArray<ts.JsxChild>
-): any[] {
-  const result: any[] = [];
+): IAnalyzedChildNode[] {
+  const result: IAnalyzedChildNode[] = [];
 
   children.forEach((child, index) => {
     if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child)) {
       const analyzed = this.analyze(child);
-      result.push(analyzed);
+      if (analyzed) {
+        result.push(analyzed);
+      }
     } else if (ts.isJsxExpression(child) && child.expression) {
       // The expression needs to be visited to transform any JSX inside it
       // We'll capture it and let the generator handle visiting it
-      const expr = {
-        type: 'expression',
+      const expr: IAnalyzedChildNode = {
+        type: 'expression' as const,
         expression: child.expression,
         isStatic: this.isStaticValue(child.expression),
         dependsOn: this.extractDependencies(child.expression),
@@ -28,15 +30,17 @@ export const analyzeChildren = function (
       const text = child.text.trim();
       if (text) {
         result.push({
-          type: 'text',
+          type: 'text' as const,
           content: text,
-          isStatic: true,
+          isStatic: true as const,
         });
       }
     } else if (ts.isJsxFragment(child)) {
       // Handle JSX fragments
       const analyzed = this.analyze(child);
-      result.push(analyzed);
+      if (analyzed) {
+        result.push(analyzed);
+      }
     }
   });
 

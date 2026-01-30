@@ -1,5 +1,6 @@
 import * as ts from 'typescript';
 import { IJSXAnalyzer } from '../jsx-analyzer.types.js';
+import { IPropIR, IEventIR } from '../../../ir/types/index.js';
 
 /**
  * UNIFIED ELEMENT ANALYSIS
@@ -15,8 +16,8 @@ import { IJSXAnalyzer } from '../jsx-analyzer.types.js';
  */
 
 interface UnifiedAnalysisResult {
-  props: any[];
-  events: any;
+  props: IPropIR[];
+  events: Record<string, IEventIR>;
   isStatic: boolean;
   staticnessReason?: string;
   hasDynamicChildren: boolean;
@@ -35,8 +36,8 @@ export const analyzeElementUnified = function (
   this: IJSXAnalyzer,
   node: ts.Node
 ): UnifiedAnalysisResult {
-  let props: any[] = [];
-  let events: any = {};
+  let props: IPropIR[] = [];
+  let events: Record<string, IEventIR> = {};
   let isStatic = true;
   let staticnessReason = '';
   let hasDynamicChildren = false;
@@ -95,25 +96,34 @@ export const analyzeElementUnified = function (
       if (attrName.startsWith('on')) {
         const eventName = attrName.substring(2).toLowerCase();
         if (initializer) {
+          let handler: ts.Expression | undefined;
           if (ts.isJsxExpression(initializer) && initializer.expression) {
-            events[eventName] = initializer.expression;
+            handler = initializer.expression;
           } else if (ts.isStringLiteral(initializer)) {
             // Handle string event handlers
-            events[eventName] = initializer;
+            handler = initializer;
+          }
+          
+          if (handler) {
+            events[eventName] = {
+              type: eventName,
+              handler: handler,
+              modifiers: []
+            };
           }
         }
         continue; // Event handlers are always dynamic
       }
 
       // === Props analysis (with integrated dependency extraction) ===
-      let propValue: any = undefined;
+      let propValue: ts.Expression | undefined = undefined;
       let isDynamic = false;
       let isStatic_prop = false;
-      let dependsOn: any[] = [];
+      let dependsOn: string[] = [];
 
       if (!initializer) {
         // Boolean attribute like `disabled`
-        propValue = true;
+        propValue = ts.factory.createTrue();
         isStatic_prop = true;
       } else if (ts.isStringLiteral(initializer)) {
         // Static string value

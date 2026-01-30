@@ -91,6 +91,9 @@ export default function visualSchemaTransformer(
           // }
 
           const elementIR = analyzer.analyze(node);
+          if (!elementIR) {
+            return node; // Return original node if analysis fails
+          }
           const generatedCode = generator.generate(elementIR);
           return generatedCode;
         } catch (error) {

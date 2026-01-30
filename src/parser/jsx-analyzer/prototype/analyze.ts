@@ -1,4 +1,5 @@
 import * as ts from 'typescript';
+import { IJSXElementIR } from '../../../ir/types/index.js';
 import { IJSXAnalyzer } from '../jsx-analyzer.types.js';
 
 /**
@@ -30,12 +31,16 @@ function getTagName(tagName: ts.JsxTagNameExpression): {
 /**
  * Analyzes a JSX node and returns its intermediate representation
  */
-export const analyze = function (this: IJSXAnalyzer, node: ts.Node): any {
+export const analyze = function (this: IJSXAnalyzer, node: ts.Node): IJSXElementIR | null {
   // Handle JSX Fragments (<></>)
   if (ts.isJsxFragment(node)) {
     return {
       type: 'fragment',
-      children: this.analyzeChildren(node.children),
+      props: [],
+      children: this.analyzeChildren(node.children) as Array<IJSXElementIR>,
+      isStatic: true,
+      hasDynamicChildren: false,
+      events: [],
     };
   }
 
@@ -47,9 +52,14 @@ export const analyze = function (this: IJSXAnalyzer, node: ts.Node): any {
     if (isComponentTag(tagName)) {
       return {
         type: 'component',
-        component: tagExpression,
+        component: tagExpression as ts.Expression,
         props: this.analyzeProps(openingElement.attributes),
-        children: this.analyzeChildren(node.children),
+        children: this.analyzeChildren(node.children) as Array<IJSXElementIR>,
+        isStatic: this.isStaticElement(node),
+        hasDynamicChildren: node.children.some(
+          (child) => ts.isJsxExpression(child) && child.expression
+        ),
+        events: this.extractEvents(openingElement.attributes),
       };
     }
 
@@ -57,13 +67,12 @@ export const analyze = function (this: IJSXAnalyzer, node: ts.Node): any {
       type: 'element',
       tag: tagName,
       props: this.analyzeProps(openingElement.attributes),
-      children: this.analyzeChildren(node.children),
+      children: this.analyzeChildren(node.children) as Array<IJSXElementIR>,
       isStatic: this.isStaticElement(node),
       hasDynamicChildren: node.children.some(
         (child) => ts.isJsxExpression(child) && child.expression
       ),
       events: this.extractEvents(openingElement.attributes),
-      key: null,
     };
   }
 
@@ -74,9 +83,12 @@ export const analyze = function (this: IJSXAnalyzer, node: ts.Node): any {
     if (isComponentTag(tagName)) {
       return {
         type: 'component',
-        component: tagExpression,
+        component: tagExpression as ts.Expression,
         props: this.analyzeProps(node.attributes),
         children: [],
+        isStatic: this.isStaticElement(node),
+        hasDynamicChildren: false,
+        events: this.extractEvents(node.attributes),
       };
     }
 
@@ -88,7 +100,6 @@ export const analyze = function (this: IJSXAnalyzer, node: ts.Node): any {
       isStatic: this.isStaticElement(node),
       hasDynamicChildren: false,
       events: this.extractEvents(node.attributes),
-      key: null,
     };
   }
 
