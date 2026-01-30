@@ -1,8 +1,8 @@
 import * as ts from 'typescript';
+import { IJSXElementIR } from '../../../../ir/types/index.js';
 import { IElementGeneratorInternal } from '../../element-generator.types.js';
 import { IChildRenderStrategy } from '../child-render-strategy.types.js';
 import { IAnalyzedChild, createCompleteValidationCheck } from '../child-render-utils.js';
-import { IJSXElementIR } from '../../../../ir/types/index.js';
 
 const factory = ts.factory;
 

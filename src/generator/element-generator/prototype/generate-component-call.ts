@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
-import { IElementGeneratorInternal } from '../element-generator.types.js';
 import { IJSXElementIR, IPropIR } from '../../../ir/types/index.js';
+import { IElementGeneratorInternal } from '../element-generator.types.js';
 
 /**
  * Helper: Check if a component uses/wraps Context.Provider

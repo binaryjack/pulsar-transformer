@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
+import { IEventIR, IPropIR } from '../../../ir/types/index.js';
 import { IJSXAnalyzer } from '../jsx-analyzer.types.js';
-import { IPropIR, IEventIR } from '../../../ir/types/index.js';
 
 /**
  * UNIFIED ELEMENT ANALYSIS
@@ -103,12 +103,12 @@ export const analyzeElementUnified = function (
             // Handle string event handlers
             handler = initializer;
           }
-          
+
           if (handler) {
             events[eventName] = {
               type: eventName,
               handler: handler,
-              modifiers: []
+              modifiers: [],
             };
           }
         }

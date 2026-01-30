@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
 import { ITransformationContext } from '../../context/transformation-context.types.js';
-import { IEventIR, IJSXElementIR, IPropIR, IExpressionIR, ITextIR } from '../../ir/types/index.js';
+import { IEventIR, IExpressionIR, IJSXElementIR, IPropIR, ITextIR } from '../../ir/types/index.js';
 
 export const SJSXAnalyzer = Symbol.for('IJSXAnalyzer');
 

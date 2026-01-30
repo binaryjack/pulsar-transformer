@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import { IJSXElementIR, IExpressionIR, ITextIR } from '../../../ir/types/index.js';
+import { IExpressionIR, IJSXElementIR, ITextIR } from '../../../ir/types/index.js';
 
 /**
  * Utilities for rendering JSX children

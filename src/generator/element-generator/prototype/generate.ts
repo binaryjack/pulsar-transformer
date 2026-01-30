@@ -1,35 +1,35 @@
-import * as ts from 'typescript'
-import { IElementGenerator } from '../element-generator.types.js'
-import { IJSXElementIR, IPropIR } from '../../../ir/types/index.js'
+import * as ts from 'typescript';
+import { IJSXElementIR, IPropIR } from '../../../ir/types/index.js';
+import { IElementGenerator } from '../element-generator.types.js';
 
 /**
  * Main entry point for generating code from JSX element IR
  * Determines if element is static or dynamic and delegates appropriately
  */
-export const generate = function(
-    this: IElementGenerator,
-    elementIR: IJSXElementIR
+export const generate = function (
+  this: IElementGenerator,
+  elementIR: IJSXElementIR
 ): ts.Expression {
-    // Handle fragments (<></>)
-    if (elementIR.type === 'fragment') {
-        return this.generateFragment(elementIR)
-    }
-    
-    // Handle component calls (e.g., <Counter />)
-    if (elementIR.type === 'component') {
-        return this.generateComponentCall(elementIR)
-    }
+  // Handle fragments (<></>)
+  if (elementIR.type === 'fragment') {
+    return this.generateFragment(elementIR);
+  }
 
-    // Check if element has any dynamic aspects
-    const hasDynamicProps = elementIR.props.some((prop: IPropIR) => prop.isDynamic)
-    const hasDynamicChildren = elementIR.hasDynamicChildren
-    const hasEvents = elementIR.events && elementIR.events.length > 0
+  // Handle component calls (e.g., <Counter />)
+  if (elementIR.type === 'component') {
+    return this.generateComponentCall(elementIR);
+  }
 
-    // If element is completely static, generate simple createElement
-    if (!hasDynamicProps && !hasDynamicChildren && !hasEvents) {
-        return this.generateStaticElement(elementIR)
-    }
+  // Check if element has any dynamic aspects
+  const hasDynamicProps = elementIR.props.some((prop: IPropIR) => prop.isDynamic);
+  const hasDynamicChildren = elementIR.hasDynamicChildren;
+  const hasEvents = elementIR.events && elementIR.events.length > 0;
 
-    // Element has dynamic aspects, generate with effects
-    return this.generateDynamicElement(elementIR)
-}
+  // If element is completely static, generate simple createElement
+  if (!hasDynamicProps && !hasDynamicChildren && !hasEvents) {
+    return this.generateStaticElement(elementIR);
+  }
+
+  // Element has dynamic aspects, generate with effects
+  return this.generateDynamicElement(elementIR);
+};
