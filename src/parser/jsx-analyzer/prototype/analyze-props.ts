@@ -8,6 +8,11 @@ import { IJSXAnalyzer } from '../jsx-analyzer.types.js';
 export const analyzeProps = function (this: IJSXAnalyzer, attributes: ts.JsxAttributes): IPropIR[] {
   const props: IPropIR[] = [];
 
+  // Safety check
+  if (!attributes || !attributes.properties) {
+    return props;
+  }
+
   attributes.properties.forEach((prop) => {
     if (ts.isJsxAttribute(prop)) {
       const name = ts.isIdentifier(prop.name) ? prop.name.text : 'unknown';

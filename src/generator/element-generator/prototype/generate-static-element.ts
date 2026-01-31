@@ -1,6 +1,6 @@
-import * as ts from 'typescript'
-import { IJSXElementIR } from '../../../ir/types/index.js'
-import { IElementGenerator } from '../element-generator.types.js'
+import * as ts from 'typescript';
+import { IJSXElementIR } from '../../../ir/types/index.js';
+import { IElementGenerator } from '../element-generator.types.js';
 
 /**
  * Generates code for a completely static element
@@ -10,117 +10,129 @@ import { IElementGenerator } from '../element-generator.types.js'
  *   el.textContent = 'Hello'
  *   return el
  */
-export const generateStaticElement = function(
-    this: IElementGenerator,
-    elementIR: IJSXElementIR
+export const generateStaticElement = function (
+  this: IElementGenerator,
+  elementIR: IJSXElementIR
 ): ts.Expression {
-    const factory = ts.factory
+  const factory = ts.factory;
 
-    // Generate: document.createElement(tagName)
-    const createElement = factory.createCallExpression(
-        factory.createPropertyAccessExpression(
-            factory.createIdentifier('document'),
-            factory.createIdentifier('createElement')
-        ),
-        undefined,
-        [factory.createStringLiteral(elementIR.tag || 'div')]
-    )
+  // Generate: document.createElement(tagName)
+  const createElement = factory.createCallExpression(
+    factory.createPropertyAccessExpression(
+      factory.createIdentifier('document'),
+      factory.createIdentifier('createElement')
+    ),
+    undefined,
+    [factory.createStringLiteral(elementIR.tag || 'div')]
+  );
 
-    const statements: ts.Statement[] = []
+  const statements: ts.Statement[] = [];
 
-    // Generate unique variable name: el0, el1, etc.
-    const elementVar = `el${(this as any).varCounter++}`
+  // Generate unique variable name: el0, el1, etc.
+  const elementVar = `el${(this as any).varCounter++}`;
 
-    // const el = document.createElement('div')
-    statements.push(
-        factory.createVariableStatement(
+  // const el = document.createElement('div')
+  statements.push(
+    factory.createVariableStatement(
+      undefined,
+      factory.createVariableDeclarationList(
+        [
+          factory.createVariableDeclaration(
+            factory.createIdentifier(elementVar),
             undefined,
-            factory.createVariableDeclarationList(
-                [
-                    factory.createVariableDeclaration(
-                        factory.createIdentifier(elementVar),
-                        undefined,
-                        undefined,
-                        createElement
-                    )
-                ],
-                ts.NodeFlags.Const
-            )
-        )
+            undefined,
+            createElement
+          ),
+        ],
+        ts.NodeFlags.Const
+      )
     )
+  );
 
-    // Set static properties
-    elementIR.props.forEach(prop => {
-        if (prop.isStatic && prop.value) {
-            // Check if prop name contains hyphen or special chars (needs setAttribute)
-            const needsSetAttribute = prop.name.includes('-') || 
-                                      prop.name.startsWith('aria') || 
-                                      prop.name.startsWith('data')
-            
-            if (needsSetAttribute) {
-                // el.setAttribute('prop-name', value)
-                statements.push(
-                    factory.createExpressionStatement(
-                        factory.createCallExpression(
-                            factory.createPropertyAccessExpression(
-                                factory.createIdentifier(elementVar),
-                                factory.createIdentifier('setAttribute')
-                            ),
-                            undefined,
-                            [
-                                factory.createStringLiteral(prop.name),
-                                prop.value as ts.Expression
-                            ]
-                        )
-                    )
-                )
-            } else {
-                // el.propName = value
-                statements.push(
-                    factory.createExpressionStatement(
-                        factory.createBinaryExpression(
-                            factory.createPropertyAccessExpression(
-                                factory.createIdentifier(elementVar),
-                                factory.createIdentifier(prop.name)
-                            ),
-                            factory.createToken(ts.SyntaxKind.EqualsToken),
-                            prop.value as ts.Expression
-                        )
-                    )
-                )
-            }
-        }
-    })
+  // Set static properties
+  elementIR.props.forEach((prop) => {
+    if (prop.isStatic && prop.value) {
+      // Check if prop name contains hyphen or special chars (needs setAttribute)
+      const needsSetAttribute =
+        prop.name.includes('-') || prop.name.startsWith('aria') || prop.name.startsWith('data');
 
-    // Handle static text children
-    if (elementIR.children.length > 0) {
-        const staticChildren = this.generateChildren(
-            elementIR.children,
-            elementVar
-        )
-        statements.push(...staticChildren)
+      if (needsSetAttribute) {
+        // el.setAttribute('prop-name', value)
+        statements.push(
+          factory.createExpressionStatement(
+            factory.createCallExpression(
+              factory.createPropertyAccessExpression(
+                factory.createIdentifier(elementVar),
+                factory.createIdentifier('setAttribute')
+              ),
+              undefined,
+              [factory.createStringLiteral(prop.name), prop.value as ts.Expression]
+            )
+          )
+        );
+      } else if (
+        prop.name === 'style' &&
+        ts.isObjectLiteralExpression(prop.value as ts.Expression)
+      ) {
+        // Special handling for style objects: Object.assign(el.style, {...})
+        statements.push(
+          factory.createExpressionStatement(
+            factory.createCallExpression(
+              factory.createPropertyAccessExpression(
+                factory.createIdentifier('Object'),
+                factory.createIdentifier('assign')
+              ),
+              undefined,
+              [
+                factory.createPropertyAccessExpression(
+                  factory.createIdentifier(elementVar),
+                  factory.createIdentifier('style')
+                ),
+                prop.value as ts.Expression,
+              ]
+            )
+          )
+        );
+      } else {
+        // el.propName = value
+        statements.push(
+          factory.createExpressionStatement(
+            factory.createBinaryExpression(
+              factory.createPropertyAccessExpression(
+                factory.createIdentifier(elementVar),
+                factory.createIdentifier(prop.name)
+              ),
+              factory.createToken(ts.SyntaxKind.EqualsToken),
+              prop.value as ts.Expression
+            )
+          )
+        );
+      }
     }
+  });
 
-    // Return element
-    statements.push(
-        factory.createReturnStatement(
-            factory.createIdentifier(elementVar)
-        )
-    )
+  // Handle static text children
+  if (elementIR.children.length > 0) {
+    const staticChildren = this.generateChildren(elementIR.children, elementVar);
+    statements.push(...staticChildren);
+  }
 
-    // Wrap in IIFE: (() => { const el = ...; return el })()
-    return factory.createCallExpression(
-        factory.createParenthesizedExpression(
-            factory.createArrowFunction(
-                undefined,
-                undefined,
-                [],
-                undefined,
-                factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-                factory.createBlock(statements, true)
-            )
-        ),
+  // Return element
+  statements.push(factory.createReturnStatement(factory.createIdentifier(elementVar)));
+
+  // Wrap in IIFE: (() => { const el = ...; return el })()
+  return factory.createCallExpression(
+    factory.createParenthesizedExpression(
+      factory.createArrowFunction(
         undefined,
-        []
-    )
-}
+        undefined,
+        [],
+        undefined,
+        factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+        factory.createBlock(statements, true)
+      )
+    ),
+    undefined,
+    []
+  );
+};

@@ -8,6 +8,16 @@ import { IAnalyzedChildNode } from '../../parser/jsx-analyzer/jsx-analyzer.types
  */
 export interface IElementGenerator {
   /**
+   * Transformation context
+   */
+  readonly context: ITransformationContext;
+
+  /**
+   * Variable counter for unique names
+   */
+  varCounter: number;
+
+  /**
    * Generate code for a JSX element
    */
   generate: (elementIR: IJSXElementIR) => ts.Expression;
@@ -51,6 +61,12 @@ export interface IElementGenerator {
    * Generate code for ref assignment
    */
   generateRefAssignment: (elementVar: string, refExpr: ts.Expression) => ts.Statement | null;
+
+  /**
+   * Generate code for registry-pattern element (NEW)
+   * Uses t_element() and $REGISTRY.wire() instead of createEffect
+   */
+  generateRegistryElement: (elementIR: IJSXElementIR) => ts.Expression;
 }
 
 /**

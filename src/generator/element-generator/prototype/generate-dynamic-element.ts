@@ -68,6 +68,29 @@ export const generateDynamicElement = function (
             )
           )
         );
+      } else if (
+        prop.name === 'style' &&
+        ts.isObjectLiteralExpression(prop.value as ts.Expression)
+      ) {
+        // Special handling for style objects: Object.assign(el.style, {...})
+        statements.push(
+          factory.createExpressionStatement(
+            factory.createCallExpression(
+              factory.createPropertyAccessExpression(
+                factory.createIdentifier('Object'),
+                factory.createIdentifier('assign')
+              ),
+              undefined,
+              [
+                factory.createPropertyAccessExpression(
+                  factory.createIdentifier(elementVar),
+                  factory.createIdentifier('style')
+                ),
+                prop.value as ts.Expression,
+              ]
+            )
+          )
+        );
       } else {
         // el.propName = value
         statements.push(

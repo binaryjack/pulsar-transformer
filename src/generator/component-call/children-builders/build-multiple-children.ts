@@ -40,13 +40,13 @@ export const buildMultipleChildren = function (
     )
   );
 
-  // Append each child with null/false checks
+  // Append each child with null/false checks and array flattening
   children.forEach((child) => {
     const childExpr = buildChildExpression(child, context, generateElement);
     const needsNullCheck = child.type === 'expression';
 
     if (needsNullCheck) {
-      // Expression children might be false/null/undefined
+      // Expression children might be false/null/undefined OR an array (from .map())
       const tempVar = `_child${context.varCounter++}`;
 
       statements.push(
@@ -66,23 +66,84 @@ export const buildMultipleChildren = function (
         )
       );
 
+      // Handle arrays (from .map()) - flatten and append each element
       statements.push(
         context.factory.createIfStatement(
-          notNullUndefinedFalse(tempVar),
+          // Check if it's an array
+          context.factory.createCallExpression(
+            context.factory.createPropertyAccessExpression(
+              context.factory.createIdentifier('Array'),
+              context.factory.createIdentifier('isArray')
+            ),
+            undefined,
+            [context.factory.createIdentifier(tempVar)]
+          ),
+          // If array: forEach and appendChild
           context.factory.createBlock(
             [
               context.factory.createExpressionStatement(
                 context.factory.createCallExpression(
                   context.factory.createPropertyAccessExpression(
-                    context.factory.createIdentifier(containerVar),
-                    context.factory.createIdentifier('appendChild')
+                    context.factory.createIdentifier(tempVar),
+                    context.factory.createIdentifier('forEach')
                   ),
                   undefined,
-                  [elementOrTextNode(tempVar)]
+                  [
+                    context.factory.createArrowFunction(
+                      undefined,
+                      undefined,
+                      [
+                        context.factory.createParameterDeclaration(
+                          undefined,
+                          undefined,
+                          context.factory.createIdentifier('_el')
+                        ),
+                      ],
+                      undefined,
+                      context.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+                      context.factory.createBlock(
+                        [
+                          context.factory.createIfStatement(
+                            notNullUndefinedFalse('_el'),
+                            context.factory.createExpressionStatement(
+                              context.factory.createCallExpression(
+                                context.factory.createPropertyAccessExpression(
+                                  context.factory.createIdentifier(containerVar),
+                                  context.factory.createIdentifier('appendChild')
+                                ),
+                                undefined,
+                                [elementOrTextNode('_el')]
+                              )
+                            )
+                          ),
+                        ],
+                        true
+                      )
+                    ),
+                  ]
                 )
               ),
             ],
             true
+          ),
+          // Else: append single element
+          context.factory.createIfStatement(
+            notNullUndefinedFalse(tempVar),
+            context.factory.createBlock(
+              [
+                context.factory.createExpressionStatement(
+                  context.factory.createCallExpression(
+                    context.factory.createPropertyAccessExpression(
+                      context.factory.createIdentifier(containerVar),
+                      context.factory.createIdentifier('appendChild')
+                    ),
+                    undefined,
+                    [elementOrTextNode(tempVar)]
+                  )
+                ),
+              ],
+              true
+            )
           )
         )
       );

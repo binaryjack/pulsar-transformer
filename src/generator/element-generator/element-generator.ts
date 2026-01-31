@@ -7,6 +7,7 @@ import { generateDynamicProps } from './prototype/generate-dynamic-props.js';
 import { generateEventListeners } from './prototype/generate-event-listeners.js';
 import { generateFragment } from './prototype/generate-fragment.js';
 import { generateRefAssignment } from './prototype/generate-ref-assignment.js';
+import { generateRegistryElement } from './prototype/generate-registry-element.js';
 import { generateStaticElement } from './prototype/generate-static-element.js';
 import { generate } from './prototype/generate.js';
 
@@ -45,6 +46,7 @@ Object.assign(ElementGenerator.prototype, {
   generate,
   generateStaticElement,
   generateDynamicElement,
+  generateRegistryElement,
   generateComponentCall,
   generateEventListeners,
   generateChildren,

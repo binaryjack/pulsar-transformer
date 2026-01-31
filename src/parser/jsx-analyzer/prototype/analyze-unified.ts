@@ -107,6 +107,7 @@ export const analyzeElementUnified = function (
           if (handler) {
             events[eventName] = {
               type: eventName,
+              name: eventName,
               handler: handler,
               modifiers: [],
             };

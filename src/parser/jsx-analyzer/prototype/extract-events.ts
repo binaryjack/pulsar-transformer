@@ -11,6 +11,11 @@ export const extractEvents = function (
 ): IEventIR[] {
   const events: IEventIR[] = [];
 
+  // Safety check
+  if (!attributes || !attributes.properties) {
+    return events;
+  }
+
   attributes.properties.forEach((prop) => {
     if (ts.isJsxAttribute(prop)) {
       const name = ts.isIdentifier(prop.name) ? prop.name.text : 'unknown';
@@ -42,6 +47,7 @@ export const extractEvents = function (
 
         events.push({
           type: eventType, // onClick -> click
+          name: name, // Keep original name like 'onClick'
           handler,
           modifiers: [],
         });

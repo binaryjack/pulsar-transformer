@@ -1,10 +1,10 @@
 import * as ts from 'typescript';
-import { IJSXElementIR, IPropIR } from '../../../ir/types/index.js';
+import { IJSXElementIR } from '../../../ir/types/index.js';
 import { IElementGenerator } from '../element-generator.types.js';
 
 /**
  * Main entry point for generating code from JSX element IR
- * Determines if element is static or dynamic and delegates appropriately
+ * Uses registry pattern for all elements
  */
 export const generate = function (
   this: IElementGenerator,
@@ -20,16 +20,6 @@ export const generate = function (
     return this.generateComponentCall(elementIR);
   }
 
-  // Check if element has any dynamic aspects
-  const hasDynamicProps = elementIR.props.some((prop: IPropIR) => prop.isDynamic);
-  const hasDynamicChildren = elementIR.hasDynamicChildren;
-  const hasEvents = elementIR.events && elementIR.events.length > 0;
-
-  // If element is completely static, generate simple createElement
-  if (!hasDynamicProps && !hasDynamicChildren && !hasEvents) {
-    return this.generateStaticElement(elementIR);
-  }
-
-  // Element has dynamic aspects, generate with effects
-  return this.generateDynamicElement(elementIR);
+  // Use registry pattern for ALL elements
+  return this.generateRegistryElement(elementIR);
 };

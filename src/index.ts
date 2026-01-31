@@ -5,10 +5,14 @@ import * as ts from 'typescript';
 // import { analyzeRouteComponent, validateUseParamsCall } from './compiler-api/route-integration.js'
 import type { IRegistryTransformConfig } from './config/registry-config.js';
 import { TransformationContext } from './context/index.js';
+import {
+  shouldWrapComponent,
+  wrapComponentWithExecute,
+} from './generator/component-wrapper/index.js';
 import { ElementGenerator } from './generator/element-generator/index.js';
 import { addRegistryImports, needsRegistryTransformation } from './generator/registry-imports.js';
 import { optimize } from './optimizer/index.js';
-import { isComponentDefinition } from './parser/component-detector.js';
+import { getComponentDefinition, isComponentDefinition } from './parser/component-detector.js';
 import { JSXAnalyzer } from './parser/jsx-analyzer/index.js';
 
 // Export configuration types
@@ -80,10 +84,22 @@ export default function visualSchemaTransformer(
     // This ensures components that return JSX work correctly
     const transformVisitor: ts.Visitor = (node: ts.Node): ts.VisitResult<ts.Node> => {
       // Check if this is a component definition (VariableDeclaration or FunctionDeclaration)
-      // If so, visit its children to transform JSX inside the function body
+      // If so, wrap it with $REGISTRY.execute() and visit children
       if (isComponentDefinition(node)) {
-        // Component detected - transformation will be applied to JSX children
-        // Don't transform the component node itself, but DO visit its children
+        const componentDef = getComponentDefinition(node);
+        if (componentDef && shouldWrapComponent(componentDef, transformContext)) {
+          // Wrap component with $REGISTRY.execute()
+          const wrappedComponent = wrapComponentWithExecute(
+            componentDef,
+            sourceFile,
+            transformContext
+          );
+
+          // Visit children to transform JSX inside the wrapped component body
+          return ts.visitEachChild(wrappedComponent, transformVisitor, context);
+        }
+
+        // Component detected but wrapping disabled - just visit children
         // This allows JSX inside the component body to be transformed
         return ts.visitEachChild(node, transformVisitor, context);
       }
@@ -178,17 +194,13 @@ export default function visualSchemaTransformer(
     if (hasJSX) {
       // Create import declarations for runtime helpers
       const runtimeImports = [
+        // Import reactive helpers from hooks
         ts.factory.createImportDeclaration(
           undefined,
           ts.factory.createImportClause(
             false,
             undefined,
             ts.factory.createNamedImports([
-              ts.factory.createImportSpecifier(
-                false,
-                undefined,
-                ts.factory.createIdentifier('createEffect')
-              ),
               ts.factory.createImportSpecifier(
                 false,
                 undefined,
@@ -202,6 +214,22 @@ export default function visualSchemaTransformer(
             ])
           ),
           ts.factory.createStringLiteral('@pulsar-framework/pulsar.dev/hooks')
+        ),
+        // Import shallowEqual from main package
+        ts.factory.createImportDeclaration(
+          undefined,
+          ts.factory.createImportClause(
+            false,
+            undefined,
+            ts.factory.createNamedImports([
+              ts.factory.createImportSpecifier(
+                false,
+                undefined,
+                ts.factory.createIdentifier('shallowEqual')
+              ),
+            ])
+          ),
+          ts.factory.createStringLiteral('@pulsar-framework/pulsar.dev')
         ),
       ];
 

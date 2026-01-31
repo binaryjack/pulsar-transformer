@@ -1,13 +1,16 @@
 /**
  * Registry Import Injection
  * Adds necessary imports for registry-enhanced createElement
+ *
+ * NEW: Also adds $REGISTRY and t_element for registry pattern
  */
 
 import * as ts from 'typescript';
 
 /**
  * Add registry-related imports to the source file
- * Injects: createElementWithRegistry, appendChildren, ElementType
+ * Injects: $REGISTRY, t_element (new pattern)
+ * Legacy: createElementWithRegistry, appendChildren, ElementType
  */
 export function addRegistryImports(sourceFile: ts.SourceFile): ts.SourceFile {
   const factory = ts.factory;
@@ -18,8 +21,12 @@ export function addRegistryImports(sourceFile: ts.SourceFile): ts.SourceFile {
       const moduleSpecifier = stmt.moduleSpecifier;
       if (ts.isStringLiteral(moduleSpecifier)) {
         return (
-          moduleSpecifier.text.includes('@pulsar-framework/pulsar.dev/jsx-runtime') ||
-          moduleSpecifier.text.includes('@pulsar-framework/pulsar.dev/registry')
+          moduleSpecifier.text.includes('@pulsar-framework/pulsar.dev') &&
+          stmt.importClause?.namedBindings &&
+          ts.isNamedImports(stmt.importClause.namedBindings) &&
+          stmt.importClause.namedBindings.elements.some(
+            (el) => el.name.text === '$REGISTRY' || el.name.text === 't_element'
+          )
         );
       }
     }
@@ -30,41 +37,24 @@ export function addRegistryImports(sourceFile: ts.SourceFile): ts.SourceFile {
     return sourceFile; // Already has imports
   }
 
-  // Create import for createElementWithRegistry and appendChildren
-  const jsxRuntimeImport = factory.createImportDeclaration(
+  // Create import for NEW registry pattern
+  const registryPatternImport = factory.createImportDeclaration(
     undefined,
     factory.createImportClause(
       false,
       undefined,
       factory.createNamedImports([
-        factory.createImportSpecifier(
-          false,
-          undefined,
-          factory.createIdentifier('createElementWithRegistry')
-        ),
-        factory.createImportSpecifier(false, undefined, factory.createIdentifier('appendChildren')),
+        factory.createImportSpecifier(false, undefined, factory.createIdentifier('$REGISTRY')),
+        factory.createImportSpecifier(false, undefined, factory.createIdentifier('t_element')),
       ])
     ),
-    factory.createStringLiteral('@pulsar-framework/pulsar.dev/jsx-runtime')
-  );
-
-  // Create import for ElementType
-  const registryTypesImport = factory.createImportDeclaration(
-    undefined,
-    factory.createImportClause(
-      false,
-      undefined,
-      factory.createNamedImports([
-        factory.createImportSpecifier(false, undefined, factory.createIdentifier('ElementType')),
-      ])
-    ),
-    factory.createStringLiteral('@pulsar-framework/pulsar.dev/registry')
+    factory.createStringLiteral('@pulsar-framework/pulsar.dev')
   );
 
   // Add imports at the beginning of the file
   return factory.updateSourceFile(
     sourceFile,
-    [jsxRuntimeImport, registryTypesImport, ...sourceFile.statements],
+    [registryPatternImport, ...sourceFile.statements],
     sourceFile.isDeclarationFile,
     sourceFile.referencedFiles,
     sourceFile.typeReferenceDirectives,

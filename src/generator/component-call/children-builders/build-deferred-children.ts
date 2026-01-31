@@ -21,18 +21,11 @@ export const buildDeferredChildren = function (
     const childExpr = buildSingleChild(child, context, generateElement);
     statements.push(context.factory.createReturnStatement(childExpr));
   } else {
-    // Multiple children - build container (reuse existing logic)
-    // Extract statements from buildMultipleChildren IIFE
-    const multipleChildrenIIFE = buildMultipleChildren(children, context, generateElement);
-
-    // Extract the arrow function from the call expression
-    const callExpr = multipleChildrenIIFE as ts.CallExpression;
-    const parenExpr = callExpr.expression as ts.ParenthesizedExpression;
-    const arrowFunc = parenExpr.expression as ts.ArrowFunction;
-    const block = arrowFunc.body as ts.Block;
-
-    // Use those statements directly
-    statements.push(...block.statements);
+    // Multiple children - build container WITHOUT extracting from IIFE
+    // Just call the existing builder which maintains correct order
+    const containerExpr = buildMultipleChildren(children, context, generateElement);
+    // Return the IIFE result directly
+    statements.push(context.factory.createReturnStatement(containerExpr));
   }
 
   // Wrap in arrow function (NOT IIFE - deferred execution)

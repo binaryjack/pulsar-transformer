@@ -230,6 +230,22 @@ export const generateDynamicProps = function (
         undefined,
         [factory.createStringLiteral(prop.name), prop.value as ts.Expression]
       );
+    } else if (prop.name === 'style' && ts.isObjectLiteralExpression(prop.value as ts.Expression)) {
+      // Special handling for style objects: Object.assign(el.style, {...})
+      assignmentExpr = factory.createCallExpression(
+        factory.createPropertyAccessExpression(
+          factory.createIdentifier('Object'),
+          factory.createIdentifier('assign')
+        ),
+        undefined,
+        [
+          factory.createPropertyAccessExpression(
+            factory.createIdentifier(elementVar),
+            factory.createIdentifier('style')
+          ),
+          prop.value as ts.Expression,
+        ]
+      );
     } else {
       // Use property assignment for regular properties
       // el.propName = value()
