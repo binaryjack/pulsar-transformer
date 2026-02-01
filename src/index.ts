@@ -8,18 +8,14 @@ import * as ts from 'typescript';
 import { factory } from 'typescript';
 import { initializeContext } from './factory.js';
 import { createElementGenerator } from './generator/element-generator.js';
-import { IComponentDeclaration, ITransformContext, TransformerError } from './types.js';
-import { getASTPath, getNodePosition, getNodeSnippet, getNodeTypeName } from './utils/ast-utils.js';
-import { createComponentWrapper } from './wrapper/component-wrapper.js';
 import {
-  ProjectTransformer,
   createProjectTransformer,
   getAllComponentFiles,
   type IProjectTransformContext,
-  type IProjectTransformResult,
-  type ComponentDefinition,
-  type ImportResolution
 } from './project-transformer.js';
+import { IComponentDeclaration, ITransformContext, TransformerError } from './types.js';
+import { getASTPath, getNodePosition, getNodeSnippet, getNodeTypeName } from './utils/ast-utils.js';
+import { createComponentWrapper } from './wrapper/component-wrapper.js';
 
 /**
  * Main TypeScript transformer function
@@ -676,10 +672,21 @@ export async function enhancedTransform(
         ts.ScriptKind.TSX
       );
 
-      const result = ts.transform(sourceFile, [transformerFactory]);
+      const transformerFactory = pulsarTransformer(options.program);
+      const transformResult = ts.transform(sourceFile, [transformerFactory]);
+      const transformedFile = transformResult.transformed[0];
+
+      const fallbackResult = {
+        code: ts.createPrinter().printFile(transformedFile),
+        dependencies: [],
+        transformed: true,
+      };
+
+      transformResult.dispose();
+      return fallbackResult;
     }
 
-    // Get dependencies for this file
+    // Get dependencies for this file from project result
     const dependencies = result.dependencyGraph.get(filePath) || new Set();
 
     return {
