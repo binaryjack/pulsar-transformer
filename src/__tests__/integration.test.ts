@@ -1,274 +1,352 @@
 /**
- * Integration tests for the complete transformation pipeline
- * Tests JSXAnalyzer → ElementGenerator → Generated Code
+ * Integration tests for complete transformer
+ * Tests: signal interpolation, child components, control flow, events
  */
 
-import * as ts from 'typescript'
-import { TransformationContext } from '../context/index.js'
-import { ElementGenerator } from '../generator/element-generator/index.js'
-import { JSXAnalyzer } from '../parser/jsx-analyzer/index.js'
+import { describe, expect, test } from 'vitest';
+import pulsarTransformer from '../index.js';
+import { transformSource as transform } from './test-helpers.js';
 
 describe('Transformer Integration', () => {
-    let analyzer: any
-    let generator: any
-    let context: any
+  function transformCode(source: string): string {
+    return transform(source, pulsarTransformer);
+  }
 
-    beforeEach(() => {
-        // Create minimal TypeScript program
-        const sourceCode = `
-            const Component = () => {
-                return <div className="test">Hello</div>
-            }
-        `
+  test('transforms simple JSX with text', () => {
+    const source = `
+      function App() {
+        return <div>Hello World</div>;
+      }
+    `;
 
-        const sourceFile = ts.createSourceFile(
-            'test.tsx',
-            sourceCode,
-            ts.ScriptTarget.Latest,
-            true,
-            ts.ScriptKind.TSX
-        )
+    const output = transformCode(source);
 
-        const compilerOptions: ts.CompilerOptions = {
-            jsx: ts.JsxEmit.React,
-            target: ts.ScriptTarget.ES2020,
-            module: ts.ModuleKind.ESNext
-        }
+    expect(output).toContain('$REGISTRY.execute');
+    expect(output).toContain('document.createElement');
+    expect(output).toContain('textContent');
+  });
 
-        const host = ts.createCompilerHost(compilerOptions)
-        const program = {
-            getTypeChecker: () => ({})
-        } as any as ts.Program
-        const tsContext = {} as ts.TransformationContext
+  test('transforms signal interpolation', () => {
+    const source = `
+      import { createSignal } from '@pulsar/core';
+      
+      function Counter() {
+        const [count, setCount] = createSignal(0);
+        return <div>{count()}</div>;
+      }
+    `;
 
-        context = new TransformationContext(program, sourceFile, tsContext)
-        analyzer = new JSXAnalyzer(context)
-        generator = new ElementGenerator(context)
-    })
+    const output = transformCode(source);
 
-    describe('Static Element Pipeline', () => {
-        it('should transform simple div element', () => {
-            // Create JSX node: <div className="test">Hello</div>
-            const jsxElement = ts.factory.createJsxElement(
-                ts.factory.createJsxOpeningElement(
-                    ts.factory.createIdentifier('div'),
-                    undefined,
-                    ts.factory.createJsxAttributes([
-                        ts.factory.createJsxAttribute(
-                            ts.factory.createIdentifier('className'),
-                            ts.factory.createStringLiteral('test')
-                        )
-                    ])
-                ),
-                [ts.factory.createJsxText('Hello', false)],
-                ts.factory.createJsxClosingElement(
-                    ts.factory.createIdentifier('div')
-                )
-            )
+    expect(output).toContain('$REGISTRY.execute');
+    expect(output).toContain('$REGISTRY.wire');
+    expect(output).toContain('() => count()');
+  });
 
-            // Analyze JSX
-            const ir = analyzer.analyze(jsxElement)
+  test('transforms event handlers', () => {
+    const source = `
+      function Button() {
+        const handleClick = () => console.log('clicked');
+        return <button onClick={handleClick}>Click</button>;
+      }
+    `;
 
-            expect(ir).toBeDefined()
-            expect(ir.tag).toBe('div')
-            expect(ir.isStatic).toBe(true)
+    const output = transformCode(source);
 
-            // Generate code
-            const code = generator.generate(ir)
+    expect(output).toContain('addEventListener');
+    expect(output).toContain('click');
+    expect(output).toContain('handleClick');
+  });
 
-            expect(code).toBeDefined()
-            expect(ts.isCallExpression(code)).toBe(true)
-        })
-    })
+  test('transforms child components', () => {
+    const source = `
+      function Child() {
+        return <span>Child</span>;
+      }
+      
+      function Parent() {
+        return <div><Child /></div>;
+      }
+    `;
 
-    describe('Dynamic Element Pipeline', () => {
-        it('should transform element with signal dependency', () => {
-            // Create: <div>{count()}</div>
-            const countCall = ts.factory.createCallExpression(
-                ts.factory.createIdentifier('count'),
-                undefined,
-                []
-            )
+    const output = transformCode(source);
 
-            const jsxElement = ts.factory.createJsxElement(
-                ts.factory.createJsxOpeningElement(
-                    ts.factory.createIdentifier('div'),
-                    undefined,
-                    ts.factory.createJsxAttributes([])
-                ),
-                [
-                    ts.factory.createJsxExpression(undefined, countCall)
-                ],
-                ts.factory.createJsxClosingElement(
-                    ts.factory.createIdentifier('div')
-                )
-            )
+    expect(output).toContain('$REGISTRY.execute');
+    expect(output).toMatch(/Child-[a-f0-9]+/); // Component ID
+  });
 
-            // Analyze
-            const ir = analyzer.analyze(jsxElement)
+  test('transforms attributes', () => {
+    const source = `
+      function Input() {
+        return <input type="text" placeholder="Enter text" disabled />;
+      }
+    `;
 
-            expect(ir).toBeDefined()
-            expect(ir.hasDynamicChildren).toBe(true)
+    const output = transformCode(source);
 
-            // Generate
-            const code = generator.generate(ir)
+    expect(output).toContain('setAttribute("type", "text")');
+    expect(output).toContain('setAttribute("placeholder", "Enter text")');
+    expect(output).toContain('disabled = true');
+  });
 
-            expect(code).toBeDefined()
-            expect(ts.isCallExpression(code)).toBe(true)
-        })
-    })
+  test('transforms dynamic attributes', () => {
+    const source = `
+      import { createSignal } from '@pulsar/core';
+      
+      function Input() {
+        const [value, setValue] = createSignal('');
+        return <input value={value()} />;
+      }
+    `;
 
-    describe('Event Handler Pipeline', () => {
-        it('should transform button with onClick', () => {
-            // Create: <button onClick={handleClick}>Click</button>
-            const jsxElement = ts.factory.createJsxElement(
-                ts.factory.createJsxOpeningElement(
-                    ts.factory.createIdentifier('button'),
-                    undefined,
-                    ts.factory.createJsxAttributes([
-                        ts.factory.createJsxAttribute(
-                            ts.factory.createIdentifier('onClick'),
-                            ts.factory.createJsxExpression(
-                                undefined,
-                                ts.factory.createIdentifier('handleClick')
-                            )
-                        )
-                    ])
-                ),
-                [ts.factory.createJsxText('Click', false)],
-                ts.factory.createJsxClosingElement(
-                    ts.factory.createIdentifier('button')
-                )
-            )
+    const output = transformCode(source);
 
-            // Analyze
-            const ir = analyzer.analyze(jsxElement)
+    expect(output).toContain('$REGISTRY.wire');
+    expect(output).toContain('() => value()');
+  });
 
-            expect(ir.events).toBeDefined()
-            expect(ir.events.length).toBeGreaterThan(0)
-            expect(ir.events[0].type).toBe('click')
+  test('transforms fragments', () => {
+    const source = `
+      function List() {
+        return <>
+          <li>Item 1</li>
+          <li>Item 2</li>
+        </>;
+      }
+    `;
 
-            // Generate
-            const code = generator.generate(ir)
+    const output = transformCode(source);
 
-            expect(code).toBeDefined()
-        })
-    })
+    expect(output).toContain('document.createDocumentFragment');
+  });
 
-    describe('Nested Elements Pipeline', () => {
-        it('should transform nested structure', () => {
-            // Create: <div><span>Hello</span></div>
-            const spanElement = ts.factory.createJsxElement(
-                ts.factory.createJsxOpeningElement(
-                    ts.factory.createIdentifier('span'),
-                    undefined,
-                    ts.factory.createJsxAttributes([])
-                ),
-                [ts.factory.createJsxText('Hello', false)],
-                ts.factory.createJsxClosingElement(
-                    ts.factory.createIdentifier('span')
-                )
-            )
+  test('transforms className to class', () => {
+    const source = `
+      function Styled() {
+        return <div className="container">Content</div>;
+      }
+    `;
 
-            const divElement = ts.factory.createJsxElement(
-                ts.factory.createJsxOpeningElement(
-                    ts.factory.createIdentifier('div'),
-                    undefined,
-                    ts.factory.createJsxAttributes([])
-                ),
-                [spanElement],
-                ts.factory.createJsxClosingElement(
-                    ts.factory.createIdentifier('div')
-                )
-            )
+    const output = transformCode(source);
 
-            // Analyze
-            const ir = analyzer.analyze(divElement)
+    expect(output).toContain('setAttribute("class", "container")');
+    expect(output).not.toContain('className');
+  });
 
-            expect(ir.children).toBeDefined()
-            expect(ir.children.length).toBeGreaterThan(0)
+  test('transforms multiple children', () => {
+    const source = `
+      function Parent() {
+        return <div>
+          <span>First</span>
+          <span>Second</span>
+          <span>Third</span>
+        </div>;
+      }
+    `;
 
-            // Generate
-            const code = generator.generate(ir)
+    const output = transformCode(source);
 
-            expect(code).toBeDefined()
-        })
-    })
+    expect(output).toMatch(/appendChild/g);
+  });
 
-    describe('Ref Assignment Pipeline', () => {
-        it('should transform element with ref', () => {
-            // Create: <input ref={inputRef} />
-            const jsxElement = ts.factory.createJsxSelfClosingElement(
-                ts.factory.createIdentifier('input'),
-                undefined,
-                ts.factory.createJsxAttributes([
-                    ts.factory.createJsxAttribute(
-                        ts.factory.createIdentifier('ref'),
-                        ts.factory.createJsxExpression(
-                            undefined,
-                            ts.factory.createIdentifier('inputRef')
-                        )
-                    )
-                ])
-            )
+  test('transforms nested components', () => {
+    const source = `
+      function GrandChild() {
+        return <span>GC</span>;
+      }
+      
+      function Child() {
+        return <div><GrandChild /></div>;
+      }
+      
+      function Parent() {
+        return <section><Child /></section>;
+      }
+    `;
 
-            // Analyze
-            const ir = analyzer.analyze(jsxElement)
+    const output = transformCode(source);
 
-            const refProp = ir.props.find((p: any) => p.name === 'ref')
-            expect(refProp).toBeDefined()
+    expect(output).toContain('GrandChild');
+    expect(output).toContain('Child');
+    expect(output).toContain('Parent');
+  });
 
-            // Generate
-            const code = generator.generate(ir)
+  test('transforms complex signal expressions', () => {
+    const source = `
+      import { createSignal, createMemo } from '@pulsar/core';
+      
+      function Complex() {
+        const [a, setA] = createSignal(1);
+        const [b, setB] = createSignal(2);
+        const sum = createMemo(() => a() + b());
+        
+        return <div>{sum()} = {a()} + {b()}</div>;
+      }
+    `;
 
-            expect(code).toBeDefined()
-        })
-    })
+    const output = transformCode(source);
 
-    describe('Mixed Content Pipeline', () => {
-        it('should transform element with static and dynamic props', () => {
-            // Create: <div className="static" id={computedId()}>Text</div>
-            const jsxElement = ts.factory.createJsxElement(
-                ts.factory.createJsxOpeningElement(
-                    ts.factory.createIdentifier('div'),
-                    undefined,
-                    ts.factory.createJsxAttributes([
-                        ts.factory.createJsxAttribute(
-                            ts.factory.createIdentifier('className'),
-                            ts.factory.createStringLiteral('static')
-                        ),
-                        ts.factory.createJsxAttribute(
-                            ts.factory.createIdentifier('id'),
-                            ts.factory.createJsxExpression(
-                                undefined,
-                                ts.factory.createCallExpression(
-                                    ts.factory.createIdentifier('computedId'),
-                                    undefined,
-                                    []
-                                )
-                            )
-                        )
-                    ])
-                ),
-                [ts.factory.createJsxText('Text', false)],
-                ts.factory.createJsxClosingElement(
-                    ts.factory.createIdentifier('div')
-                )
-            )
+    expect(output).toContain('$REGISTRY.wire');
+    expect(output).toMatch(/\$REGISTRY\.wire.*sum\(\)/);
+    expect(output).toMatch(/\$REGISTRY\.wire.*a\(\)/);
+    expect(output).toMatch(/\$REGISTRY\.wire.*b\(\)/);
+  });
 
-            // Analyze
-            const ir = analyzer.analyze(jsxElement)
+  test('transforms mixed static and dynamic content', () => {
+    const source = `
+      import { createSignal } from '@pulsar/core';
+      
+      function Mixed() {
+        const [name, setName] = createSignal('World');
+        return <div>Hello {name()}, welcome!</div>;
+      }
+    `;
 
-            const staticProp = ir.props.find((p: any) => p.name === 'className')
-            const dynamicProp = ir.props.find((p: any) => p.name === 'id')
+    const output = transformCode(source);
 
-            expect(staticProp?.isStatic).toBe(true)
-            expect(dynamicProp?.isDynamic).toBe(true)
+    expect(output).toContain('Hello ');
+    expect(output).toContain(', welcome!');
+    expect(output).toContain('$REGISTRY.wire');
+  });
 
-            // Generate
-            const code = generator.generate(ir)
+  test('transforms arrow function components', () => {
+    const source = `
+      const Arrow = () => {
+        return <div>Arrow</div>;
+      };
+    `;
 
-            expect(code).toBeDefined()
-        })
-    })
-})
+    const output = transformCode(source);
+
+    expect(output).toContain('$REGISTRY.execute');
+    expect(output).toContain('Arrow');
+  });
+
+  test('transforms component with props', () => {
+    const source = `
+      interface Props {
+        title: string;
+        count: number;
+      }
+      
+      function Component(props: Props) {
+        return <div>{props.title}: {props.count}</div>;
+      }
+    `;
+
+    const output = transformCode(source);
+
+    expect(output).toContain('$REGISTRY.execute');
+    expect(output).toContain('props');
+  });
+
+  test('handles empty components', () => {
+    const source = `
+      function Empty() {
+        return <div />;
+      }
+    `;
+
+    const output = transformCode(source);
+
+    expect(output).toContain('$REGISTRY.execute');
+    expect(output).toContain('document.createElement("div")');
+  });
+
+  test('handles deeply nested JSX', () => {
+    const source = `
+      function Deep() {
+        return (
+          <div>
+            <section>
+              <article>
+                <header>
+                  <h1>Title</h1>
+                </header>
+              </article>
+            </section>
+          </div>
+        );
+      }
+    `;
+
+    const output = transformCode(source);
+
+    expect(output).toContain('document.createElement("div")');
+    expect(output).toContain('document.createElement("section")');
+    expect(output).toContain('document.createElement("article")');
+    expect(output).toContain('document.createElement("header")');
+    expect(output).toContain('document.createElement("h1")');
+  });
+
+  test('transforms boolean attributes correctly', () => {
+    const source = `
+      function BoolAttrs() {
+        return <input disabled checked required />;
+      }
+    `;
+
+    const output = transformCode(source);
+
+    expect(output).toContain('disabled = true');
+    expect(output).toContain('checked = true');
+    expect(output).toContain('required = true');
+  });
+
+  test('transforms style attribute', () => {
+    const source = `
+      function Styled() {
+        return <div style={{ color: 'red', fontSize: '16px' }}>Styled</div>;
+      }
+    `;
+
+    const output = transformCode(source);
+
+    expect(output).toContain('style');
+    expect(output).toContain('color');
+    expect(output).toContain('red');
+  });
+
+  test('transforms spread props', () => {
+    const source = `
+      function Spread(props: any) {
+        return <div {...props}>Content</div>;
+      }
+    `;
+
+    const output = transformCode(source);
+
+    expect(output).toContain('Object.entries');
+    expect(output).toContain('setAttribute');
+  });
+
+  test('handles components returning null', () => {
+    const source = `
+      function MaybeNull(props: { show: boolean }) {
+        return props.show ? <div>Visible</div> : null;
+      }
+    `;
+
+    const output = transformCode(source);
+
+    expect(output).toContain('$REGISTRY.execute');
+  });
+
+  test('no transformation for non-JSX functions', () => {
+    const source = `
+      function notAComponent() {
+        return 42;
+      }
+      
+      function alsoNot() {
+        const x = 10;
+        return x * 2;
+      }
+    `;
+
+    const output = transformCode(source);
+
+    expect(output).not.toContain('$REGISTRY.execute');
+    expect(output).not.toContain('$REGISTRY.wire');
+  });
+});
