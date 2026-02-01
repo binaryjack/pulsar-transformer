@@ -11,6 +11,15 @@ import { createElementGenerator } from './generator/element-generator.js';
 import { IComponentDeclaration, ITransformContext, TransformerError } from './types.js';
 import { getASTPath, getNodePosition, getNodeSnippet, getNodeTypeName } from './utils/ast-utils.js';
 import { createComponentWrapper } from './wrapper/component-wrapper.js';
+import {
+  ProjectTransformer,
+  createProjectTransformer,
+  getAllComponentFiles,
+  type IProjectTransformContext,
+  type IProjectTransformResult,
+  type ComponentDefinition,
+  type ImportResolution
+} from './project-transformer.js';
 
 /**
  * Main TypeScript transformer function
@@ -667,15 +676,7 @@ export async function enhancedTransform(
         ts.ScriptKind.TSX
       );
 
-      const singleFileResult = pulsarTransformer(options.program)(
-        ts.createTransformationContext(ts.getDefaultCompilerOptions())
-      )(sourceFile);
-
-      return {
-        code: ts.createPrinter().printFile(singleFileResult),
-        dependencies: [],
-        transformed: true,
-      };
+      const result = ts.transform(sourceFile, [transformerFactory]);
     }
 
     // Get dependencies for this file

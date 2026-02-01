@@ -317,7 +317,7 @@ export class ProjectTransformer {
       onEmitNode: () => undefined,
       requestEmitHelper: () => undefined,
       readEmitHelpers: () => undefined,
-      factory: ts.factory
+      factory: ts.factory,
     };
 
     for (const filePath of this.context.processOrder) {
