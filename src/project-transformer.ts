@@ -149,7 +149,7 @@ export class ProjectTransformer {
                 column: 0,
                 offset: 0,
                 sourceSnippet: '',
-                phase: 'project_transform',
+                phase: 'validate',
                 nodeType: 'unknown',
                 nodeKind: 0,
                 astPath: [],
@@ -301,7 +301,24 @@ export class ProjectTransformer {
     }
 
     // Create transformation context
-    const transformContext = ts.createTransformationContext(ts.getDefaultCompilerOptions());
+    const transformContext: ts.TransformationContext = {
+      getCompilerOptions: () => ts.getDefaultCompilerOptions(),
+      startLexicalEnvironment: () => undefined,
+      suspendLexicalEnvironment: () => undefined,
+      resumeLexicalEnvironment: () => undefined,
+      endLexicalEnvironment: () => undefined,
+      hoistFunctionDeclaration: () => undefined,
+      hoistVariableDeclaration: () => undefined,
+      enableSubstitution: () => undefined,
+      isSubstitutionEnabled: () => false,
+      onSubstituteNode: (hint: ts.EmitHint, node: ts.Node) => node,
+      enableEmitNotification: () => undefined,
+      isEmitNotificationEnabled: () => false,
+      onEmitNode: () => undefined,
+      requestEmitHelper: () => undefined,
+      readEmitHelpers: () => undefined,
+      factory: ts.factory
+    };
 
     for (const filePath of this.context.processOrder) {
       try {
@@ -328,7 +345,7 @@ export class ProjectTransformer {
                   column: 0,
                   offset: 0,
                   sourceSnippet: '',
-                  phase: 'file_transform',
+                  phase: 'generate',
                   nodeType: 'unknown',
                   nodeKind: 0,
                   astPath: [],
