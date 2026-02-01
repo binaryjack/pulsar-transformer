@@ -4,6 +4,7 @@
  */
 
 import * as ts from 'typescript';
+import * as path from 'path';
 import { factory } from 'typescript';
 import { initializeContext } from './factory.js';
 import { createElementGenerator } from './generator/element-generator.js';
@@ -555,3 +556,146 @@ function addRegistryImport(sourceFile: ts.SourceFile): ts.SourceFile {
  */
 export { initializeContext, transformerFactory } from './factory.js';
 export * from './types.js';
+
+/**
+ * Export project-level transformer
+ */
+export {
+  createProjectTransformer,
+  getAllComponentFiles,
+  ProjectTransformer,
+  type ComponentDefinition,
+  type ImportResolution,
+  type IProjectTransformContext,
+  type IProjectTransformResult,
+} from './project-transformer.js';
+
+/**
+ * Enhanced transformer API for bundler plugins
+ *
+ * This provides a higher-level API that can handle component dependencies
+ * while maintaining backward compatibility with the single-file transformer
+ */
+export interface IEnhancedTransformerOptions {
+  /** TypeScript program (required for dependency resolution) */
+  program: ts.Program;
+
+  /** Root directory of the project */
+  rootDir: string;
+
+  /** Enable debug logging */
+  debug?: boolean;
+
+  /** File paths to transform (if not provided, scans rootDir) */
+  filePaths?: string[];
+}
+
+/**
+ * Enhanced transformer result
+ */
+export interface IEnhancedTransformResult {
+  /** Transformed source code */
+  code: string;
+
+  /** Source map (if available) */
+  map?: string;
+
+  /** Dependencies discovered for this file */
+  dependencies: string[];
+
+  /** Whether this file was transformed */
+  transformed: boolean;
+}
+
+/**
+ * Enhanced transformer that handles component dependencies
+ *
+ * This is the recommended API for bundler plugins as it properly handles
+ * component imports and ensures all dependencies are transformed
+ */
+export async function enhancedTransform(
+  code: string,
+  filePath: string,
+  options: IEnhancedTransformerOptions
+): Promise<IEnhancedTransformResult> {
+  try {
+    // Skip non-TSX/JSX files
+    if (!filePath.endsWith('.tsx') && !filePath.endsWith('.jsx')) {
+      return {
+        code,
+        dependencies: [],
+        transformed: false,
+      };
+    }
+
+    // Get or scan component files
+    const componentFiles = options.filePaths || getAllComponentFiles(options.rootDir);
+
+    // Create project context
+    const projectContext: IProjectTransformContext = {
+      program: options.program,
+      rootDir: options.rootDir,
+      filePaths: componentFiles,
+      dependencyGraph: new Map(),
+      componentDefinitions: new Map(),
+      processOrder: [],
+      debug: options.debug || false,
+    };
+
+    // Create project transformer
+    const projectTransformer = createProjectTransformer(projectContext);
+
+    // Transform the project
+    const result = await projectTransformer.transform();
+
+    // Extract result for the specific file
+    const transformedFile = result.transformedFiles.get(filePath);
+
+    if (!transformedFile) {
+      // File wasn't in the project, fall back to single-file transformation
+      if (options.debug) {
+        console.log(
+          `[ENHANCED_TRANSFORMER] File not in project, using single-file transform: ${path.basename(filePath)}`
+        );
+      }
+
+      const sourceFile = ts.createSourceFile(
+        filePath,
+        code,
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TSX
+      );
+
+      const singleFileResult = pulsarTransformer(options.program)(
+        ts.createTransformationContext(ts.getDefaultCompilerOptions())
+      )(sourceFile);
+
+      return {
+        code: ts.createPrinter().printFile(singleFileResult),
+        dependencies: [],
+        transformed: true,
+      };
+    }
+
+    // Get dependencies for this file
+    const dependencies = result.dependencyGraph.get(filePath) || new Set();
+
+    return {
+      code: ts.createPrinter().printFile(transformedFile),
+      dependencies: Array.from(dependencies),
+      transformed: true,
+    };
+  } catch (error) {
+    if (options.debug) {
+      console.error(`[ENHANCED_TRANSFORMER] Error transforming ${filePath}:`, error);
+    }
+
+    // Fall back to returning original code
+    return {
+      code,
+      dependencies: [],
+      transformed: false,
+    };
+  }
+}
