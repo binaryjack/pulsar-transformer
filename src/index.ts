@@ -3,8 +3,8 @@
  * Complete implementation with full AST visitor pattern
  */
 
-import * as ts from 'typescript';
 import * as path from 'path';
+import * as ts from 'typescript';
 import { factory } from 'typescript';
 import { initializeContext } from './factory.js';
 import { createElementGenerator } from './generator/element-generator.js';

@@ -153,7 +153,7 @@ export class ProjectTransformer {
                 nodeType: 'unknown',
                 nodeKind: 0,
                 astPath: [],
-                originalCode: ''
+                originalCode: '',
               }
             );
 
@@ -332,7 +332,7 @@ export class ProjectTransformer {
                   nodeType: 'unknown',
                   nodeKind: 0,
                   astPath: [],
-                  originalCode: ''
+                  originalCode: '',
                 }
               );
 
@@ -642,7 +642,7 @@ export class ProjectTransformer {
             nodeType: 'unknown',
             nodeKind: 0,
             astPath: [],
-            originalCode: ''
+            originalCode: '',
           }
         );
       }
