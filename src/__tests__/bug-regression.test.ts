@@ -528,10 +528,10 @@ describe('Bug Regression Tests', () => {
 
       // Child component should be called as function
       expect(output).toMatch(/Child\s*\(\s*\{/);
-      
+
       // Parent component should receive children prop
       expect(output).toMatch(/Parent\s*\(\s*\{\s*children\s*:/);
-      
+
       // Should NOT use createElement for components
       expect(output).not.toContain("createElement('Child')");
       expect(output).not.toContain("createElement('Parent')");

@@ -6,10 +6,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as ts from 'typescript';
-import { addPulsarImports } from './utils/import-injector.js';
 import { initializeContext } from './factory.js';
 import { createElementGenerator } from './generator/element-generator.js';
 import { IComponentDeclaration, ITransformContext, TransformerError } from './types.js';
+import { addPulsarImports } from './utils/import-injector.js';
 import { createComponentWrapper } from './wrapper/component-wrapper.js';
 
 /**
