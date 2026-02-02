@@ -26,12 +26,12 @@ import { createComponentWrapper } from './wrapper/component-wrapper.js';
 const DEFAULT_OPTIONS: ITransformerOptions = {
   debug: process.env.PULSAR_DEBUG === 'true',
   debugChannels: {
-    transform: true,
-    detector: true,
-    generator: true,
-    visitor: true,
-    wire: true,
-    performance: true,
+    transform: false,
+    detector: false,
+    generator: false,
+    visitor: false,
+    wire: false,
+    performance: false,
   },
   strict: false,
   profile: true,
@@ -112,6 +112,8 @@ export const transformerFactory: ITransformerFactory = {
       debugTracker: tracker,
       options: mergedOptions,
       requiresRegistry: false,
+      reactiveFunctions: new Set(),
+      signalPropsInScope: new Set(),
     };
 
     // Start tracking session

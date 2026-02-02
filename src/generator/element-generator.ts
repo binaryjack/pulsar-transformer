@@ -6,6 +6,7 @@
 import * as ts from 'typescript';
 import { factory } from 'typescript';
 import { createExpressionClassifier } from '../detector/expression-classifier.js';
+import { transformReactiveExpression } from '../detector/signal-detector.js';
 import {
   IElementGenerator,
   IEventCall,
@@ -438,8 +439,11 @@ function processAttribute(
     return;
   }
 
+  // Transform reactive functions first (auto-add () calls)
+  const reactiveTransformedExpression = transformReactiveExpression(expression, context);
+
   // Classify expression
-  const classification = classifier.classify(expression);
+  const classification = classifier.classify(reactiveTransformedExpression);
 
   if (classification.type === 'event') {
     // Event handler
@@ -447,7 +451,7 @@ function processAttribute(
     const eventCall: IEventCall = {
       element: elementVar,
       eventName,
-      handler: expression,
+      handler: reactiveTransformedExpression,
     };
     events.push(eventCall);
     // Event statement will be added by transformJsxElement from events array
@@ -458,24 +462,24 @@ function processAttribute(
       property: normalizeAttributeName(attrName),
       // If expression is call expression (e.g., count()), pass the callee (count)
       // Otherwise wrap in arrow function
-      getter: ts.isCallExpression(expression)
-        ? expression.expression // Extract function reference: count() → count
+      getter: ts.isCallExpression(reactiveTransformedExpression)
+        ? reactiveTransformedExpression.expression // Extract function reference: count() → count
         : factory.createArrowFunction(
             undefined,
             undefined,
             [],
             undefined,
             factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-            expression
+            reactiveTransformedExpression
           ),
-      dependencies: classifier.getSignalDependencies(expression),
+      dependencies: classifier.getSignalDependencies(reactiveTransformedExpression),
       comment: classification.reason,
     };
     wires.push(wire);
     // Wire statement will be added by transformJsxElement from wires array
   } else {
     // Static attribute
-    statements.push(createAttributeStatement(elementVar, attrName, expression));
+    statements.push(createAttributeStatement(elementVar, attrName, reactiveTransformedExpression));
   }
 }
 
@@ -490,6 +494,9 @@ function processSpreadAttribute(
   context: ITransformContext,
   classifier: IExpressionClassifier
 ): void {
+  // Transform reactive functions first (auto-add () calls)
+  const reactiveTransformedExpression = transformReactiveExpression(spread.expression, context);
+
   // Object.assign(el, props)
   statements.push(
     factory.createExpressionStatement(
@@ -499,7 +506,7 @@ function processSpreadAttribute(
           factory.createIdentifier('assign')
         ),
         undefined,
-        [factory.createIdentifier(elementVar), spread.expression]
+        [factory.createIdentifier(elementVar), reactiveTransformedExpression]
       )
     )
   );
@@ -517,7 +524,10 @@ function processChildExpression(
   context: ITransformContext,
   classifier: IExpressionClassifier
 ): void {
-  const classification = classifier.classify(expression);
+  // Transform reactive functions first (auto-add () calls)
+  const reactiveTransformedExpression = transformReactiveExpression(expression, context);
+
+  const classification = classifier.classify(reactiveTransformedExpression);
 
   if (classification.requiresWire) {
     // Dynamic text content - need to transform any nested JSX in the expression
@@ -552,23 +562,24 @@ function processChildExpression(
       return ts.visitEachChild(node, visitNode, undefined);
     };
 
-    const transformedExpression = ts.visitNode(expression, visitNode) as ts.Expression;
+    const transformedExpression = ts.visitNode(
+      reactiveTransformedExpression,
+      visitNode
+    ) as ts.Expression;
 
     const wire: IWireCall = {
       element: parentVar,
       property: 'textContent',
-      // If expression is call expression, extract callee, otherwise wrap
-      getter: ts.isCallExpression(transformedExpression)
-        ? transformedExpression.expression
-        : factory.createArrowFunction(
-            undefined,
-            undefined,
-            [],
-            undefined,
-            factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-            transformedExpression
-          ),
-      dependencies: classifier.getSignalDependencies(expression),
+      // Wrap the expression in an arrow function for wire
+      getter: factory.createArrowFunction(
+        undefined,
+        undefined,
+        [],
+        undefined,
+        factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+        transformedExpression
+      ),
+      dependencies: classifier.getSignalDependencies(reactiveTransformedExpression),
     };
     wires.push(wire);
     // Wire statement will be added by transformJsxElement from wires array
@@ -582,7 +593,7 @@ function processChildExpression(
             factory.createIdentifier('textContent')
           ),
           factory.createToken(ts.SyntaxKind.PlusEqualsToken),
-          expression
+          reactiveTransformedExpression
         )
       )
     );

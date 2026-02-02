@@ -6,6 +6,7 @@
 import * as path from 'path';
 import * as ts from 'typescript';
 import { factory } from 'typescript';
+import { analyzeComponentParameters } from './detector/signal-detector.js';
 import { initializeContext } from './factory.js';
 import { createElementGenerator } from './generator/element-generator.js';
 import {
@@ -123,17 +124,24 @@ function createVisitor(context: ITransformContext) {
         const decl = node.declarationList.declarations[0];
         if (decl && ts.isIdentifier(decl.name)) {
           const isComponent = isArrowFunctionComponent(decl);
-          console.log(
-            `[TRANSFORMER] Checking VariableStatement: ${decl.name.text}, isComponent: ${isComponent}`
-          );
+          if (context.debug) {
+            console.log(
+              `[TRANSFORMER] Checking VariableStatement: ${decl.name.text}, isComponent: ${isComponent}`
+            );
+          }
           if (isComponent) {
-            console.log(`[TRANSFORMER] ✅ Transforming component: ${decl.name.text}`);
+            if (context.debug) {
+              console.log(`[TRANSFORMER] ✅ Transforming component: ${decl.name.text}`);
+            }
             return transformArrowFunctionComponentStatement(
               node,
               context,
               componentWrapper,
               visitor
             );
+          } else {
+            // Check for reactive variable declarations (new!)
+            return transformReactiveVariableStatement(node, context, visitor);
           }
         }
       }
@@ -313,6 +321,9 @@ function transformArrowFunctionComponentStatement(
   const componentName = decl.name.text;
   context.currentComponent = componentName;
 
+  // Analyze component parameters to detect signal props
+  analyzeComponentParameters(decl.initializer.parameters, context);
+
   try {
     // Visit arrow function body
     const transformedArrow = ts.visitNode(decl.initializer, visitor) as ts.ArrowFunction;
@@ -398,6 +409,61 @@ function transformArrowFunctionComponent(
 }
 
 /**
+ * Transform variable statements that contain reactive expressions
+ * Wraps signal-containing initializers in arrow functions for reactivity
+ */
+function transformReactiveVariableStatement(
+  node: ts.VariableStatement,
+  context: ITransformContext,
+  visitor: (node: ts.Node) => ts.VisitResult<ts.Node>
+): ts.VariableStatement {
+  const declaration = node.declarationList.declarations[0];
+
+  if (!declaration || !ts.isIdentifier(declaration.name) || !declaration.initializer) {
+    // Not a simple variable declaration, continue with normal transformation
+    return ts.visitEachChild(node, visitor, undefined) as ts.VariableStatement;
+  }
+
+  const varName = declaration.name.text;
+
+  // Check if this variable contains signal calls
+  if (hasSignalCalls(declaration.initializer, context)) {
+    // Mark as reactive function and transform
+    context.reactiveFunctions.add(varName);
+    console.log(`[REACTIVE-VAR] 🔄 Detected and transforming reactive variable: ${varName}`);
+
+    // Create arrow function wrapper: const filtered = () => COMPONENTS.filter(...)
+    const arrowFunction = factory.createArrowFunction(
+      undefined, // modifiers
+      undefined, // type parameters
+      [], // parameters
+      undefined, // type
+      factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+      declaration.initializer // body is the original expression
+    );
+
+    // Create new variable declaration with arrow function
+    const newDeclaration = factory.updateVariableDeclaration(
+      declaration,
+      declaration.name,
+      declaration.exclamationToken,
+      declaration.type,
+      arrowFunction
+    );
+
+    // Create new variable statement
+    return factory.updateVariableStatement(
+      node,
+      node.modifiers,
+      factory.updateVariableDeclarationList(node.declarationList, [newDeclaration])
+    );
+  }
+
+  // Not a reactive variable, continue with normal transformation
+  return ts.visitEachChild(node, visitor, undefined) as ts.VariableStatement;
+}
+
+/**
  * Check if node is a function component
  */
 function isFunctionComponent(node: ts.Node): node is ts.FunctionDeclaration {
@@ -421,12 +487,10 @@ function isArrowFunctionComponent(node: ts.Node): node is ts.VariableDeclaration
   if (!node.initializer) return false;
 
   const isArrow = ts.isArrowFunction(node.initializer);
-  console.log(`[isArrowFunctionComponent] ${node.name.text}: isArrow=${isArrow}`);
   if (!isArrow) return false;
 
   // Component names must start with uppercase
   const hasUppercase = /^[A-Z]/.test(node.name.text);
-  console.log(`[isArrowFunctionComponent] ${node.name.text}: hasUppercase=${hasUppercase}`);
   if (!hasUppercase) return false;
 
   // Must return JSX
@@ -437,7 +501,6 @@ function isArrowFunctionComponent(node: ts.Node): node is ts.VariableDeclaration
   } else {
     hasJsx = isJsxExpression(body);
   }
-  console.log(`[isArrowFunctionComponent] ${node.name.text}: hasJsx=${hasJsx}`);
   return hasJsx;
 }
 
@@ -451,9 +514,6 @@ function hasJsxReturn(block: ts.Block): boolean {
     if (hasJsx) return;
 
     if (ts.isReturnStatement(node) && node.expression) {
-      console.log(
-        `[hasJsxReturn] Found return statement, kind: ${node.expression.kind}, text: ${node.expression.getText().substring(0, 100)}`
-      );
       if (isJsxExpression(node.expression)) {
         hasJsx = true;
       }

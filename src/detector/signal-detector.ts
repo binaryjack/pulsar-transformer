@@ -47,6 +47,9 @@ export function detectSignals(sourceFile: ts.SourceFile, context: ITransformCont
   sourceFile.statements.forEach((statement) => {
     scanForSignalDeclarations(statement, context);
   });
+
+  // Phase 3: Detect reactive variables (new!)
+  detectReactiveVariables(sourceFile, context);
 }
 
 /**
@@ -373,7 +376,19 @@ export function isSignalGetter(identifier: ts.Identifier, context: ITransformCon
     }
   }
 
-  // Tier 3: Heuristic-based detection (conservative fallback)
+  // Tier 3: Function prop detection
+  // Check if this identifier is a known signal prop in current scope
+  if (context.signalPropsInScope && context.signalPropsInScope.has(name)) {
+    if (context.debugTracker) {
+      const tracker = context.debugTracker as any;
+      if (tracker.options?.enabled && tracker.options?.channels?.detector) {
+        console.log(`[TIER-3] Signal detected via prop: ${name}`);
+      }
+    }
+    return true;
+  }
+
+  // Tier 4: Heuristic-based detection (conservative fallback)
   // Only apply if we have signal imports (avoid false positives)
   if (context.hasSignalImports) {
     // Conservative heuristics: common signal getter patterns
@@ -408,10 +423,31 @@ export function hasSignalCalls(expression: ts.Expression, context: ITransformCon
     // Check for signal call: identifier()
     if (ts.isCallExpression(node)) {
       if (ts.isIdentifier(node.expression)) {
-        // Only use symbol-based detection - no heuristics
+        // Primary: symbol-based detection
         if (isSignalGetter(node.expression, context)) {
           hasSignal = true;
           return;
+        }
+
+        // Fallback: pattern-based detection for function props that look like signals
+        const name = node.expression.text;
+        if (name && node.arguments.length === 0) {
+          // Check if this is a known signal prop from component parameters
+          if (context.signalPropsInScope.has(name)) {
+            console.log(`[PATTERN-DETECT] 📡 Signal prop call detected: ${name}()`);
+            hasSignal = true;
+            return;
+          }
+
+          // Conservative pattern matching for likely signals
+          if (
+            /^(active|current|selected|is|has|show|get)[A-Z]/.test(name) ||
+            /^[a-z]+[A-Z].*$/.test(name)
+          ) {
+            console.log(`[PATTERN-DETECT] 📡 Potential signal call detected: ${name}()`);
+            hasSignal = true;
+            return;
+          }
         }
       }
     }
@@ -511,4 +547,98 @@ export function createSignalDetector(context: ITransformContext) {
       };
     },
   };
+}
+
+/**
+ * Detect and track reactive variable declarations
+ * Identifies variables that contain signal calls and marks them as reactive functions
+ */
+export function detectReactiveVariables(
+  sourceFile: ts.SourceFile,
+  context: ITransformContext
+): void {
+  function visit(node: ts.Node): void {
+    // Look for variable declarations
+    if (ts.isVariableDeclaration(node) && node.initializer && ts.isIdentifier(node.name)) {
+      const varName = node.name.text;
+
+      // Check if initializer contains signal calls
+      if (hasSignalCalls(node.initializer, context)) {
+        // Mark this variable as reactive (needs to be wrapped in arrow function)
+        context.reactiveFunctions.add(varName);
+
+        if (context.debugTracker) {
+          const tracker = context.debugTracker as any;
+          if (tracker.options?.enabled && tracker.options?.channels?.detector) {
+            console.log(`[DETECTOR] Reactive variable detected: ${varName}`);
+          }
+        }
+      }
+    }
+
+    // Recurse into child nodes
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+}
+
+/**
+ * Check if an identifier is a reactive function that needs () call in JSX
+ */
+export function isReactiveFunction(identifier: ts.Identifier, context: ITransformContext): boolean {
+  return context.reactiveFunctions.has(identifier.text);
+}
+
+/**
+ * Transform expressions to auto-call reactive functions
+ * Converts: filtered.map(...) → filtered().map(...)
+ */
+export function transformReactiveExpression(
+  expression: ts.Expression,
+  context: ITransformContext
+): ts.Expression {
+  const visitor = (node: ts.Node): ts.Node => {
+    // Look for property access on reactive functions: filtered.map(...)
+    if (ts.isPropertyAccessExpression(node)) {
+      if (ts.isIdentifier(node.expression) && isReactiveFunction(node.expression, context)) {
+        if (context.options.debug) {
+          console.log(`[TRANSFORMER] 🔄 Auto-calling reactive function: ${node.expression.text}`);
+        }
+        // Transform: filtered.map → filtered().map
+        return factory.updatePropertyAccessExpression(
+          node,
+          factory.createCallExpression(
+            node.expression, // filtered
+            undefined, // type arguments
+            [] // arguments
+          ),
+          node.name // map
+        );
+      }
+    }
+
+    // Look for direct reactive function usage: filtered (without property access)
+    if (ts.isIdentifier(node) && isReactiveFunction(node, context)) {
+      // Only transform if it's not already being called and not in a property access
+      // We need to check the parent to avoid double transformation
+      const parent = (node as any).parent;
+      if (parent && !ts.isCallExpression(parent) && !ts.isPropertyAccessExpression(parent)) {
+        if (context.options.debug) {
+          console.log(`[TRANSFORMER] 🔄 Auto-calling reactive function: ${node.text}`);
+        }
+        // Transform: filtered → filtered()
+        return factory.createCallExpression(
+          node, // filtered
+          undefined, // type arguments
+          [] // arguments
+        );
+      }
+    }
+
+    // Recurse into children
+    return ts.visitEachChild(node, visitor, undefined);
+  };
+
+  return ts.visitNode(expression, visitor) as ts.Expression;
 }

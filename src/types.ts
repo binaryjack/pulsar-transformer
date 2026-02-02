@@ -66,6 +66,12 @@ export interface ITransformContext {
 
   /** Tracks if $REGISTRY is used (for auto-import) */
   requiresRegistry: boolean;
+
+  /** Variables that contain reactive expressions (need () calls in JSX) */
+  readonly reactiveFunctions: Set<string>;
+
+  /** Function props that are signals (detected from component parameters) */
+  readonly signalPropsInScope: Set<string>;
 }
 
 export interface ImportInfo {

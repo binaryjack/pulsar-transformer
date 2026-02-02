@@ -872,12 +872,10 @@ export class ProjectTransformer {
     if (!node.initializer) return false;
 
     const isArrow = ts.isArrowFunction(node.initializer);
-    console.log(`[isArrowFunctionComponent] ${node.name.text}: isArrow=${isArrow}`);
     if (!isArrow) return false;
 
     // Component names must start with uppercase
     const hasUppercase = /^[A-Z]/.test(node.name.text);
-    console.log(`[isArrowFunctionComponent] ${node.name.text}: hasUppercase=${hasUppercase}`);
     if (!hasUppercase) return false;
 
     // Must return JSX
@@ -888,7 +886,6 @@ export class ProjectTransformer {
     } else {
       hasJsx = this.isJsxExpression(body);
     }
-    console.log(`[isArrowFunctionComponent] ${node.name.text}: hasJsx=${hasJsx}`);
     return hasJsx;
   }
 
