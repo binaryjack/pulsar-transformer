@@ -5,17 +5,16 @@
 
 import * as path from 'path';
 import * as ts from 'typescript';
-import { factory } from 'typescript';
-import { analyzeComponentParameters } from './detector/signal-detector.js';
+
+import { hasSignalCalls } from './detector/signal-detector.js';
 import { initializeContext } from './factory.js';
 import { createElementGenerator } from './generator/element-generator.js';
 import {
-  createProjectTransformer,
-  getAllComponentFiles,
-  type IProjectTransformContext,
+    createProjectTransformer, getAllComponentFiles, IProjectTransformContext, type
 } from './project-transformer.js';
 import { IComponentDeclaration, ITransformContext, TransformerError } from './types.js';
 import { getASTPath, getNodePosition, getNodeSnippet, getNodeTypeName } from './utils/ast-utils.js';
+import { addPulsarImports } from './utils/import-injector.js';
 import { createComponentWrapper } from './wrapper/component-wrapper.js';
 
 /**
@@ -124,13 +123,13 @@ function createVisitor(context: ITransformContext) {
         const decl = node.declarationList.declarations[0];
         if (decl && ts.isIdentifier(decl.name)) {
           const isComponent = isArrowFunctionComponent(decl);
-          if (context.debug) {
+          if (context.options.debug) {
             console.log(
               `[TRANSFORMER] Checking VariableStatement: ${decl.name.text}, isComponent: ${isComponent}`
             );
           }
           if (isComponent) {
-            if (context.debug) {
+            if (context.options.debug) {
               console.log(`[TRANSFORMER] ✅ Transforming component: ${decl.name.text}`);
             }
             return transformArrowFunctionComponentStatement(
@@ -321,8 +320,8 @@ function transformArrowFunctionComponentStatement(
   const componentName = decl.name.text;
   context.currentComponent = componentName;
 
-  // Analyze component parameters to detect signal props
-  analyzeComponentParameters(decl.initializer.parameters, context);
+  // TODO: Re-enable when analyzeComponentParameters is implemented
+  // analyzeComponentParameters(decl.initializer.parameters, context);
 
   try {
     // Visit arrow function body

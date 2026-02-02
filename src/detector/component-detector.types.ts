@@ -191,10 +191,10 @@ export interface IComponentDetector {
  * Configuration for ComponentDetector
  */
 export interface IComponentDetectorConfig {
-  /** TypeScript type checker */
-  checker: ts.TypeChecker;
-  /** Source file being analyzed */
-  sourceFile: ts.SourceFile;
+  /** TypeScript type checker (optional for testing) */
+  checker?: ts.TypeChecker;
+  /** Source file being analyzed (optional for testing) */
+  sourceFile?: ts.SourceFile;
   /** Enable debug logging */
   debug?: boolean;
   /** Custom strategies to register */

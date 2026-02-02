@@ -40,8 +40,14 @@ export const PascalCaseStrategy = function (this: IPascalCaseStrategy) {
 PascalCaseStrategy.prototype.isPascalCase = function (name: string): boolean {
   if (!name || name.length === 0) return false;
 
+  // Must not start with underscore or number
+  if (/^[_0-9]/.test(name)) return false;
+
   // Must start with uppercase letter
   if (name[0] !== name[0].toUpperCase()) return false;
+
+  // Single uppercase letter is valid (e.g., 'A')
+  if (name.length === 1) return true;
 
   // Must not be all uppercase (that's CONSTANT_CASE)
   if (name === name.toUpperCase()) return false;
@@ -64,7 +70,7 @@ PascalCaseStrategy.prototype.detect = function (
       isComponent: false,
       confidence: 'low',
       strategy: this.name,
-      reason: 'Anonymous function',
+      reason: 'No function name',
     };
   }
 
@@ -74,7 +80,7 @@ PascalCaseStrategy.prototype.detect = function (
     isComponent: isPascal,
     confidence: isPascal ? 'medium' : 'low',
     strategy: this.name,
-    reason: isPascal ? `PascalCase name: ${name}` : `Not PascalCase: ${name}`,
+    reason: isPascal ? `PascalCase naming: ${name}` : `not PascalCase: ${name}`,
     componentName: isPascal ? name : undefined,
   };
 };

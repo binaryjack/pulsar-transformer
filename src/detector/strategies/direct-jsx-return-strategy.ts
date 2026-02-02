@@ -53,11 +53,14 @@ DirectJsxReturnStrategy.prototype.hasDirectJsxReturn = function (
   if (ts.isBlock(body)) {
     for (const statement of body.statements) {
       if (ts.isReturnStatement(statement) && statement.expression) {
-        if (
-          ts.isJsxElement(statement.expression) ||
-          ts.isJsxSelfClosingElement(statement.expression) ||
-          ts.isJsxFragment(statement.expression)
-        ) {
+        let expr = statement.expression;
+
+        // Unwrap parenthesized expressions: return (<JSX>)
+        while (ts.isParenthesizedExpression(expr)) {
+          expr = expr.expression;
+        }
+
+        if (ts.isJsxElement(expr) || ts.isJsxSelfClosingElement(expr) || ts.isJsxFragment(expr)) {
           return true;
         }
       }
@@ -91,7 +94,7 @@ DirectJsxReturnStrategy.prototype.detect = function (
     isComponent: true,
     confidence: 'high',
     strategy: this.name,
-    reason: 'Directly returns JSX element',
+    reason: 'Function has direct JSX return',
     componentName: name,
   };
 };

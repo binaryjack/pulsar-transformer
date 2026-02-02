@@ -7,6 +7,8 @@
  * @see .github/01-ARCHITECTURE-PATTERNS.md - Factory pattern
  */
 
+import * as ts from 'typescript';
+
 import { ComponentDetector } from './component-detector.js';
 import { ConditionalJsxReturnStrategy } from './strategies/conditional-jsx-return-strategy.js';
 import { DirectJsxReturnStrategy } from './strategies/direct-jsx-return-strategy.js';
@@ -52,10 +54,11 @@ import type {
  * }
  * ```
  */
-export function createComponentDetector(config: IComponentDetectorConfig): IComponentDetector {
+export function createComponentDetector(config: IComponentDetectorConfig = {}): IComponentDetector {
+  // Create dummy context if not provided (for testing)
   const context: IDetectionContext = {
-    checker: config.checker,
-    sourceFile: config.sourceFile,
+    checker: config.checker || ({} as ts.TypeChecker),
+    sourceFile: config.sourceFile || ({} as ts.SourceFile),
     debug: config.debug,
   };
 

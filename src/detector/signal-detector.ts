@@ -4,7 +4,10 @@
  */
 
 import * as ts from 'typescript';
-import { ITransformContext, ImportInfo } from '../types.js';
+
+import { ImportInfo, ITransformContext } from '../types.js';
+
+const factory = ts.factory;
 
 /**
  * Known signal-creating functions from Pulsar framework

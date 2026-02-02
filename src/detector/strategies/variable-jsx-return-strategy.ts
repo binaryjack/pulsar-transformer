@@ -62,7 +62,13 @@ VariableJsxReturnStrategy.prototype.getJsxVariableName = function (
     if (ts.isVariableStatement(statement)) {
       for (const declaration of statement.declarationList.declarations) {
         if (declaration.initializer) {
-          const init = declaration.initializer;
+          let init = declaration.initializer;
+
+          // Unwrap parenthesized expressions: const x = (<JSX>)
+          while (ts.isParenthesizedExpression(init)) {
+            init = init.expression;
+          }
+
           if (ts.isJsxElement(init) || ts.isJsxSelfClosingElement(init) || ts.isJsxFragment(init)) {
             // Found JSX assignment
             if (ts.isIdentifier(declaration.name)) {

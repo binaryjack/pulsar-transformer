@@ -45,13 +45,18 @@ ReturnTypeStrategy.prototype.hasHtmlElementReturnType = function (
 
   const typeText = node.type.getText();
 
-  return (
-    typeText === 'HTMLElement' ||
-    typeText === 'Element' ||
-    typeText === 'Node' ||
-    typeText === 'HTMLElement | null' ||
-    typeText === 'Element | null'
-  );
+  // Direct matches
+  if (typeText === 'HTMLElement' || typeText === 'Element' || typeText === 'Node') {
+    return true;
+  }
+
+  // Union types - check if any part contains HTMLElement/Element/Node
+  if (typeText.includes('|')) {
+    const parts = typeText.split('|').map((p) => p.trim());
+    return parts.some((part) => part === 'HTMLElement' || part === 'Element' || part === 'Node');
+  }
+
+  return false;
 };
 
 /**

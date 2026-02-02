@@ -93,8 +93,18 @@ ConditionalJsxReturnStrategy.prototype.hasConditionalJsxReturn = function (
     for (const statement of body.statements) {
       // Return with conditional: return x ? <A/> : <B/>
       if (ts.isReturnStatement(statement) && statement.expression) {
-        if (containsJsx(statement.expression)) {
-          return true;
+        let expr = statement.expression;
+
+        // Unwrap parenthesized expressions: return (x ? <A/> : <B/>)
+        while (ts.isParenthesizedExpression(expr)) {
+          expr = expr.expression;
+        }
+
+        // Only detect if the return expression itself is conditional
+        if (ts.isConditionalExpression(expr) || ts.isBinaryExpression(expr)) {
+          if (containsJsx(expr)) {
+            return true;
+          }
         }
       }
 
@@ -107,6 +117,17 @@ ConditionalJsxReturnStrategy.prototype.hasConditionalJsxReturn = function (
 
         if (thenHasJsx || elseHasJsx) {
           return true;
+        }
+      }
+
+      // Switch statement with JSX returns
+      if (ts.isSwitchStatement(statement)) {
+        for (const caseClause of statement.caseBlock.clauses) {
+          for (const stmt of caseClause.statements) {
+            if (checkStatementForJsx(stmt)) {
+              return true;
+            }
+          }
         }
       }
     }
@@ -158,7 +179,7 @@ ConditionalJsxReturnStrategy.prototype.detect = function (
     isComponent: true,
     confidence: 'high',
     strategy: this.name,
-    reason: 'Conditionally returns JSX',
+    reason: 'Function has conditional JSX return',
     componentName: name,
   };
 };

@@ -6,11 +6,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as ts from 'typescript';
+
+import { createComponentDetector } from './detector/create-component-detector.js';
 import { initializeContext } from './factory.js';
 import { createElementGenerator } from './generator/element-generator.js';
 import { IComponentDeclaration, ITransformContext, TransformerError } from './types.js';
 import { addPulsarImports } from './utils/import-injector.js';
 import { createComponentWrapper } from './wrapper/component-wrapper.js';
+
+import type { IComponentDetector } from './detector/component-detector.types.js';
 
 /**
  * Project transformation context
@@ -104,10 +108,16 @@ export interface IProjectTransformResult {
 export class ProjectTransformer {
   private context: IProjectTransformContext;
   private typeChecker: ts.TypeChecker;
+  private componentDetector: IComponentDetector;
 
   constructor(context: IProjectTransformContext) {
     this.context = context;
     this.typeChecker = context.program.getTypeChecker();
+    // Create empty detector - will be updated per source file in extractComponentDefinitions
+    this.componentDetector = createComponentDetector({
+      checker: this.typeChecker,
+      debug: context.debug,
+    });
   }
 
   /**
@@ -395,11 +405,24 @@ export class ProjectTransformer {
   private extractComponentDefinitions(sourceFile: ts.SourceFile): ComponentDefinition[] {
     const components: ComponentDefinition[] = [];
 
+    // Update detector context for this source file
+    this.componentDetector = createComponentDetector({
+      checker: this.typeChecker,
+      sourceFile: sourceFile,
+      debug: this.context.debug,
+    });
+
     const visit = (node: ts.Node): void => {
       // Function declarations: function MyComponent() { ... }
       if (ts.isFunctionDeclaration(node) && node.name) {
-        const componentName = node.name.text;
-        if (this.isComponentName(componentName) && this.hasJsxReturn(node)) {
+        const result = this.componentDetector.detect(node);
+        if (result.isComponent) {
+          const componentName = node.name.text;
+          if (this.context.debug) {
+            console.log(
+              `[ComponentDetector] ✅ Detected function component: ${componentName} (${result.primaryReason?.strategy}, ${result.confidence})`
+            );
+          }
           components.push({
             name: componentName,
             filePath: sourceFile.fileName,
@@ -415,9 +438,15 @@ export class ProjectTransformer {
       if (ts.isVariableStatement(node)) {
         const decl = node.declarationList.declarations[0];
         if (decl && ts.isIdentifier(decl.name) && decl.initializer) {
-          const componentName = decl.name.text;
-          if (this.isComponentName(componentName) && ts.isArrowFunction(decl.initializer)) {
-            if (this.hasJsxInArrowFunction(decl.initializer)) {
+          if (ts.isArrowFunction(decl.initializer)) {
+            const result = this.componentDetector.detect(decl.initializer);
+            if (result.isComponent) {
+              const componentName = decl.name.text;
+              if (this.context.debug) {
+                console.log(
+                  `[ComponentDetector] ✅ Detected arrow component: ${componentName} (${result.primaryReason?.strategy}, ${result.confidence})`
+                );
+              }
               components.push({
                 name: componentName,
                 filePath: sourceFile.fileName,
@@ -859,11 +888,9 @@ export class ProjectTransformer {
     if (!node.name) return false;
     if (!node.body) return false;
 
-    // Component names must start with uppercase
-    if (!/^[A-Z]/.test(node.name.text)) return false;
-
-    // Must return JSX
-    return this.hasJsxReturnInBlock(node.body);
+    // Use ComponentDetector for detection
+    const result = this.componentDetector.detect(node);
+    return result.isComponent;
   }
 
   private isArrowFunctionComponent(node: ts.Node): node is ts.VariableDeclaration {
@@ -874,19 +901,9 @@ export class ProjectTransformer {
     const isArrow = ts.isArrowFunction(node.initializer);
     if (!isArrow) return false;
 
-    // Component names must start with uppercase
-    const hasUppercase = /^[A-Z]/.test(node.name.text);
-    if (!hasUppercase) return false;
-
-    // Must return JSX
-    const body = node.initializer.body;
-    let hasJsx = false;
-    if (ts.isBlock(body)) {
-      hasJsx = this.hasJsxReturnInBlock(body);
-    } else {
-      hasJsx = this.isJsxExpression(body);
-    }
-    return hasJsx;
+    // Use ComponentDetector for detection
+    const result = this.componentDetector.detect(node.initializer);
+    return result.isComponent;
   }
 
   private createWireStatement(wire: any): ts.Statement {

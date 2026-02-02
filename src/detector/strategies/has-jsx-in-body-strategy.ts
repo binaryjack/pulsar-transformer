@@ -65,6 +65,11 @@ HasJsxInBodyStrategy.prototype.countJsxElements = function (
 HasJsxInBodyStrategy.prototype.hasJsxInBody = function (
   node: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression
 ): boolean {
+  // Exclude arrow expression bodies - they're handled by DirectJsxReturnStrategy
+  if (ts.isArrowFunction(node) && !ts.isBlock(node.body)) {
+    return false;
+  }
+
   return this.countJsxElements(node) > 0;
 };
 
@@ -83,7 +88,7 @@ HasJsxInBodyStrategy.prototype.detect = function (
       isComponent: false,
       confidence: 'low',
       strategy: this.name,
-      reason: 'No JSX elements found in body',
+      reason: 'No JSX in body',
     };
   }
 
@@ -93,7 +98,7 @@ HasJsxInBodyStrategy.prototype.detect = function (
     isComponent: true,
     confidence: 'low', // Low confidence - JSX might be for props
     strategy: this.name,
-    reason: `Found ${jsxCount} JSX element(s) in body`,
+    reason: `JSX in function body: ${jsxCount} JSX ${jsxCount === 1 ? 'element' : 'elements'}`,
     componentName: name,
   };
 };
