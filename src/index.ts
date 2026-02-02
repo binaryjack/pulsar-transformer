@@ -10,12 +10,16 @@ import { hasSignalCalls } from './detector/signal-detector.js';
 import { initializeContext } from './factory.js';
 import { createElementGenerator } from './generator/element-generator.js';
 import {
-    createProjectTransformer, getAllComponentFiles, IProjectTransformContext, type
+  createProjectTransformer,
+  getAllComponentFiles,
+  IProjectTransformContext,
 } from './project-transformer.js';
 import { IComponentDeclaration, ITransformContext, TransformerError } from './types.js';
 import { getASTPath, getNodePosition, getNodeSnippet, getNodeTypeName } from './utils/ast-utils.js';
 import { addPulsarImports } from './utils/import-injector.js';
 import { createComponentWrapper } from './wrapper/component-wrapper.js';
+
+const factory = ts.factory;
 
 /**
  * Main TypeScript transformer function

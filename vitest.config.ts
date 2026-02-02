@@ -8,6 +8,7 @@ export default defineConfig({
       'src/__tests__/**/*.test.ts',
       'src/detector/__tests__/**/*.test.ts',
       'src/reporter/__tests__/**/*.test.ts',
+      'src/utils/__tests__/**/*.test.ts',
     ],
   },
 });

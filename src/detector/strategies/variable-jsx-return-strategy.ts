@@ -23,10 +23,12 @@
 
 import * as ts from 'typescript';
 
+import { addReturnTypeIfMissing } from '../../utils/add-return-type.js';
+
 import type {
-  IVariableJsxReturnStrategy,
-  IDetectionResult,
   IDetectionContext,
+  IDetectionResult,
+  IVariableJsxReturnStrategy,
 } from '../component-detector.types.js';
 
 /**
@@ -125,6 +127,9 @@ VariableJsxReturnStrategy.prototype.hasVariableJsxReturn = function (
 
 /**
  * Detect component by variable JSX return pattern
+ *
+ * IMPROVEMENT: Automatically adds `: HTMLElement` return type if missing
+ * to prevent TypeScript inference issues.
  */
 VariableJsxReturnStrategy.prototype.detect = function (
   node: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression,
@@ -143,6 +148,22 @@ VariableJsxReturnStrategy.prototype.detect = function (
 
   const name = node.name?.getText(context.sourceFile);
   const jsxVarName = this.getJsxVariableName(node);
+
+  // Auto-add return type if missing (Phase 1C integration)
+  if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node)) {
+    const result = addReturnTypeIfMissing(node, {
+      targetType: 'HTMLElement',
+      addCommentFlag: true,
+      emitWarnings: context.debug ?? false,
+      errorOnAsync: false,
+    });
+
+    if (context.debug && result.modified) {
+      console.log(
+        `[VariableJsxReturnStrategy] Auto-added ': HTMLElement' to ${name || 'anonymous'}`
+      );
+    }
+  }
 
   return {
     isComponent: true,

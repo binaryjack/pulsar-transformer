@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as ts from 'typescript';
 
 import { createComponentDetector } from './detector/create-component-detector.js';
+import { createRecursionDetector } from './detector/create-recursion-detector.js';
 import { initializeContext } from './factory.js';
 import { createElementGenerator } from './generator/element-generator.js';
 import { IComponentDeclaration, ITransformContext, TransformerError } from './types.js';
@@ -15,6 +16,7 @@ import { addPulsarImports } from './utils/import-injector.js';
 import { createComponentWrapper } from './wrapper/component-wrapper.js';
 
 import type { IComponentDetector } from './detector/component-detector.types.js';
+import type { IRecursionDetector } from './detector/recursion-detector.types.js';
 
 /**
  * Project transformation context
@@ -109,6 +111,7 @@ export class ProjectTransformer {
   private context: IProjectTransformContext;
   private typeChecker: ts.TypeChecker;
   private componentDetector: IComponentDetector;
+  private recursionDetector: IRecursionDetector;
 
   constructor(context: IProjectTransformContext) {
     this.context = context;
@@ -118,6 +121,8 @@ export class ProjectTransformer {
       checker: this.typeChecker,
       debug: context.debug,
     });
+    // Create recursion detector to prevent infinite loops
+    this.recursionDetector = createRecursionDetector();
   }
 
   /**
@@ -803,6 +808,32 @@ export class ProjectTransformer {
     if (!node.name) return node;
 
     const componentName = node.name.text;
+
+    // Check for self-recursion BEFORE entering component
+    if (this.recursionDetector.checkRecursion(componentName)) {
+      const callStack = this.recursionDetector.getCallStack();
+      throw new TransformerError(
+        `Self-recursion detected in component "${componentName}"! Component tries to render itself, which would cause an infinite loop.\n` +
+          `Call stack: ${callStack.join(' -> ')} -> ${componentName}\n` +
+          `Fix: Components cannot render themselves. Use conditional rendering or child components instead.`,
+        'SELF_RECURSION_DETECTED',
+        {
+          sourceFile: context.fileName,
+          line: node.getStart(context.sourceFile),
+          column: 0,
+          offset: node.getStart(context.sourceFile),
+          sourceSnippet: node.getText(context.sourceFile).substring(0, 100),
+          phase: 'validate',
+          nodeType: 'FunctionDeclaration',
+          nodeKind: node.kind,
+          astPath: [],
+          originalCode: node.getText(context.sourceFile),
+        }
+      );
+    }
+
+    // Enter component scope
+    this.recursionDetector.enterComponent(componentName);
     context.currentComponent = componentName;
 
     try {
@@ -826,6 +857,8 @@ export class ProjectTransformer {
       // Wrap in $REGISTRY.execute
       return wrapper.wrapComponent(declaration);
     } finally {
+      // Exit component scope
+      this.recursionDetector.exitComponent(componentName);
       context.currentComponent = null;
     }
   }
@@ -842,6 +875,32 @@ export class ProjectTransformer {
     if (!decl.initializer || !ts.isArrowFunction(decl.initializer)) return node;
 
     const componentName = decl.name.text;
+
+    // Check for self-recursion BEFORE entering component
+    if (this.recursionDetector.checkRecursion(componentName)) {
+      const callStack = this.recursionDetector.getCallStack();
+      throw new TransformerError(
+        `Self-recursion detected in component "${componentName}"! Component tries to render itself, which would cause an infinite loop.\n` +
+          `Call stack: ${callStack.join(' -> ')} -> ${componentName}\n` +
+          `Fix: Components cannot render themselves. Use conditional rendering or child components instead.`,
+        'SELF_RECURSION_DETECTED',
+        {
+          sourceFile: context.fileName,
+          line: node.getStart(context.sourceFile),
+          column: 0,
+          offset: node.getStart(context.sourceFile),
+          sourceSnippet: node.getText(context.sourceFile).substring(0, 100),
+          phase: 'validate',
+          nodeType: 'VariableStatement',
+          nodeKind: node.kind,
+          astPath: [],
+          originalCode: node.getText(context.sourceFile),
+        }
+      );
+    }
+
+    // Enter component scope
+    this.recursionDetector.enterComponent(componentName);
     context.currentComponent = componentName;
 
     try {
@@ -879,6 +938,8 @@ export class ProjectTransformer {
 
       return wrappedDecl;
     } finally {
+      // Exit component scope
+      this.recursionDetector.exitComponent(componentName);
       context.currentComponent = null;
     }
   }
