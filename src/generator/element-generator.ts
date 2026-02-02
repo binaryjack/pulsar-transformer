@@ -66,7 +66,7 @@ function generateSelfClosingElement(
 
   const varName = generateVariableName(context);
 
-  // Create element: const el1 = document.createElement('div')
+  // Create element: const el1 = t_element('div', {})
   statements.push(
     factory.createVariableStatement(
       undefined,
@@ -76,20 +76,19 @@ function generateSelfClosingElement(
             factory.createIdentifier(varName),
             undefined,
             undefined,
-            factory.createCallExpression(
-              factory.createPropertyAccessExpression(
-                factory.createIdentifier('document'),
-                factory.createIdentifier('createElement')
-              ),
-              undefined,
-              [factory.createStringLiteral(tagName)]
-            )
+            factory.createCallExpression(factory.createIdentifier('t_element'), undefined, [
+              factory.createStringLiteral(tagName),
+              factory.createObjectLiteralExpression([], false),
+            ])
           ),
         ],
         ts.NodeFlags.Const
       )
     )
   );
+
+  // Mark that t_element is used
+  context.requiresRegistry = true;
 
   // Process attributes
   element.attributes.properties.forEach((prop) => {
@@ -137,20 +136,19 @@ function generateFullElement(
             factory.createIdentifier(varName),
             undefined,
             undefined,
-            factory.createCallExpression(
-              factory.createPropertyAccessExpression(
-                factory.createIdentifier('document'),
-                factory.createIdentifier('createElement')
-              ),
-              undefined,
-              [factory.createStringLiteral(tagName)]
-            )
+            factory.createCallExpression(factory.createIdentifier('t_element'), undefined, [
+              factory.createStringLiteral(tagName),
+              factory.createObjectLiteralExpression([], false),
+            ])
           ),
         ],
         ts.NodeFlags.Const
       )
     )
   );
+
+  // Mark that t_element is used
+  context.requiresRegistry = true;
 
   // Process attributes
   element.openingElement.attributes.properties.forEach((prop) => {
@@ -179,9 +177,15 @@ function generateFullElement(
         classifier
       );
     } else if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child)) {
-      // Recursively generate child
+      // Recursively generate child - route to component or element generator
       const gen = createElementGenerator(context);
-      const childElement = gen.generateElement(child);
+      const childTagName = getTagName(child);
+      const isChildComponent = isCustomComponent(childTagName);
+
+      const childElement = isChildComponent
+        ? gen.generateComponent(child)
+        : gen.generateElement(child);
+
       children.push(childElement);
 
       // Add child statements
@@ -333,7 +337,47 @@ function generateComponentCall(
     }
   });
 
-  // Component call: const el1 = ComponentName({ prop1: value1 })
+  // Handle children for non-self-closing components
+  if (!ts.isJsxSelfClosingElement(component) && component.children.length > 0) {
+    const gen = createElementGenerator(context);
+    const childExpressions: ts.Expression[] = [];
+
+    for (const child of component.children) {
+      // Skip text nodes, expressions, and fragments for now
+      if (!ts.isJsxElement(child) && !ts.isJsxSelfClosingElement(child)) {
+        continue;
+      }
+
+      const childTagName = getTagName(child);
+      const isChildComponent = isCustomComponent(childTagName);
+
+      // Transform child element/component
+      const generated = isChildComponent
+        ? gen.generateComponent(child)
+        : gen.generateElement(child as any);
+
+      statements.push(...generated.statements);
+      generated.requiredImports.forEach((imp) => requiredImports.add(imp));
+
+      childExpressions.push(factory.createIdentifier(generated.variableName));
+    }
+
+    // Add children to props object
+    if (childExpressions.length === 1) {
+      propsProperties.push(
+        factory.createPropertyAssignment(factory.createIdentifier('children'), childExpressions[0])
+      );
+    } else if (childExpressions.length > 1) {
+      propsProperties.push(
+        factory.createPropertyAssignment(
+          factory.createIdentifier('children'),
+          factory.createArrayLiteralExpression(childExpressions, false)
+        )
+      );
+    }
+  }
+
+  // Component call: const el1 = ComponentName({ prop1: value1, children: el2 })
   statements.push(
     factory.createVariableStatement(
       undefined,
@@ -412,14 +456,18 @@ function processAttribute(
     const wire: IWireCall = {
       element: elementVar,
       property: normalizeAttributeName(attrName),
-      getter: factory.createArrowFunction(
-        undefined,
-        undefined,
-        [],
-        undefined,
-        factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-        expression
-      ),
+      // If expression is call expression (e.g., count()), pass the callee (count)
+      // Otherwise wrap in arrow function
+      getter: ts.isCallExpression(expression)
+        ? expression.expression // Extract function reference: count() → count
+        : factory.createArrowFunction(
+            undefined,
+            undefined,
+            [],
+            undefined,
+            factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+            expression
+          ),
       dependencies: classifier.getSignalDependencies(expression),
       comment: classification.reason,
     };
@@ -509,14 +557,17 @@ function processChildExpression(
     const wire: IWireCall = {
       element: parentVar,
       property: 'textContent',
-      getter: factory.createArrowFunction(
-        undefined,
-        undefined,
-        [],
-        undefined,
-        factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-        transformedExpression
-      ),
+      // If expression is call expression, extract callee, otherwise wrap
+      getter: ts.isCallExpression(transformedExpression)
+        ? transformedExpression.expression
+        : factory.createArrowFunction(
+            undefined,
+            undefined,
+            [],
+            undefined,
+            factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+            transformedExpression
+          ),
       dependencies: classifier.getSignalDependencies(expression),
     };
     wires.push(wire);
@@ -570,11 +621,32 @@ function createAttributeStatement(
   attrName: string,
   value: ts.Expression
 ): ts.Statement {
+  const normalizedName = normalizeAttributeName(attrName);
+
+  // Check if attribute name contains hyphens or needs setAttribute
+  // Common cases: aria-*, data-*, or any attribute with hyphen
+  const needsSetAttribute = normalizedName.includes('-') || /^(aria|data)/.test(normalizedName);
+
+  if (needsSetAttribute) {
+    // Use setAttribute for hyphenated attributes: el.setAttribute("aria-label", value)
+    return factory.createExpressionStatement(
+      factory.createCallExpression(
+        factory.createPropertyAccessExpression(
+          factory.createIdentifier(elementVar),
+          factory.createIdentifier('setAttribute')
+        ),
+        undefined,
+        [factory.createStringLiteral(normalizedName), value]
+      )
+    );
+  }
+
+  // Use property access for valid JavaScript identifiers: el.className = value
   return factory.createExpressionStatement(
     factory.createBinaryExpression(
       factory.createPropertyAccessExpression(
         factory.createIdentifier(elementVar),
-        factory.createIdentifier(normalizeAttributeName(attrName))
+        factory.createIdentifier(normalizedName)
       ),
       factory.createToken(ts.SyntaxKind.EqualsToken),
       value

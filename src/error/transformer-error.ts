@@ -195,6 +195,7 @@ function getASTPath(node: any): string[] {
 }
 
 function getNodeTypeName(node: any): string {
+  if (!node) return 'Unknown';
   const ts = require('typescript');
   return ts.SyntaxKind[node.kind] || `Unknown(${node.kind})`;
 }

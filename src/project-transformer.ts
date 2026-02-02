@@ -6,9 +6,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as ts from 'typescript';
+import { addPulsarImports } from './utils/import-injector.js';
 import { initializeContext } from './factory.js';
 import { createElementGenerator } from './generator/element-generator.js';
-import { ITransformContext, TransformerError } from './types.js';
+import { IComponentDeclaration, ITransformContext, TransformerError } from './types.js';
 import { createComponentWrapper } from './wrapper/component-wrapper.js';
 
 /**
@@ -595,7 +596,7 @@ export class ProjectTransformer {
   }
 
   /**
-   * Create AST visitor for transformation (extracted from existing transformer)
+   * Create AST visitor for transformation (using complete transformer logic)
    */
   private createVisitor(context: ITransformContext): (node: ts.Node) => ts.VisitResult<ts.Node> {
     const elementGenerator = createElementGenerator(context);
@@ -642,24 +643,39 @@ export class ProjectTransformer {
           }
         }
 
-        // Recurse into children
+        // Recurse into children - this is CRITICAL for handling all AST nodes properly
         return ts.visitEachChild(node, visitor, undefined);
       } catch (error) {
-        // Create detailed error context (simplified for project transformer)
+        // Better error handling (preserve original transformer error patterns)
+        if (error instanceof TransformerError) {
+          throw error;
+        }
+
+        // Import utility functions for proper error context
+        const {
+          getNodePosition,
+          getNodeSnippet,
+          getNodeTypeName,
+          getASTPath,
+        } = require('./utils/ast-utils.js');
+        const position = getNodePosition(node, context.sourceFile);
+        const snippet = getNodeSnippet(node, context.sourceFile);
+        const astPath = getASTPath(node);
+
         throw new TransformerError(
           `Transformation failed: ${error instanceof Error ? error.message : String(error)}`,
           'PROJECT_TRANSFORM_ERROR',
           {
             sourceFile: context.fileName,
-            line: 0,
-            column: 0,
-            offset: 0,
-            sourceSnippet: '',
+            line: position.line,
+            column: position.column,
+            offset: position.offset,
+            sourceSnippet: snippet,
             phase: 'visit',
-            nodeType: 'unknown',
-            nodeKind: 0,
-            astPath: [],
-            originalCode: '',
+            nodeType: getNodeTypeName(node),
+            nodeKind: node.kind,
+            astPath,
+            originalCode: node.getText(context.sourceFile),
           }
         );
       }
@@ -668,76 +684,37 @@ export class ProjectTransformer {
     return visitor;
   }
 
-  /**
-   * Add $REGISTRY import to source file if not already present (extracted from existing transformer)
-   */
-  private addRegistryImport(sourceFile: ts.SourceFile): ts.SourceFile {
-    // Check if $REGISTRY import already exists
-    const hasRegistryImport = sourceFile.statements.some(
-      (stmt) =>
-        ts.isImportDeclaration(stmt) &&
-        stmt.moduleSpecifier &&
-        ts.isStringLiteral(stmt.moduleSpecifier) &&
-        stmt.moduleSpecifier.text === '@pulsar-framework/pulsar.dev' &&
-        stmt.importClause?.namedBindings &&
-        ts.isNamedImports(stmt.importClause.namedBindings) &&
-        stmt.importClause.namedBindings.elements.some((el) => el.name.text === '$REGISTRY')
-    );
-
-    if (hasRegistryImport) {
-      return sourceFile;
-    }
-
-    // Create import statement: import { $REGISTRY } from '@pulsar-framework/pulsar.dev';
-    const registryImport = ts.factory.createImportDeclaration(
-      undefined,
-      ts.factory.createImportClause(
-        false,
-        undefined,
-        ts.factory.createNamedImports([
-          ts.factory.createImportSpecifier(
-            false,
-            undefined,
-            ts.factory.createIdentifier('$REGISTRY')
-          ),
-        ])
-      ),
-      ts.factory.createStringLiteral('@pulsar-framework/pulsar.dev'),
-      undefined
-    );
-
-    // Add import at the beginning
-    const statements = [registryImport, ...sourceFile.statements];
-
-    return ts.factory.updateSourceFile(sourceFile, statements);
-  }
-
-  // Additional transformation methods (extracted and simplified)
+  // Complete transformation methods from main transformer
   private transformJsxElement(
     node: ts.JsxElement | ts.JsxSelfClosingElement,
     context: ITransformContext,
     generator: ReturnType<typeof createElementGenerator>
   ): ts.Expression {
-    // Implementation would mirror existing transformJsxElement
     context.jsxDepth++;
 
     try {
+      // Check if this is a component (starts with uppercase) or intrinsic element
       const tagName = ts.isJsxSelfClosingElement(node)
         ? node.tagName.getText()
         : node.openingElement.tagName.getText();
 
       const isComponent = /^[A-Z]/.test(tagName);
+
       const generated = isComponent
         ? generator.generateComponent(node)
         : generator.generateElement(node);
 
+      // Mark $REGISTRY as required if we have wires
       if (generated.wires.length > 0) {
         context.requiresRegistry = true;
       }
 
-      // Create IIFE that returns the element (simplified)
+      // Create IIFE that returns the element (simplified - no wires/events for now)
       const statements = [
         ...generated.statements,
+        // TODO: Add wire and event statements back after debugging
+        // ...generated.wires.map((wire) => this.createWireStatement(wire)),
+        // ...generated.events.map((event) => this.createEventStatement(event)),
         ts.factory.createReturnStatement(ts.factory.createIdentifier(generated.variableName)),
       ];
 
@@ -794,15 +771,34 @@ export class ProjectTransformer {
     wrapper: ReturnType<typeof createComponentWrapper>,
     visitor: (node: ts.Node) => ts.VisitResult<ts.Node>
   ): ts.Statement {
-    // Simplified implementation
     if (!node.name) return node;
-    return wrapper.wrapComponent({
-      name: node.name.text,
-      node,
-      parameters: Array.from(node.parameters),
-      returnType: node.type,
-      body: node.body ? Array.from(node.body.statements) : [],
-    });
+
+    const componentName = node.name.text;
+    context.currentComponent = componentName;
+
+    try {
+      // First visit the body to transform any JSX
+      const transformedNode = ts.visitEachChild(node, visitor, undefined) as ts.FunctionDeclaration;
+
+      // Extract body statements
+      const bodyStatements = transformedNode.body
+        ? Array.from(transformedNode.body.statements)
+        : [];
+
+      // Create component declaration
+      const declaration: IComponentDeclaration = {
+        name: componentName,
+        node: transformedNode,
+        parameters: Array.from(transformedNode.parameters),
+        returnType: transformedNode.type,
+        body: bodyStatements,
+      };
+
+      // Wrap in $REGISTRY.execute
+      return wrapper.wrapComponent(declaration);
+    } finally {
+      context.currentComponent = null;
+    }
   }
 
   private transformArrowFunctionComponentStatement(
@@ -812,43 +808,61 @@ export class ProjectTransformer {
     visitor: (node: ts.Node) => ts.VisitResult<ts.Node>
   ): ts.Statement {
     const decl = node.declarationList.declarations[0];
+
     if (!ts.isIdentifier(decl.name)) return node;
     if (!decl.initializer || !ts.isArrowFunction(decl.initializer)) return node;
 
     const componentName = decl.name.text;
-    const transformedArrow = ts.visitNode(decl.initializer, visitor) as ts.ArrowFunction;
+    context.currentComponent = componentName;
 
-    let bodyStatements: ts.Statement[];
-    if (ts.isBlock(transformedArrow.body)) {
-      bodyStatements = Array.from(transformedArrow.body.statements);
-    } else {
-      bodyStatements = [ts.factory.createReturnStatement(transformedArrow.body)];
+    try {
+      // Visit arrow function body
+      const transformedArrow = ts.visitNode(decl.initializer, visitor) as ts.ArrowFunction;
+
+      // Extract body
+      let bodyStatements: ts.Statement[];
+      if (ts.isBlock(transformedArrow.body)) {
+        bodyStatements = Array.from(transformedArrow.body.statements);
+      } else {
+        bodyStatements = [ts.factory.createReturnStatement(transformedArrow.body)];
+      }
+
+      // Create component declaration
+      const declaration: IComponentDeclaration = {
+        name: componentName,
+        node: decl,
+        parameters: Array.from(transformedArrow.parameters),
+        returnType: transformedArrow.type,
+        body: bodyStatements,
+      };
+
+      // Wrap in $REGISTRY.execute and preserve modifiers
+      const wrappedDecl = wrapper.wrapComponent(declaration);
+
+      // If the wrapped result is a VariableStatement, add original modifiers
+      if (ts.isVariableStatement(wrappedDecl)) {
+        return ts.factory.updateVariableStatement(
+          wrappedDecl,
+          node.modifiers, // Preserve export, etc
+          wrappedDecl.declarationList
+        );
+      }
+
+      return wrappedDecl;
+    } finally {
+      context.currentComponent = null;
     }
-
-    const wrappedDecl = wrapper.wrapComponent({
-      name: componentName,
-      node: decl,
-      parameters: Array.from(transformedArrow.parameters),
-      returnType: transformedArrow.type,
-      body: bodyStatements,
-    });
-
-    if (ts.isVariableStatement(wrappedDecl)) {
-      return ts.factory.updateVariableStatement(
-        wrappedDecl,
-        node.modifiers,
-        wrappedDecl.declarationList
-      );
-    }
-
-    return wrappedDecl;
   }
 
   private isFunctionComponent(node: ts.Node): node is ts.FunctionDeclaration {
     if (!ts.isFunctionDeclaration(node)) return false;
     if (!node.name) return false;
     if (!node.body) return false;
+
+    // Component names must start with uppercase
     if (!/^[A-Z]/.test(node.name.text)) return false;
+
+    // Must return JSX
     return this.hasJsxReturnInBlock(node.body);
   }
 
@@ -858,11 +872,15 @@ export class ProjectTransformer {
     if (!node.initializer) return false;
 
     const isArrow = ts.isArrowFunction(node.initializer);
+    console.log(`[isArrowFunctionComponent] ${node.name.text}: isArrow=${isArrow}`);
     if (!isArrow) return false;
 
+    // Component names must start with uppercase
     const hasUppercase = /^[A-Z]/.test(node.name.text);
+    console.log(`[isArrowFunctionComponent] ${node.name.text}: hasUppercase=${hasUppercase}`);
     if (!hasUppercase) return false;
 
+    // Must return JSX
     const body = node.initializer.body;
     let hasJsx = false;
     if (ts.isBlock(body)) {
@@ -870,7 +888,50 @@ export class ProjectTransformer {
     } else {
       hasJsx = this.isJsxExpression(body);
     }
+    console.log(`[isArrowFunctionComponent] ${node.name.text}: hasJsx=${hasJsx}`);
     return hasJsx;
+  }
+
+  private createWireStatement(wire: any): ts.Statement {
+    return ts.factory.createExpressionStatement(
+      ts.factory.createCallExpression(
+        ts.factory.createPropertyAccessExpression(
+          ts.factory.createIdentifier('$REGISTRY'),
+          ts.factory.createIdentifier('wire')
+        ),
+        undefined,
+        [
+          ts.factory.createIdentifier(wire.element),
+          ts.factory.createStringLiteral(wire.property),
+          wire.getter,
+        ]
+      )
+    );
+  }
+
+  private createEventStatement(event: any): ts.Statement {
+    return ts.factory.createExpressionStatement(
+      ts.factory.createCallExpression(
+        ts.factory.createPropertyAccessExpression(
+          ts.factory.createIdentifier('$REGISTRY'),
+          ts.factory.createIdentifier('event')
+        ),
+        undefined,
+        [
+          ts.factory.createIdentifier(event.element),
+          ts.factory.createStringLiteral(event.type),
+          event.handler,
+        ]
+      )
+    );
+  }
+
+  /**
+   * Add $REGISTRY and t_element imports to source file if not already present
+   * Delegates to shared utility to avoid code duplication
+   */
+  private addRegistryImport(sourceFile: ts.SourceFile): ts.SourceFile {
+    return addPulsarImports(sourceFile);
   }
 }
 

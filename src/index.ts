@@ -146,9 +146,11 @@ function createVisitor(context: ITransformContext) {
         throw error;
       }
 
-      const position = getNodePosition(node, context.sourceFile);
-      const snippet = getNodeSnippet(node, context.sourceFile);
-      const astPath = getASTPath(node);
+      const position = node
+        ? getNodePosition(node, context.sourceFile)
+        : { line: 0, column: 0, offset: 0 };
+      const snippet = node ? getNodeSnippet(node, context.sourceFile) : 'N/A';
+      const astPath = node ? getASTPath(node) : [];
 
       throw new TransformerError(
         `Transformation failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -161,9 +163,9 @@ function createVisitor(context: ITransformContext) {
           sourceSnippet: snippet,
           phase: 'visit',
           nodeType: getNodeTypeName(node),
-          nodeKind: node.kind,
+          nodeKind: node?.kind || 0,
           astPath,
-          originalCode: node.getText(context.sourceFile),
+          originalCode: node ? node.getText(context.sourceFile) : 'N/A',
           sessionId: context.debugTracker?.currentSession || undefined,
         }
       );
@@ -189,6 +191,7 @@ function transformJsxElement(
 
     const isComponent = /^[A-Z]/.test(tagName);
 
+    // Route to component generator for uppercase tags (components)
     const generated = isComponent
       ? generator.generateComponent(node)
       : generator.generateElement(node);
@@ -517,43 +520,11 @@ function createEventStatement(event: any): ts.Statement {
 }
 
 /**
- * Add $REGISTRY import to source file if not already present
+ * Add $REGISTRY and t_element imports to source file if not already present
+ * Delegates to shared utility to avoid code duplication
  */
 function addRegistryImport(sourceFile: ts.SourceFile): ts.SourceFile {
-  // Check if $REGISTRY import already exists
-  const hasRegistryImport = sourceFile.statements.some(
-    (stmt) =>
-      ts.isImportDeclaration(stmt) &&
-      stmt.moduleSpecifier &&
-      ts.isStringLiteral(stmt.moduleSpecifier) &&
-      stmt.moduleSpecifier.text === '@pulsar-framework/pulsar.dev' &&
-      stmt.importClause?.namedBindings &&
-      ts.isNamedImports(stmt.importClause.namedBindings) &&
-      stmt.importClause.namedBindings.elements.some((el) => el.name.text === '$REGISTRY')
-  );
-
-  if (hasRegistryImport) {
-    return sourceFile;
-  }
-
-  // Create import statement: import { $REGISTRY } from '@pulsar-framework/pulsar.dev';
-  const registryImport = factory.createImportDeclaration(
-    undefined,
-    factory.createImportClause(
-      false,
-      undefined,
-      factory.createNamedImports([
-        factory.createImportSpecifier(false, undefined, factory.createIdentifier('$REGISTRY')),
-      ])
-    ),
-    factory.createStringLiteral('@pulsar-framework/pulsar.dev'),
-    undefined
-  );
-
-  // Add import at the beginning
-  const statements = [registryImport, ...sourceFile.statements];
-
-  return factory.updateSourceFile(sourceFile, statements);
+  return addPulsarImports(sourceFile);
 }
 
 /**

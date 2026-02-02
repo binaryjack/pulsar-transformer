@@ -1,0 +1,16 @@
+import pulsarTransformer from '../index.js';
+import { transformSource as transform } from './test-helpers.js';
+
+const source = `
+  import { useState } from '@pulsar-framework/pulsar.dev';
+  
+  function Counter() {
+    const [count, setCount] = useState(0);
+    return <div>{count()}</div>;
+  }
+`;
+
+const output = transform(source, pulsarTransformer);
+console.log('=== GENERATED OUTPUT ===');
+console.log(output);
+console.log('=== END OUTPUT ===');

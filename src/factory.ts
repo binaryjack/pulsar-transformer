@@ -5,7 +5,7 @@
 
 import * as ts from 'typescript';
 import { createExpressionClassifier } from './detector/expression-classifier.js';
-import { detectSignals } from './detector/signal-detector.js';
+import { buildScopeMap, detectSignals } from './detector/signal-detector.js';
 import { createElementGenerator } from './generator/element-generator.js';
 import {
   IComponentWrapper,
@@ -82,6 +82,16 @@ export const transformerFactory: ITransformerFactory = {
 
     const tracker = mergedOptions.debug ? createTransformTracker(debugOptions) : undefined;
 
+    // Known signal creators from Pulsar framework
+    const signalCreators = new Set([
+      'useState',
+      'createSignal',
+      'createMemo',
+      'createComputed',
+      'createResource',
+      'createEffect',
+    ]);
+
     const context: ITransformContext = {
       sourceFile,
       fileName,
@@ -90,6 +100,9 @@ export const transformerFactory: ITransformerFactory = {
       program,
       signalGetters: new Set(),
       signalImports: new Map(),
+      scopeMap: new Map(),
+      signalCreators,
+      hasSignalImports: false,
       components: new Map(),
       signals: new Map(),
       componentIndex: new Map(),
@@ -106,8 +119,14 @@ export const transformerFactory: ITransformerFactory = {
       tracker.startSession(fileName, sourceFile);
     }
 
-    // Detect signals in source file
+    // Phase 1: Detect signal imports
     detectSignals(sourceFile, context);
+
+    // Phase 2: Build scope map for signal getters (Tier 2 detection)
+    buildScopeMap(sourceFile, context);
+
+    // Phase 3: Update hasSignalImports flag
+    context.hasSignalImports = context.signalImports.size > 0;
 
     return context;
   },

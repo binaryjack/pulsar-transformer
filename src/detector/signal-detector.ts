@@ -50,6 +50,124 @@ export function detectSignals(sourceFile: ts.SourceFile, context: ITransformCont
 }
 
 /**
+ * Build scope map for signal getters (Tier 2: Scope-based detection)
+ * Walks AST and tracks const [getter, setter] = signalCreator() patterns per scope
+ * Works WITHOUT TypeChecker by using AST pattern matching
+ */
+export function buildScopeMap(sourceFile: ts.SourceFile, context: ITransformContext): void {
+  // Track current function scope stack
+  const scopeStack: string[] = ['__global__'];
+
+  // Initialize global scope
+  if (!context.scopeMap.has('__global__')) {
+    context.scopeMap.set('__global__', new Set());
+  }
+
+  function getCurrentScope(): string {
+    return scopeStack[scopeStack.length - 1];
+  }
+
+  function getScopeSet(): Set<string> {
+    const scopeName = getCurrentScope();
+    let scopeSet = context.scopeMap.get(scopeName);
+    if (!scopeSet) {
+      scopeSet = new Set();
+      context.scopeMap.set(scopeName, scopeSet);
+    }
+    return scopeSet;
+  }
+
+  function visit(node: ts.Node): void {
+    // Track function scopes
+    const isFunctionLike =
+      ts.isFunctionDeclaration(node) ||
+      ts.isFunctionExpression(node) ||
+      ts.isArrowFunction(node) ||
+      ts.isMethodDeclaration(node);
+
+    if (isFunctionLike) {
+      // Generate unique scope name
+      let scopeName = '__anonymous__';
+
+      if (ts.isFunctionDeclaration(node) && node.name) {
+        scopeName = node.name.text;
+      } else if (ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)) {
+        scopeName = node.name.text;
+      } else if (node.parent && ts.isVariableDeclaration(node.parent)) {
+        const varDecl = node.parent;
+        if (ts.isIdentifier(varDecl.name)) {
+          scopeName = varDecl.name.text;
+        }
+      }
+
+      // Make scope name unique by adding position
+      scopeName = `${scopeName}@${node.pos}`;
+
+      scopeStack.push(scopeName);
+      context.scopeMap.set(scopeName, new Set());
+    }
+
+    // Detect signal getter declarations
+    if (ts.isVariableDeclaration(node)) {
+      // Pattern: const [getter, setter] = signalCreator()
+      if (
+        ts.isArrayBindingPattern(node.name) &&
+        node.initializer &&
+        ts.isCallExpression(node.initializer)
+      ) {
+        const callExpr = node.initializer;
+        const calleeName = getCalleeName(callExpr);
+
+        // Check if this is a signal creator
+        if (calleeName && isSignalCreatorByName(calleeName, context)) {
+          const bindings = node.name.elements;
+          if (bindings.length >= 1) {
+            const firstBinding = bindings[0];
+            if (ts.isBindingElement(firstBinding) && ts.isIdentifier(firstBinding.name)) {
+              const getterName = firstBinding.name.text;
+
+              // Add getter to current scope
+              const scopeSet = getScopeSet();
+              scopeSet.add(getterName);
+
+              if (context.debugTracker) {
+                const tracker = context.debugTracker as any;
+                if (tracker.options?.enabled && tracker.options?.channels?.detector) {
+                  console.log(
+                    `[SCOPE-DETECTOR] Found signal getter: ${getterName} in scope ${getCurrentScope()} from ${calleeName}()`
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Recurse into children
+    ts.forEachChild(node, visit);
+
+    // Pop function scope
+    if (isFunctionLike && scopeStack.length > 1) {
+      scopeStack.pop();
+    }
+  }
+
+  visit(sourceFile);
+}
+
+/**
+ * Check if function name is a signal creator (name-based, no TypeChecker)
+ */
+function isSignalCreatorByName(name: string, context: ITransformContext): boolean {
+  // Check if it's a known signal creator
+  if (context.signalCreators.has(name)) return true;
+
+  // Check if it was imported from Pulsar
+  return context.signalImports.has(name);
+}
+
+/**
  * Process import declaration to find signal creators
  */
 function processImportDeclaration(node: ts.ImportDeclaration, context: ITransformContext): void {
@@ -219,12 +337,63 @@ function isSignalCreator(name: string, context: ITransformContext): boolean {
 }
 
 /**
- * Check if identifier refers to a signal getter
+ * Check if identifier refers to a signal getter (Three-tier detection)
+ * Tier 1: Symbol-based (TypeChecker) - most accurate when available
+ * Tier 2: Scope-based (AST pattern) - works without TypeChecker
+ * Tier 3: Heuristic-based - conservative fallback
  */
 export function isSignalGetter(identifier: ts.Identifier, context: ITransformContext): boolean {
-  if (!context.typeChecker) return false;
-  const symbol = context.typeChecker.getSymbolAtLocation(identifier);
-  return symbol ? context.signalGetters.has(symbol) : false;
+  const name = identifier.text;
+
+  // Tier 1: Symbol-based detection (most accurate)
+  if (context.typeChecker) {
+    const symbol = context.typeChecker.getSymbolAtLocation(identifier);
+    if (symbol && context.signalGetters.has(symbol)) {
+      if (context.debugTracker) {
+        const tracker = context.debugTracker as any;
+        if (tracker.options?.enabled && tracker.options?.channels?.detector) {
+          console.log(`[TIER-1] Signal detected via symbol: ${name}`);
+        }
+      }
+      return true;
+    }
+  }
+
+  // Tier 2: Scope-based detection (AST pattern matching)
+  // Check if identifier is in any tracked scope
+  for (const [scopeName, getters] of context.scopeMap.entries()) {
+    if (getters.has(name)) {
+      if (context.debugTracker) {
+        const tracker = context.debugTracker as any;
+        if (tracker.options?.enabled && tracker.options?.channels?.detector) {
+          console.log(`[TIER-2] Signal detected via scope: ${name} in ${scopeName}`);
+        }
+      }
+      return true;
+    }
+  }
+
+  // Tier 3: Heuristic-based detection (conservative fallback)
+  // Only apply if we have signal imports (avoid false positives)
+  if (context.hasSignalImports) {
+    // Conservative heuristics: common signal getter patterns
+    const isCommonPattern =
+      /^(count|value|state|data|items|selected|active|visible|open|loading|error)$/.test(name) ||
+      /^(is|has|show|enable|disable)[A-Z]/.test(name) || // isActive, hasError, showModal
+      (/^(get|set)[A-Z]/.test(name) && !name.startsWith('set')); // getCount, but not setCount
+
+    if (isCommonPattern) {
+      if (context.debugTracker) {
+        const tracker = context.debugTracker as any;
+        if (tracker.options?.enabled && tracker.options?.channels?.detector) {
+          console.log(`[TIER-3] Signal detected via heuristic: ${name}`);
+        }
+      }
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -239,24 +408,8 @@ export function hasSignalCalls(expression: ts.Expression, context: ITransformCon
     // Check for signal call: identifier()
     if (ts.isCallExpression(node)) {
       if (ts.isIdentifier(node.expression)) {
-        // First try symbol-based detection
+        // Only use symbol-based detection - no heuristics
         if (isSignalGetter(node.expression, context)) {
-          hasSignal = true;
-          return;
-        }
-
-        // Fallback: heuristic pattern matching for signal-like calls
-        // Signal getters typically: camelCase, no args, ends with ()
-        const name = node.expression.text;
-        if (
-          node.arguments.length === 0 &&
-          name.length > 0 &&
-          name[0] === name[0].toLowerCase() &&
-          !name.startsWith('get') &&
-          !name.startsWith('is') &&
-          !name.startsWith('has')
-        ) {
-          // Could be a signal getter - treat as dynamic
           hasSignal = true;
           return;
         }

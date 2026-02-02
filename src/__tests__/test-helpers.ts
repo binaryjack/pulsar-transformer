@@ -64,7 +64,9 @@ export function transformSource(
   source: string,
   transformerFactory: (program: ts.Program) => ts.TransformerFactory<ts.SourceFile>
 ): string {
-  const program = createTestProgram(source);
+  // Create source file with parent tracking enabled
+  const sourceFile = ts.createSourceFile('module.tsx', source, ts.ScriptTarget.ESNext, true);
+  const program = createTestProgram(source, 'module.tsx');
 
   const result = ts.transpileModule(source, {
     compilerOptions: {
@@ -74,6 +76,7 @@ export function transformSource(
       jsxFactory: 'createElement',
       jsxFragmentFactory: 'Fragment',
     },
+    fileName: 'module.tsx',
     transformers: {
       before: [(ctx) => transformerFactory(program)(ctx)],
     },

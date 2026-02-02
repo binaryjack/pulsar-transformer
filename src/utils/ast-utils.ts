@@ -70,6 +70,7 @@ export function getASTPath(node: ts.Node): string[] {
 /**
  * Get readable node type name
  */
-export function getNodeTypeName(node: ts.Node): string {
-  return ts.SyntaxKind[node.kind];
+export function getNodeTypeName(node: ts.Node | undefined): string {
+  if (!node) return 'Unknown';
+  return ts.SyntaxKind[node.kind] || `Unknown(${node.kind})`;
 }

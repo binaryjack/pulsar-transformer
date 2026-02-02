@@ -31,6 +31,15 @@ export interface ITransformContext {
   /** Signal-creating imports tracked (useState, createSignal, etc.) */
   readonly signalImports: Map<string, ImportInfo>;
 
+  /** Scope-based signal getter tracking: scope name -> Set of getter names */
+  readonly scopeMap: Map<string, Set<string>>;
+
+  /** Known signal creator function names (useState, createSignal, etc.) */
+  readonly signalCreators: Set<string>;
+
+  /** Flag indicating if any signal imports exist in this file */
+  hasSignalImports: boolean;
+
   /** Component registry */
   readonly components: Map<string, IComponentInfo>;
 
@@ -363,7 +372,7 @@ export interface IGeneratedElement {
 export interface IWireCall {
   element: string;
   property: string;
-  getter: ts.ArrowFunction;
+  getter: ts.ArrowFunction | ts.Expression; // Support both arrow functions and signal getter references
   dependencies: ts.Symbol[];
   comment?: string;
 }

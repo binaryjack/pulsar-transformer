@@ -11,6 +11,7 @@ import {
   IExpressionClassifier,
   ITransformContext,
 } from '../types.js';
+import { isEventHandlerContext } from './event-handler-detector.js';
 import { getSignalDependencies, hasSignalCalls, isSignalGetter } from './signal-detector.js';
 
 /**
@@ -60,8 +61,8 @@ export function createExpressionClassifier(context: ITransformContext): IExpress
       }
 
       // Check parent context for event handlers
-      const isEvent = isEventHandlerContext(expression, context);
-      if (isEvent) {
+      const isEventHandler = isEventHandlerContext(expression, context);
+      if (isEventHandler) {
         return createClassification(
           'event',
           'add-event-listener',
@@ -348,27 +349,6 @@ function createClassification(
       ...metadata,
     },
   };
-}
-
-/**
- * Check if expression is in event handler context
- */
-function isEventHandlerContext(expression: ts.Expression, context: ITransformContext): boolean {
-  let current: ts.Node = expression;
-
-  // Walk up parent chain looking for JsxAttribute
-  while (current.parent) {
-    if (ts.isJsxAttribute(current.parent)) {
-      const attrName = ts.isIdentifier(current.parent.name)
-        ? current.parent.name.text
-        : current.parent.name.name.text;
-      const classifier = createExpressionClassifier(context);
-      return classifier.isEventHandler(attrName);
-    }
-    current = current.parent;
-  }
-
-  return false;
 }
 
 /**
