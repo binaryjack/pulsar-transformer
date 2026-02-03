@@ -10,6 +10,25 @@ import { Parser } from '../parser.js';
 import { getErrors } from './get-errors.js';
 import { getPosition } from './get-position.js';
 import { hasErrors } from './has-errors.js';
+import { parseComponentDeclaration } from './parse-component-declaration.js';
+import {
+  _parseArrowFunctionOrGrouping,
+  _parseCallOrIdentifier,
+  _parseExportDeclaration,
+  _parseExpressionStatement,
+  _parseLiteral,
+  parseExpression,
+} from './parse-expression.js';
+import { parseImportDeclaration } from './parse-import-declaration.js';
+import {
+  _isClosingTag,
+  _parsePSRAttribute,
+  _parsePSRChild,
+  parsePSRElement,
+} from './parse-psr-element.js';
+import { parsePSRSignalBinding } from './parse-psr-signal-binding.js';
+import { parseReturnStatement } from './parse-return-statement.js';
+import { parseVariableDeclaration } from './parse-variable-declaration.js';
 import {
   _addError,
   _advance,
@@ -21,25 +40,6 @@ import {
   _parseStatement,
   parse,
 } from './parse.js';
-import { parseComponentDeclaration } from './parse-component-declaration.js';
-import {
-  _parseArrowFunctionOrGrouping,
-  _parseCallOrIdentifier,
-  _parseExportDeclaration,
-  _parseExpressionStatement,
-  _parseImportDeclaration,
-  _parseLiteral,
-  parseExpression,
-} from './parse-expression.js';
-import {
-  _isClosingTag,
-  _parsePSRAttribute,
-  _parsePSRChild,
-  parsePSRElement,
-} from './parse-psr-element.js';
-import { parsePSRSignalBinding } from './parse-psr-signal-binding.js';
-import { parseReturnStatement } from './parse-return-statement.js';
-import { parseVariableDeclaration } from './parse-variable-declaration.js';
 
 // Attach public methods to Parser.prototype
 Parser.prototype.parse = parse;
@@ -178,7 +178,7 @@ Object.defineProperty(Parser.prototype, '_parseExpressionStatement', {
 });
 
 Object.defineProperty(Parser.prototype, '_parseImportDeclaration', {
-  value: _parseImportDeclaration,
+  value: parseImportDeclaration,
   writable: true,
   enumerable: false,
   configurable: false,

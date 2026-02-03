@@ -5,7 +5,6 @@
 import { Analyzer } from '../analyzer.js';
 
 // Import analysis methods
-import { _analyzeNode, analyze } from './analyze.js';
 import { _detectEventHandlers, _isPureComponent, analyzeComponent } from './analyze-component.js';
 import { _handlerAccessesSignals, analyzeElement } from './analyze-element.js';
 import {
@@ -17,9 +16,11 @@ import {
   _isParameter,
   analyzeExpression,
 } from './analyze-expression.js';
+import { analyzeImport } from './analyze-import.js';
 import { analyzeReturn } from './analyze-return.js';
 import { _isInCurrentScope, analyzeSignalBinding } from './analyze-signal-binding.js';
 import { analyzeVariable } from './analyze-variable.js';
+import { _analyzeNode, analyze } from './analyze.js';
 import { getContext, getErrors, hasErrors } from './context.js';
 import { addError, enterScope, exitScope, isSignal, registerSignal } from './helpers.js';
 
@@ -74,6 +75,13 @@ Object.defineProperty(Analyzer.prototype, '_analyzeVariable', {
 
 Object.defineProperty(Analyzer.prototype, '_analyzeReturn', {
   value: analyzeReturn,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Analyzer.prototype, '_analyzeImport', {
+  value: analyzeImport,
   writable: true,
   enumerable: false,
   configurable: false,

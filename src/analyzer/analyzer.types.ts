@@ -46,6 +46,7 @@ export interface IAnalyzerInternal extends IAnalyzer {
   _analyzeExpression(node: any): IIRNode;
   _analyzeVariable(node: any): IIRNode;
   _analyzeReturn(node: any): IIRNode;
+  _analyzeImport(node: any): IIRNode;
 
   // Helper methods
   _addError(error: IAnalyzerError): void;

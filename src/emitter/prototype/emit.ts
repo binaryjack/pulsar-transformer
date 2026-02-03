@@ -31,6 +31,9 @@ export function emit(this: IEmitterInternal, ir: IIRNode): string {
     case IRNodeType.EVENT_HANDLER_IR:
       this._emitEventHandler(ir);
       break;
+    case IRNodeType.IMPORT:
+      this._emitImport(ir);
+      break;
     case IRNodeType.VARIABLE_DECLARATION_IR:
       this._emitVariableDeclaration(ir);
       break;

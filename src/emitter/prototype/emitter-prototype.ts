@@ -15,6 +15,7 @@ import { _emitElement } from './emit-element.js';
 import { _emitEventHandler } from './emit-event-handler.js';
 import { _emitExpression } from './emit-expression.js';
 import { _emitIdentifier } from './emit-identifier.js';
+import { _emitImport } from './emit-import.js';
 import { _emitLiteral } from './emit-literal.js';
 import { _emitSignalBinding } from './emit-signal-binding.js';
 import { _emitStatement } from './emit-statement.js';
@@ -35,6 +36,7 @@ const emitterPrivateMethods = {
   _emitElement,
   _emitSignalBinding,
   _emitEventHandler,
+  _emitImport,
   _emitVariableDeclaration,
   _emitLiteral,
   _emitIdentifier,

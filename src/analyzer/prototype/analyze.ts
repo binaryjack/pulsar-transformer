@@ -17,6 +17,7 @@ export function analyze(this: IAnalyzerInternal, ast: IASTNode): IIRNode {
   this._context.scopes = [];
   this._context.currentComponent = null;
   this._context.signals.clear();
+  this._context.imports.clear();
   this._errors = [];
 
   // Analyze root program node
@@ -63,6 +64,9 @@ function _analyzeNode(this: IAnalyzerInternal, node: IASTNode): IIRNode | null {
 
     case ASTNodeType.RETURN_STATEMENT:
       return this._analyzeReturn(node);
+
+    case ASTNodeType.IMPORT_DECLARATION:
+      return this._analyzeImport(node);
 
     case ASTNodeType.PSR_ELEMENT:
       return this._analyzeElement(node);

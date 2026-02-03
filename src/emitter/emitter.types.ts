@@ -100,7 +100,7 @@ export interface IImportTracker {
  */
 export interface IImportTrackerInternal extends IImportTracker {
   imports: Map<string, Set<string>>;
-  _formatImport(source: string, specifiers: Set<string>): string;
+  _formatImport(source: string, specifiers: Set<string | null>): string;
 }
 
 /**
@@ -129,6 +129,7 @@ export interface IEmitterInternal extends IEmitter {
   _emitElement(ir: IIRNode): void;
   _emitSignalBinding(ir: IIRNode): void;
   _emitEventHandler(ir: IIRNode): void;
+  _emitImport(ir: IIRNode): void;
   _emitVariableDeclaration(ir: IIRNode): void;
   _emitLiteral(ir: IIRNode): void;
   _emitIdentifier(ir: IIRNode): void;

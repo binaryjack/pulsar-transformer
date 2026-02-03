@@ -250,37 +250,6 @@ function _parseExpressionStatement(this: IParserInternal): any {
 }
 
 /**
- * Parse import declaration (stub - not implemented yet)
- */
-function _parseImportDeclaration(this: IParserInternal): any {
-  const startToken = this._advance(); // consume 'import'
-
-  // Stub implementation - skip to semicolon
-  while (!this._check('SEMICOLON') && !this._isAtEnd()) {
-    this._advance();
-  }
-  this._match('SEMICOLON');
-
-  return {
-    type: ASTNodeType.IMPORT_DECLARATION,
-    source: '',
-    specifiers: [],
-    location: {
-      start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
-      },
-      end: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.end,
-      },
-    },
-  };
-}
-
-/**
  * Parse export declaration (stub - not implemented yet)
  */
 function _parseExportDeclaration(this: IParserInternal): any {
@@ -313,6 +282,5 @@ export {
   _parseCallOrIdentifier,
   _parseExportDeclaration,
   _parseExpressionStatement,
-  _parseImportDeclaration,
   _parseLiteral,
 };
