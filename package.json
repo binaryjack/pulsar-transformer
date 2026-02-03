@@ -1,7 +1,7 @@
 {
   "name": "@pulsar-framework/transformer",
-  "version": "0.7.0-alpha",
-  "description": "TypeScript transformer for Pulsar JSX",
+  "version": "1.0.0-alpha.1",
+  "description": "PSR (Pulsar Syntax Runtime) to TypeScript transformer with Registry Pattern code generation",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,25 +9,33 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./pipeline": {
+      "types": "./dist/pipeline/index.d.ts",
+      "default": "./dist/pipeline/index.js"
     }
   },
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {},
   "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.8",
     "typescript": "^5.9.3",
     "vitest": "^2.1.8"
   },
   "keywords": [
     "pulsar",
+    "psr",
     "typescript",
     "transformer",
-    "jsx",
-    "compiler"
+    "compiler",
+    "registry-pattern",
+    "reactive"
   ],
   "author": "Tadeo Piana <https://www.linkedin.com/in/tadeopiana/>",
   "license": "MIT",
