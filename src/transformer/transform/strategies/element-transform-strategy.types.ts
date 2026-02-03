@@ -1,13 +1,13 @@
 /**
  * Element Transform Strategy Type Definitions
- * 
+ *
  * Strategy 2: Element-to-DOM transformation
  * Converts ElementIR → DOM creation code
  */
 
 import type ts from 'typescript';
 import type { IElementIR } from '../../../analyzer/ir/ir-node-types';
-import type { ITransformContext, IElementTransformStrategy } from '../transform-strategy.types';
+import type { IElementTransformStrategy, ITransformContext } from '../transform-strategy.types';
 
 /**
  * Element transform strategy internal interface

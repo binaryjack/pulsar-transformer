@@ -3,12 +3,15 @@
  */
 
 import ts from 'typescript';
-import type { ISignalTransformStrategyInternal } from './signal-transform-strategy.types';
-import type { ISignalBindingIR, IRNode } from '../../../analyzer/ir/ir-node-types';
+import type { IRNode, ISignalBindingIR } from '../../../analyzer/ir/ir-node-types';
 import type { ITransformContext } from '../transform-strategy.types';
 import { SignalTransformStrategy } from './signal-transform-strategy';
+import type { ISignalTransformStrategyInternal } from './signal-transform-strategy.types';
 
-export function canTransform(this: ISignalTransformStrategyInternal, node: IRNode): node is ISignalBindingIR {
+export function canTransform(
+  this: ISignalTransformStrategyInternal,
+  node: IRNode
+): node is ISignalBindingIR {
   return node.type === 'SignalBindingIR';
 }
 
@@ -57,34 +60,30 @@ export function generateEffect(
   context: ITransformContext
 ): ts.CallExpression {
   // createEffect(() => { element.textContent = signal(); })
-  return ts.factory.createCallExpression(
-    ts.factory.createIdentifier('createEffect'),
-    undefined,
-    [
-      ts.factory.createArrowFunction(
-        undefined,
-        undefined,
-        [],
-        undefined,
-        ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-        ts.factory.createBlock(
-          [
-            ts.factory.createExpressionStatement(
-              ts.factory.createBinaryExpression(
-                ts.factory.createPropertyAccessExpression(
-                  ts.factory.createIdentifier('element'),
-                  ts.factory.createIdentifier('textContent')
-                ),
-                ts.factory.createToken(ts.SyntaxKind.EqualsToken),
-                this.generateSignalRead(binding, context)
-              )
-            ),
-          ],
-          true
-        )
-      ),
-    ]
-  );
+  return ts.factory.createCallExpression(ts.factory.createIdentifier('createEffect'), undefined, [
+    ts.factory.createArrowFunction(
+      undefined,
+      undefined,
+      [],
+      undefined,
+      ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+      ts.factory.createBlock(
+        [
+          ts.factory.createExpressionStatement(
+            ts.factory.createBinaryExpression(
+              ts.factory.createPropertyAccessExpression(
+                ts.factory.createIdentifier('element'),
+                ts.factory.createIdentifier('textContent')
+              ),
+              ts.factory.createToken(ts.SyntaxKind.EqualsToken),
+              this.generateSignalRead(binding, context)
+            )
+          ),
+        ],
+        true
+      )
+    ),
+  ]);
 }
 
 export function canOptimize(

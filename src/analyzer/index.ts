@@ -2,6 +2,11 @@
  * Analyzer public API exports
  */
 
+export type {
+  IAnalyzer,
+  IAnalyzerConfig,
+  IAnalyzerContext,
+  IAnalyzerError,
+} from './analyzer.types';
 export { createAnalyzer } from './create-analyzer';
-export type { IAnalyzer, IAnalyzerConfig, IAnalyzerError, IAnalyzerContext } from './analyzer.types';
 export * from './ir';

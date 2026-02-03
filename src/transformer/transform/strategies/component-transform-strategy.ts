@@ -1,11 +1,11 @@
 /**
  * Component Transform Strategy Constructor
- * 
+ *
  * Transforms ComponentIR → Registry-registered TypeScript function
- * 
+ *
  * Input:  ComponentIR (name, parameters, body, reactiveDependencies)
  * Output: Registry-registered function declaration
- * 
+ *
  * Example:
  * ComponentIR { name: 'Counter', parameters: [...], body: [...] }
  * →
@@ -13,10 +13,10 @@
  * registry.register('component:Counter', () => Counter);
  */
 
-import type ts from 'typescript';
-import type { IComponentTransformStrategyInternal, IComponentTransformConfig } from './component-transform-strategy.types';
-import type { IComponentIR, IRNode } from '../../../analyzer/ir/ir-node-types';
-import type { ITransformContext } from '../transform-strategy.types';
+import type {
+  IComponentTransformConfig,
+  IComponentTransformStrategyInternal,
+} from './component-transform-strategy.types';
 
 /**
  * Component transformation strategy constructor

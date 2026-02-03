@@ -1,6 +1,6 @@
 /**
  * Transform Strategy Tests
- * 
+ *
  * Tests all 6 transformation strategies:
  * 1. Component-to-Function
  * 2. Element-to-DOM
@@ -10,22 +10,22 @@
  * 6. Registry-Registration (TODO)
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import ts from 'typescript';
-import { createComponentTransformStrategy } from '../strategies/create-component-transform-strategy';
-import { ElementTransformStrategy } from '../strategies/element-transform-strategy';
-import '../strategies/element-transform-strategy.prototype';
-import { SignalTransformStrategy } from '../strategies/signal-transform-strategy';
-import '../strategies/signal-transform-strategy.prototype';
-import { EventTransformStrategy } from '../strategies/event-transform-strategy';
-import '../strategies/event-transform-strategy.prototype';
-import { createTransformStrategyManager } from '../strategy-manager';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type {
   IComponentIR,
   IElementIR,
-  ISignalBindingIR,
   IEventHandlerIR,
+  ISignalBindingIR,
 } from '../../../analyzer/ir/ir-node-types';
+import { createComponentTransformStrategy } from '../strategies/create-component-transform-strategy';
+import { ElementTransformStrategy } from '../strategies/element-transform-strategy';
+import '../strategies/element-transform-strategy.prototype';
+import { EventTransformStrategy } from '../strategies/event-transform-strategy';
+import '../strategies/event-transform-strategy.prototype';
+import { SignalTransformStrategy } from '../strategies/signal-transform-strategy';
+import '../strategies/signal-transform-strategy.prototype';
+import { createTransformStrategyManager } from '../strategy-manager';
 import type { ITransformContext } from '../transform-strategy.types';
 
 describe('Transform Strategies', () => {
@@ -62,9 +62,7 @@ describe('Transform Strategies', () => {
       const componentIR: IComponentIR = {
         type: 'ComponentIR',
         name: 'Counter',
-        parameters: [
-          { name: 'initialValue', kind: 'parameter', isSignal: false },
-        ],
+        parameters: [{ name: 'initialValue', kind: 'parameter', isSignal: false }],
         body: [],
         reactiveDependencies: [],
         registryKey: 'component:Counter',

@@ -1,25 +1,28 @@
 /**
  * Component Transform Strategy Prototype Methods
- * 
+ *
  * Implements IComponentTransformStrategy interface
  */
 
 import ts from 'typescript';
-import type { IComponentTransformStrategyInternal } from './component-transform-strategy.types';
 import type { IComponentIR, IRNode } from '../../../analyzer/ir/ir-node-types';
 import type { ITransformContext } from '../transform-strategy.types';
 import { ComponentTransformStrategy } from './component-transform-strategy';
+import type { IComponentTransformStrategyInternal } from './component-transform-strategy.types';
 
 /**
  * Can this strategy transform the given node?
  */
-export function canTransform(this: IComponentTransformStrategyInternal, node: IRNode): node is IComponentIR {
+export function canTransform(
+  this: IComponentTransformStrategyInternal,
+  node: IRNode
+): node is IComponentIR {
   return node.type === 'ComponentIR';
 }
 
 /**
  * Transform ComponentIR to TypeScript AST
- * 
+ *
  * Returns array: [FunctionDeclaration, RegistryRegistration]
  */
 export function transform(
@@ -89,7 +92,7 @@ export function transformToFunction(
 
 /**
  * Generate registry registration code
- * 
+ *
  * Creates: registry.register('component:Counter', () => Counter);
  */
 export function generateRegistration(
@@ -204,11 +207,17 @@ export function _generateSignalDeclarations(
           [
             ts.factory.createVariableDeclaration(
               ts.factory.createArrayBindingPattern([
-                ts.factory.createBindingElement(undefined, undefined, ts.factory.createIdentifier(stmt.name)),
                 ts.factory.createBindingElement(
                   undefined,
                   undefined,
-                  ts.factory.createIdentifier(`set${stmt.name.charAt(0).toUpperCase()}${stmt.name.slice(1)}`)
+                  ts.factory.createIdentifier(stmt.name)
+                ),
+                ts.factory.createBindingElement(
+                  undefined,
+                  undefined,
+                  ts.factory.createIdentifier(
+                    `set${stmt.name.charAt(0).toUpperCase()}${stmt.name.slice(1)}`
+                  )
                 ),
               ]),
               undefined,

@@ -3,12 +3,15 @@
  */
 
 import ts from 'typescript';
-import type { IElementTransformStrategyInternal } from './element-transform-strategy.types';
 import type { IElementIR, IRNode } from '../../../analyzer/ir/ir-node-types';
 import type { ITransformContext } from '../transform-strategy.types';
 import { ElementTransformStrategy } from './element-transform-strategy';
+import type { IElementTransformStrategyInternal } from './element-transform-strategy.types';
 
-export function canTransform(this: IElementTransformStrategyInternal, node: IRNode): node is IElementIR {
+export function canTransform(
+  this: IElementTransformStrategyInternal,
+  node: IRNode
+): node is IElementIR {
   return node.type === 'ElementIR';
 }
 

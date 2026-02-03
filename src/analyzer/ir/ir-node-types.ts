@@ -1,6 +1,6 @@
 /**
  * IR (Intermediate Representation) Node Types
- * 
+ *
  * Optimized representation for transformation and code generation.
  */
 
@@ -13,17 +13,17 @@ export enum IRNodeType {
   ELEMENT_IR = 'ElementIR',
   SIGNAL_BINDING_IR = 'SignalBindingIR',
   EVENT_HANDLER_IR = 'EventHandlerIR',
-  
+
   // Expression IR
   LITERAL_IR = 'LiteralIR',
   IDENTIFIER_IR = 'IdentifierIR',
   CALL_EXPRESSION_IR = 'CallExpressionIR',
   ARROW_FUNCTION_IR = 'ArrowFunctionIR',
-  
+
   // Statement IR
   VARIABLE_DECLARATION_IR = 'VariableDeclarationIR',
   RETURN_STATEMENT_IR = 'ReturnStatementIR',
-  
+
   // Registry Pattern IR
   REGISTRY_REGISTRATION_IR = 'RegistryRegistrationIR',
   REGISTRY_LOOKUP_IR = 'RegistryLookupIR',
@@ -49,7 +49,7 @@ export interface IIRMetadata {
     column: number;
     offset: number;
   };
-  
+
   /**
    * Optimization hints
    */
@@ -58,12 +58,12 @@ export interface IIRMetadata {
     isStatic?: boolean;
     isPure?: boolean;
   };
-  
+
   /**
    * Dependency tracking
    */
   dependencies?: string[];
-  
+
   /**
    * Type information
    */
@@ -79,22 +79,22 @@ export interface IComponentIR extends IIRNode {
   params: IIdentifierIR[];
   body: IIRNode[];
   returnExpression: IIRNode | null;
-  
+
   /**
    * Reactive dependencies detected in component
    */
   reactiveDependencies: string[];
-  
+
   /**
    * Registry information
    */
   registryKey: string;
-  
+
   /**
    * Whether component uses signals
    */
   usesSignals: boolean;
-  
+
   /**
    * Whether component has event handlers
    */
@@ -110,17 +110,17 @@ export interface IElementIR extends IIRNode {
   attributes: IAttributeIR[];
   children: IIRNode[];
   selfClosing: boolean;
-  
+
   /**
    * Static vs dynamic classification
    */
   isStatic: boolean;
-  
+
   /**
    * Event handlers attached
    */
   eventHandlers: IEventHandlerIR[];
-  
+
   /**
    * Signal bindings in this element
    */
@@ -143,12 +143,12 @@ export interface IAttributeIR {
 export interface ISignalBindingIR extends IIRNode {
   type: IRNodeType.SIGNAL_BINDING_IR;
   signalName: string;
-  
+
   /**
    * Optimization: direct signal reference
    */
   canOptimize: boolean;
-  
+
   /**
    * Whether signal is from parent scope
    */
@@ -162,12 +162,12 @@ export interface IEventHandlerIR extends IIRNode {
   type: IRNodeType.EVENT_HANDLER_IR;
   eventName: string;
   handler: IIRNode;
-  
+
   /**
    * Whether handler is inline or reference
    */
   isInline: boolean;
-  
+
   /**
    * Whether handler accesses signals
    */
@@ -189,12 +189,12 @@ export interface ILiteralIR extends IIRNode {
 export interface IIdentifierIR extends IIRNode {
   type: IRNodeType.IDENTIFIER_IR;
   name: string;
-  
+
   /**
    * Scope information
    */
   scope: 'local' | 'parameter' | 'global' | 'imported';
-  
+
   /**
    * Whether this identifier is a signal
    */
@@ -208,12 +208,12 @@ export interface ICallExpressionIR extends IIRNode {
   type: IRNodeType.CALL_EXPRESSION_IR;
   callee: IIdentifierIR;
   arguments: IIRNode[];
-  
+
   /**
    * Whether this is a signal creation call
    */
   isSignalCreation: boolean;
-  
+
   /**
    * Whether this is a Pulsar primitive call
    */
@@ -227,12 +227,12 @@ export interface IArrowFunctionIR extends IIRNode {
   type: IRNodeType.ARROW_FUNCTION_IR;
   params: IIdentifierIR[];
   body: IIRNode | IIRNode[];
-  
+
   /**
    * Captured variables from outer scope
    */
   captures: string[];
-  
+
   /**
    * Whether function is pure (no side effects)
    */
@@ -247,7 +247,7 @@ export interface IVariableDeclarationIR extends IIRNode {
   kind: 'const' | 'let';
   name: string;
   initializer: IIRNode | null;
-  
+
   /**
    * Whether this declares a signal
    */

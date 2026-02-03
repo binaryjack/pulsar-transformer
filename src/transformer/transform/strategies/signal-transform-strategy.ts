@@ -2,7 +2,10 @@
  * Signal Transform Strategy Constructor
  */
 
-import type { ISignalTransformStrategyInternal, ISignalTransformConfig } from './signal-transform-strategy.types';
+import type {
+  ISignalTransformConfig,
+  ISignalTransformStrategyInternal,
+} from './signal-transform-strategy.types';
 
 export const SignalTransformStrategy = function (
   this: ISignalTransformStrategyInternal,

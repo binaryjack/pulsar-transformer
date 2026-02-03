@@ -2,10 +2,10 @@
  * Transform Strategy Manager Prototype Methods
  */
 
-import type { ITransformStrategyManagerInternal } from './strategy-manager.types';
-import type { ITransformStrategy } from '../transform-strategy.types';
 import type { IRNode } from '../../../analyzer/ir/ir-node-types';
+import type { ITransformStrategy } from '../transform-strategy.types';
 import { TransformStrategyManager } from './strategy-manager';
+import type { ITransformStrategyManagerInternal } from './strategy-manager.types';
 
 export function registerStrategy(
   this: ITransformStrategyManagerInternal,

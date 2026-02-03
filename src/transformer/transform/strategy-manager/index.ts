@@ -2,5 +2,8 @@
  * Strategy Manager Exports
  */
 
+export type {
+  ITransformStrategyConfig,
+  ITransformStrategyManager,
+} from '../transform-strategy.types';
 export { createTransformStrategyManager } from './create-strategy-manager';
-export type { ITransformStrategyManager, ITransformStrategyConfig } from '../transform-strategy.types';

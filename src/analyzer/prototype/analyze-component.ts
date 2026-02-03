@@ -1,11 +1,11 @@
 /**
  * Analyze Component Declaration
- * 
+ *
  * Converts component AST to ComponentIR with optimization metadata.
  */
 
-import type { IAnalyzerInternal } from '../analyzer.types';
 import type { IComponentDeclarationNode } from '../../parser/ast';
+import type { IAnalyzerInternal } from '../analyzer.types';
 import type { IComponentIR, IIdentifierIR, IIRNode } from '../ir';
 import { IRNodeType } from '../ir';
 
@@ -17,11 +17,11 @@ export function analyzeComponent(
   node: IComponentDeclarationNode
 ): IComponentIR {
   const componentName = node.name.name;
-  
+
   // Enter component scope
   this._enterScope(componentName);
   this._context.currentComponent = componentName;
-  
+
   // Analyze parameters
   const params: IIdentifierIR[] = node.params.map((param) => ({
     type: IRNodeType.IDENTIFIER_IR,
@@ -32,7 +32,7 @@ export function analyzeComponent(
       sourceLocation: param.location?.start,
     },
   }));
-  
+
   // Register parameters in scope
   for (const param of params) {
     this._context.scopes[0].variables.set(param.name, {
@@ -42,37 +42,37 @@ export function analyzeComponent(
       declarationNode: node,
     });
   }
-  
+
   // Analyze body statements
   const body: IIRNode[] = [];
   const reactiveDependencies: string[] = [];
-  
+
   for (const statement of node.body) {
     const irNode = this._analyzeNode(statement);
     if (irNode) {
       body.push(irNode);
     }
   }
-  
+
   // Analyze return expression
   let returnExpression: IIRNode | null = null;
   if (node.returnStatement) {
     returnExpression = this._analyzeNode(node.returnStatement);
   }
-  
+
   // Collect reactive dependencies (signals used)
   for (const signal of this._context.signals) {
     reactiveDependencies.push(signal);
   }
-  
+
   // Generate registry key
   const registryKey = `component:${componentName}`;
   this._context.registryKeys.set(componentName, registryKey);
-  
+
   // Exit component scope
   this._exitScope();
   this._context.currentComponent = null;
-  
+
   // Build ComponentIR
   const componentIR: IComponentIR = {
     type: IRNodeType.COMPONENT_IR,
@@ -94,7 +94,7 @@ export function analyzeComponent(
       dependencies: reactiveDependencies,
     },
   };
-  
+
   return componentIR;
 }
 

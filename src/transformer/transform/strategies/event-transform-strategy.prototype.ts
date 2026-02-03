@@ -3,12 +3,15 @@
  */
 
 import ts from 'typescript';
-import type { IEventTransformStrategyInternal } from './event-transform-strategy.types';
 import type { IEventHandlerIR, IRNode } from '../../../analyzer/ir/ir-node-types';
 import type { ITransformContext } from '../transform-strategy.types';
 import { EventTransformStrategy } from './event-transform-strategy';
+import type { IEventTransformStrategyInternal } from './event-transform-strategy.types';
 
-export function canTransform(this: IEventTransformStrategyInternal, node: IRNode): node is IEventHandlerIR {
+export function canTransform(
+  this: IEventTransformStrategyInternal,
+  node: IRNode
+): node is IEventHandlerIR {
   return node.type === 'EventHandlerIR';
 }
 
@@ -80,7 +83,10 @@ export function generateListenerFunction(
   );
 }
 
-export function normalizeEventName(this: IEventTransformStrategyInternal, eventName: string): string {
+export function normalizeEventName(
+  this: IEventTransformStrategyInternal,
+  eventName: string
+): string {
   // onClick → click, onMouseMove → mousemove
   if (eventName.startsWith('on')) {
     return eventName.slice(2).toLowerCase();

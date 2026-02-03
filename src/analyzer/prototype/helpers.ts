@@ -1,17 +1,17 @@
 /**
  * Analyzer Helper Methods
- * 
+ *
  * Scope management, signal tracking, error handling.
  */
 
-import type { IAnalyzerInternal, IAnalyzerError, IScope } from '../analyzer.types';
+import type { IAnalyzerError, IAnalyzerInternal, IScope } from '../analyzer.types';
 
 /**
  * Add analysis error
  */
 export function addError(this: IAnalyzerInternal, error: IAnalyzerError): void {
   this._errors.push(error);
-  
+
   // Stop if max errors reached
   const maxErrors = this._config.maxErrors || 10;
   if (this._errors.length >= maxErrors) {
@@ -29,7 +29,7 @@ export function enterScope(this: IAnalyzerInternal, name: string): void {
     variables: new Map(),
     parent: this._context.scopes[0] || null,
   };
-  
+
   // Push to front of stack
   this._context.scopes.unshift(scope);
 }
@@ -59,7 +59,7 @@ export function isSignal(this: IAnalyzerInternal, name: string): boolean {
       return true;
     }
   }
-  
+
   // Check global signals
   return this._context.signals.has(name);
 }

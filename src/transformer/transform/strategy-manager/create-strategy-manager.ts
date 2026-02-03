@@ -2,8 +2,11 @@
  * Create Transform Strategy Manager Factory
  */
 
+import type {
+  ITransformStrategyConfig,
+  ITransformStrategyManager,
+} from '../transform-strategy.types';
 import { TransformStrategyManager } from './strategy-manager';
-import type { ITransformStrategyManager, ITransformStrategyConfig } from '../transform-strategy.types';
 import './strategy-manager.prototype';
 
 export function createTransformStrategyManager(

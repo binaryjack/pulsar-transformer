@@ -1,41 +1,38 @@
 /**
  * Analyze Expression
- * 
+ *
  * Converts expression AST nodes to IR.
  */
 
-import type { IAnalyzerInternal } from '../analyzer.types';
 import type { IASTNode } from '../../parser/ast';
+import { ASTNodeType } from '../../parser/ast';
+import type { IAnalyzerInternal } from '../analyzer.types';
 import type {
+  IArrowFunctionIR,
+  ICallExpressionIR,
+  IIdentifierIR,
   IIRNode,
   ILiteralIR,
-  IIdentifierIR,
-  ICallExpressionIR,
-  IArrowFunctionIR,
 } from '../ir';
 import { IRNodeType } from '../ir';
-import { ASTNodeType } from '../../parser/ast';
 
 /**
  * Analyze expression node
  */
-export function analyzeExpression(
-  this: IAnalyzerInternal,
-  node: IASTNode
-): IIRNode {
+export function analyzeExpression(this: IAnalyzerInternal, node: IASTNode): IIRNode {
   switch (node.type) {
     case ASTNodeType.LITERAL:
       return this._analyzeLiteral(node as any);
-      
+
     case ASTNodeType.IDENTIFIER:
       return this._analyzeIdentifier(node as any);
-      
+
     case ASTNodeType.CALL_EXPRESSION:
       return this._analyzeCallExpression(node as any);
-      
+
     case ASTNodeType.ARROW_FUNCTION:
       return this._analyzeArrowFunction(node as any);
-      
+
     default:
       // Fallback to literal
       return {
@@ -70,10 +67,10 @@ function _analyzeLiteral(this: IAnalyzerInternal, node: any): ILiteralIR {
  */
 function _analyzeIdentifier(this: IAnalyzerInternal, node: any): IIdentifierIR {
   const name = node.name;
-  
+
   // Determine scope
   let scope: 'local' | 'parameter' | 'global' | 'imported' = 'local';
-  
+
   if (this._context.imports.has(name)) {
     scope = 'imported';
   } else if (this._isParameter(name)) {
@@ -81,10 +78,10 @@ function _analyzeIdentifier(this: IAnalyzerInternal, node: any): IIdentifierIR {
   } else if (!this._isInCurrentScope(name)) {
     scope = 'global';
   }
-  
+
   // Check if identifier is a signal
   const isSignal = this._isSignal(name);
-  
+
   return {
     type: IRNodeType.IDENTIFIER_IR,
     name,
@@ -103,19 +100,17 @@ function _analyzeIdentifier(this: IAnalyzerInternal, node: any): IIdentifierIR {
 function _analyzeCallExpression(this: IAnalyzerInternal, node: any): ICallExpressionIR {
   const callee = this._analyzeIdentifier(node.callee) as IIdentifierIR;
   const args = node.arguments.map((arg: any) => this._analyzeNode(arg));
-  
+
   // Detect signal creation (createSignal, createMemo, createEffect)
   const isSignalCreation =
     callee.name === 'createSignal' ||
     callee.name === 'createMemo' ||
     callee.name === 'createEffect';
-  
+
   // Detect Pulsar primitives
   const isPulsarPrimitive =
-    isSignalCreation ||
-    callee.name === 'createResource' ||
-    callee.name === 'createStore';
-  
+    isSignalCreation || callee.name === 'createResource' || callee.name === 'createStore';
+
   return {
     type: IRNodeType.CALL_EXPRESSION_IR,
     callee,
@@ -137,9 +132,9 @@ function _analyzeCallExpression(this: IAnalyzerInternal, node: any): ICallExpres
 function _analyzeArrowFunction(this: IAnalyzerInternal, node: any): IArrowFunctionIR {
   // Enter function scope
   this._enterScope('arrow-function');
-  
+
   const params = node.params.map((param: any) => this._analyzeIdentifier(param));
-  
+
   // Analyze body
   let body: IIRNode | IIRNode[];
   if (Array.isArray(node.body)) {
@@ -147,16 +142,16 @@ function _analyzeArrowFunction(this: IAnalyzerInternal, node: any): IArrowFuncti
   } else {
     body = this._analyzeNode(node.body);
   }
-  
+
   // Detect captured variables (simplified)
   const captures: string[] = [];
-  
+
   // Exit function scope
   this._exitScope();
-  
+
   // Determine if function is pure
   const isPure = this._isFunctionPure(body);
-  
+
   return {
     type: IRNodeType.ARROW_FUNCTION_IR,
     params: params as IIdentifierIR[],
@@ -189,17 +184,17 @@ function _isFunctionPure(this: IAnalyzerInternal, body: IIRNode | IIRNode[]): bo
 function _isParameter(this: IAnalyzerInternal, name: string): boolean {
   const currentScope = this._context.scopes[0];
   if (!currentScope) return false;
-  
+
   const variable = currentScope.variables.get(name);
   return variable ? variable.kind === 'parameter' : false;
 }
 
 // Export helpers
 export {
-  _analyzeLiteral,
-  _analyzeIdentifier,
-  _analyzeCallExpression,
   _analyzeArrowFunction,
+  _analyzeCallExpression,
+  _analyzeIdentifier,
+  _analyzeLiteral,
   _isFunctionPure,
   _isParameter,
 };

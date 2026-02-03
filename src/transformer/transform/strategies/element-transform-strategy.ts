@@ -1,10 +1,13 @@
 /**
  * Element Transform Strategy Constructor
- * 
+ *
  * Transforms ElementIR → DOM creation code
  */
 
-import type { IElementTransformStrategyInternal, IElementTransformConfig } from './element-transform-strategy.types';
+import type {
+  IElementTransformConfig,
+  IElementTransformStrategyInternal,
+} from './element-transform-strategy.types';
 
 export const ElementTransformStrategy = function (
   this: IElementTransformStrategyInternal,

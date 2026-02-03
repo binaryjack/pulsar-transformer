@@ -1,12 +1,12 @@
 /**
  * Transform Strategy Exports
- * 
+ *
  * Central export point for all 6 transformation strategies
  */
 
 // Strategy 1: Component-to-Function
-export { createComponentTransformStrategy } from './create-component-transform-strategy';
 export type { IComponentTransformConfig } from './component-transform-strategy.types';
+export { createComponentTransformStrategy } from './create-component-transform-strategy';
 
 // Strategy 2: Element-to-DOM
 export { ElementTransformStrategy } from './element-transform-strategy';
@@ -22,9 +22,9 @@ export type { IEventTransformConfig } from './event-transform-strategy.types';
 
 // All strategy types
 export type {
-  ITransformStrategy,
   IComponentTransformStrategy,
   IElementTransformStrategy,
-  ISignalTransformStrategy,
   IEventTransformStrategy,
+  ISignalTransformStrategy,
+  ITransformStrategy,
 } from '../transform-strategy.types';

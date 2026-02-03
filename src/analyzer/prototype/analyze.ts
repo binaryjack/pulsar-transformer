@@ -1,13 +1,13 @@
 /**
  * Main Analyze Method
- * 
+ *
  * Entry point for AST to IR conversion.
  */
 
-import type { IAnalyzerInternal } from '../analyzer.types';
 import type { IASTNode, IProgramNode } from '../../parser/ast';
-import type { IIRNode } from '../ir';
 import { ASTNodeType } from '../../parser/ast';
+import type { IAnalyzerInternal } from '../analyzer.types';
+import type { IIRNode } from '../ir';
 
 /**
  * Analyze AST and build IR
@@ -18,7 +18,7 @@ export function analyze(this: IAnalyzerInternal, ast: IASTNode): IIRNode {
   this._context.currentComponent = null;
   this._context.signals.clear();
   this._errors = [];
-  
+
   // Analyze root program node
   if (ast.type !== ASTNodeType.PROGRAM) {
     this._addError({
@@ -28,10 +28,10 @@ export function analyze(this: IAnalyzerInternal, ast: IASTNode): IIRNode {
     });
     throw new Error('Invalid AST: expected Program node');
   }
-  
+
   const program = ast as IProgramNode;
   const irNodes: IIRNode[] = [];
-  
+
   // Analyze each top-level statement
   for (const statement of program.body) {
     const irNode = this._analyzeNode(statement);
@@ -39,13 +39,15 @@ export function analyze(this: IAnalyzerInternal, ast: IASTNode): IIRNode {
       irNodes.push(irNode);
     }
   }
-  
+
   // Return IR program (for now, return first node or compound)
-  return irNodes[0] || {
-    type: 'ProgramIR' as any,
-    body: irNodes,
-    metadata: {},
-  };
+  return (
+    irNodes[0] || {
+      type: 'ProgramIR' as any,
+      body: irNodes,
+      metadata: {},
+    }
+  );
 }
 
 /**
@@ -55,25 +57,25 @@ function _analyzeNode(this: IAnalyzerInternal, node: IASTNode): IIRNode | null {
   switch (node.type) {
     case ASTNodeType.COMPONENT_DECLARATION:
       return this._analyzeComponent(node);
-      
+
     case ASTNodeType.VARIABLE_DECLARATION:
       return this._analyzeVariable(node);
-      
+
     case ASTNodeType.RETURN_STATEMENT:
       return this._analyzeReturn(node);
-      
+
     case ASTNodeType.PSR_ELEMENT:
       return this._analyzeElement(node);
-      
+
     case ASTNodeType.PSR_SIGNAL_BINDING:
       return this._analyzeSignalBinding(node);
-      
+
     case ASTNodeType.CALL_EXPRESSION:
     case ASTNodeType.LITERAL:
     case ASTNodeType.IDENTIFIER:
     case ASTNodeType.ARROW_FUNCTION:
       return this._analyzeExpression(node);
-      
+
     default:
       // Unknown node type - skip
       return null;

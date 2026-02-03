@@ -1,11 +1,11 @@
 /**
  * Analyze Variable Declaration
- * 
+ *
  * Converts variable declaration AST to IR and tracks signals.
  */
 
-import type { IAnalyzerInternal } from '../analyzer.types';
 import type { IVariableDeclarationNode } from '../../parser/ast';
+import type { IAnalyzerInternal } from '../analyzer.types';
 import type { IVariableDeclarationIR } from '../ir';
 import { IRNodeType } from '../ir';
 
@@ -18,15 +18,14 @@ export function analyzeVariable(
 ): IVariableDeclarationIR {
   const name = node.id.name;
   const kind = node.kind;
-  
+
   // Analyze initializer
   const initializer = node.init ? this._analyzeNode(node.init) : null;
-  
+
   // Detect signal declaration (createSignal, createMemo, etc.)
   const isSignalDeclaration =
-    initializer?.type === IRNodeType.CALL_EXPRESSION_IR &&
-    (initializer as any).isSignalCreation;
-  
+    initializer?.type === IRNodeType.CALL_EXPRESSION_IR && (initializer as any).isSignalCreation;
+
   // Register in scope
   const currentScope = this._context.scopes[0];
   if (currentScope) {
@@ -37,12 +36,12 @@ export function analyzeVariable(
       declarationNode: node,
     });
   }
-  
+
   // Register signal if detected
   if (isSignalDeclaration) {
     this._registerSignal(name);
   }
-  
+
   return {
     type: IRNodeType.VARIABLE_DECLARATION_IR,
     kind,

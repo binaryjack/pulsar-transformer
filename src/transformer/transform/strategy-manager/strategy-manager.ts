@@ -1,11 +1,11 @@
 /**
  * Transform Strategy Manager Constructor
- * 
+ *
  * Manages registration and selection of transformation strategies
  */
 
-import type { ITransformStrategyManagerInternal } from './strategy-manager.types';
 import type { ITransformStrategyConfig } from '../transform-strategy.types';
+import type { ITransformStrategyManagerInternal } from './strategy-manager.types';
 
 export const TransformStrategyManager = function (
   this: ITransformStrategyManagerInternal,

@@ -13,17 +13,17 @@ export interface IAnalyzer {
    * Analyze AST and build IR
    */
   analyze(ast: IASTNode): IIRNode;
-  
+
   /**
    * Get analysis context
    */
   getContext(): IAnalyzerContext;
-  
+
   /**
    * Check for analysis errors
    */
   hasErrors(): boolean;
-  
+
   /**
    * Get analysis errors
    */
@@ -37,7 +37,7 @@ export interface IAnalyzerInternal extends IAnalyzer {
   _context: IAnalyzerContext;
   _errors: IAnalyzerError[];
   _config: IAnalyzerConfig;
-  
+
   // Private analysis methods
   _analyzeNode(node: IASTNode): IIRNode;
   _analyzeComponent(node: any): IIRNode;
@@ -46,7 +46,7 @@ export interface IAnalyzerInternal extends IAnalyzer {
   _analyzeExpression(node: any): IIRNode;
   _analyzeVariable(node: any): IIRNode;
   _analyzeReturn(node: any): IIRNode;
-  
+
   // Helper methods
   _addError(error: IAnalyzerError): void;
   _enterScope(name: string): void;
@@ -63,17 +63,17 @@ export interface IAnalyzerConfig {
    * Collect errors instead of throwing
    */
   collectErrors?: boolean;
-  
+
   /**
    * Maximum errors before stopping
    */
   maxErrors?: number;
-  
+
   /**
    * Enable optimization analysis
    */
   enableOptimizations?: boolean;
-  
+
   /**
    * Track dependencies
    */
@@ -88,22 +88,22 @@ export interface IAnalyzerContext {
    * Current scope stack
    */
   scopes: IScope[];
-  
+
   /**
    * Current component being analyzed
    */
   currentComponent: string | null;
-  
+
   /**
    * Declared signals in current scope
    */
   signals: Set<string>;
-  
+
   /**
    * Imported identifiers
    */
   imports: Map<string, string>;
-  
+
   /**
    * Registry keys generated
    */

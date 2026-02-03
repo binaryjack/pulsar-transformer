@@ -1,13 +1,13 @@
 /**
  * Component Transform Strategy Factory
- * 
+ *
  * Creates instances of ComponentTransformStrategy
  */
 
-import { ComponentTransformStrategy } from './component-transform-strategy';
 import type { IComponentTransformStrategy } from '../transform-strategy.types';
-import type { IComponentTransformConfig } from './component-transform-strategy.types';
+import { ComponentTransformStrategy } from './component-transform-strategy';
 import './component-transform-strategy.prototype';
+import type { IComponentTransformConfig } from './component-transform-strategy.types';
 
 /**
  * Create component transformation strategy

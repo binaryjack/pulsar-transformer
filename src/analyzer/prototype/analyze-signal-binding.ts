@@ -1,11 +1,11 @@
 /**
  * Analyze Signal Binding
- * 
+ *
  * Converts signal binding AST to SignalBindingIR.
  */
 
-import type { IAnalyzerInternal } from '../analyzer.types';
 import type { IPSRSignalBindingNode } from '../../parser/ast';
+import type { IAnalyzerInternal } from '../analyzer.types';
 import type { ISignalBindingIR } from '../ir';
 import { IRNodeType } from '../ir';
 
@@ -17,16 +17,16 @@ export function analyzeSignalBinding(
   node: IPSRSignalBindingNode
 ): ISignalBindingIR {
   const signalName = node.identifier.name;
-  
+
   // Register signal usage
   this._registerSignal(signalName);
-  
+
   // Check if signal is in scope
   const isExternal = !this._isInCurrentScope(signalName);
-  
+
   // Optimization: can optimize if signal is locally declared
   const canOptimize = !isExternal && this._isSignal(signalName);
-  
+
   return {
     type: IRNodeType.SIGNAL_BINDING_IR,
     signalName,

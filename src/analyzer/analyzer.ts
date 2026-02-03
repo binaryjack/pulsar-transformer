@@ -1,18 +1,15 @@
 /**
  * Analyzer Constructor
- * 
+ *
  * Builds IR from AST with optimization analysis.
  */
 
-import type { IAnalyzerInternal, IAnalyzerConfig, IAnalyzerContext } from './analyzer.types';
+import type { IAnalyzerConfig, IAnalyzerContext, IAnalyzerInternal } from './analyzer.types';
 
 /**
  * Analyzer constructor function
  */
-export const Analyzer = function (
-  this: IAnalyzerInternal,
-  config: IAnalyzerConfig
-) {
+export const Analyzer = function (this: IAnalyzerInternal, config: IAnalyzerConfig) {
   // Store configuration
   Object.defineProperty(this, '_config', {
     value: config,
@@ -20,7 +17,7 @@ export const Analyzer = function (
     enumerable: false,
     configurable: false,
   });
-  
+
   // Initialize context
   Object.defineProperty(this, '_context', {
     value: {
@@ -34,7 +31,7 @@ export const Analyzer = function (
     enumerable: false,
     configurable: false,
   });
-  
+
   // Initialize errors array
   Object.defineProperty(this, '_errors', {
     value: [],

@@ -1,10 +1,10 @@
 /**
  * Analyzer Context Methods
- * 
+ *
  * Get context, check errors, retrieve errors.
  */
 
-import type { IAnalyzerInternal, IAnalyzerContext, IAnalyzerError } from '../analyzer.types';
+import type { IAnalyzerContext, IAnalyzerError, IAnalyzerInternal } from '../analyzer.types';
 
 /**
  * Get analyzer context

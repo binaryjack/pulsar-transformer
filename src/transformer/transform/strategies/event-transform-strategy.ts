@@ -2,7 +2,10 @@
  * Event Transform Strategy Constructor
  */
 
-import type { IEventTransformStrategyInternal, IEventTransformConfig } from './event-transform-strategy.types';
+import type {
+  IEventTransformConfig,
+  IEventTransformStrategyInternal,
+} from './event-transform-strategy.types';
 
 export const EventTransformStrategy = function (
   this: IEventTransformStrategyInternal,

@@ -5,23 +5,23 @@
 import { Analyzer } from '../analyzer';
 
 // Import analysis methods
-import { analyze, _analyzeNode } from './analyze';
-import { analyzeComponent, _detectEventHandlers, _isPureComponent } from './analyze-component';
-import { analyzeElement, _handlerAccessesSignals } from './analyze-element';
-import { analyzeSignalBinding, _isInCurrentScope } from './analyze-signal-binding';
+import { _analyzeNode, analyze } from './analyze';
+import { _detectEventHandlers, _isPureComponent, analyzeComponent } from './analyze-component';
+import { _handlerAccessesSignals, analyzeElement } from './analyze-element';
 import {
-  analyzeExpression,
-  _analyzeLiteral,
-  _analyzeIdentifier,
-  _analyzeCallExpression,
   _analyzeArrowFunction,
+  _analyzeCallExpression,
+  _analyzeIdentifier,
+  _analyzeLiteral,
   _isFunctionPure,
   _isParameter,
+  analyzeExpression,
 } from './analyze-expression';
-import { analyzeVariable } from './analyze-variable';
 import { analyzeReturn } from './analyze-return';
-import { addError, enterScope, exitScope, registerSignal, isSignal } from './helpers';
-import { getContext, hasErrors, getErrors } from './context';
+import { _isInCurrentScope, analyzeSignalBinding } from './analyze-signal-binding';
+import { analyzeVariable } from './analyze-variable';
+import { getContext, getErrors, hasErrors } from './context';
+import { addError, enterScope, exitScope, isSignal, registerSignal } from './helpers';
 
 // Attach public methods
 Analyzer.prototype.analyze = analyze;

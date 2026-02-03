@@ -1,13 +1,13 @@
 /**
  * Signal Transform Strategy Type Definitions
- * 
+ *
  * Strategy 3: Signal-to-Reactive transformation
  * Converts SignalBindingIR → Reactive subscription code
  */
 
 import type ts from 'typescript';
 import type { ISignalBindingIR } from '../../../analyzer/ir/ir-node-types';
-import type { ITransformContext, ISignalTransformStrategy } from '../transform-strategy.types';
+import type { ISignalTransformStrategy, ITransformContext } from '../transform-strategy.types';
 
 export interface ISignalTransformStrategyInternal extends ISignalTransformStrategy {
   _generateSubscription(binding: ISignalBindingIR, context: ITransformContext): ts.CallExpression;
