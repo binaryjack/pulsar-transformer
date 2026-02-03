@@ -37,6 +37,16 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
   const specifiers: IIdentifierNode[] = [];
   let source: ILiteralNode | null = null;
   let exportKind: 'named' | 'default' | 'all' = 'named';
+  let isTypeOnly = false;
+
+  // Check for type-only export: export type { Foo } from './types'
+  if (this._check('TYPE')) {
+    const nextToken = this._tokens[this._current + 1];
+    if (nextToken && nextToken.type === 'LBRACE') {
+      isTypeOnly = true;
+      this._advance(); // consume 'type'
+    }
+  }
 
   // Check for default export: export default ...
   if (this._check('IDENTIFIER') && this._getCurrentToken()!.value === 'default') {
@@ -58,6 +68,7 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
       specifiers: [],
       source: null,
       exportKind,
+      isTypeOnly,
       location: {
         start: {
           line: startToken.line,
@@ -157,6 +168,7 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
       specifiers,
       source,
       exportKind,
+      isTypeOnly,
       location: {
         start: {
           line: startToken.line,
@@ -179,6 +191,16 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
 
     // Parse specifiers
     while (!this._check('RBRACE') && !this._isAtEnd()) {
+      // Check for inline type: export { type Foo, Bar }
+      let isSpecifierTypeOnly = false;
+      if (this._check('TYPE')) {
+        const nextToken = this._tokens[this._current + 1];
+        if (nextToken && nextToken.type === 'IDENTIFIER') {
+          isSpecifierTypeOnly = true;
+          this._advance(); // consume 'type'
+        }
+      }
+
       const specToken = this._expect('IDENTIFIER', 'Expected export specifier');
 
       // Check for alias: export { foo as bar }
@@ -192,6 +214,7 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
         type: ASTNodeType.IDENTIFIER,
         name: specToken.value,
         alias,
+        isTypeOnly: isSpecifierTypeOnly,
         location: {
           start: {
             line: specToken.line,
@@ -249,6 +272,7 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
     specifiers,
     source,
     exportKind,
+    isTypeOnly,
     location: {
       start: {
         line: startToken.line,

@@ -168,7 +168,9 @@ export interface IExpressionStatementNode extends IASTNode {
 export interface IIdentifierNode extends IASTNode {
   readonly type: ASTNodeType.IDENTIFIER;
   readonly name: string;
-  readonly alias?: string; // For import aliases: import { name as alias }  readonly isTypeOnly?: boolean; // For type imports/exports: import { type Foo }}
+  readonly alias?: string; // For import/export aliases: import { foo as bar }
+  readonly isTypeOnly?: boolean; // For type imports/exports: import { type Foo }
+}
 
 /**
  * Literal value

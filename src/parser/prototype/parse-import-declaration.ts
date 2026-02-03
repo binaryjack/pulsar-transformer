@@ -42,7 +42,6 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
 
   // Check for side-effect import: import 'module';
   if (this._check('STRING')) {
-  if (this._check('STRING')) {
     const sourceToken = this._advance();
     source = {
       type: ASTNodeType.LITERAL,
