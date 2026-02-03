@@ -13,6 +13,7 @@ import { _emitCallExpression } from './emit-call-expression.js';
 import { _emitComponent } from './emit-component.js';
 import { _emitElement } from './emit-element.js';
 import { _emitEventHandler } from './emit-event-handler.js';
+import { _emitExport } from './emit-export.js';
 import { _emitExpression } from './emit-expression.js';
 import { _emitIdentifier } from './emit-identifier.js';
 import { _emitImport } from './emit-import.js';
@@ -37,6 +38,7 @@ const emitterPrivateMethods = {
   _emitSignalBinding,
   _emitEventHandler,
   _emitImport,
+  _emitExport,
   _emitVariableDeclaration,
   _emitLiteral,
   _emitIdentifier,

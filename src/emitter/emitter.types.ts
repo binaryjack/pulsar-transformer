@@ -130,6 +130,7 @@ export interface IEmitterInternal extends IEmitter {
   _emitSignalBinding(ir: IIRNode): void;
   _emitEventHandler(ir: IIRNode): void;
   _emitImport(ir: IIRNode): void;
+  _emitExport(ir: IIRNode): void;
   _emitVariableDeclaration(ir: IIRNode): void;
   _emitLiteral(ir: IIRNode): void;
   _emitIdentifier(ir: IIRNode): void;

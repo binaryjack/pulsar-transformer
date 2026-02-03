@@ -9,50 +9,55 @@
  * export * from './utils';
  */
 
-import type { IEmitterInternal } from '../emitter.types.js';
 import type { IExportIR } from '../../analyzer/ir/index.js';
+import type { IEmitterInternal } from '../emitter.types.js';
 
 /**
  * Emit export statement
  */
-export function emitExport(this: IEmitterInternal, exportIR: IExportIR): string {
-  const { exportKind, specifiers, source } = exportIR;
+export function _emitExport(this: IEmitterInternal, ir: IExportIR): void {
+  const { exportKind, specifiers, source } = ir;
+
+  let exportStatement = '';
 
   // Handle default export
   if (exportKind === 'default') {
-    return 'export default';
+    exportStatement = 'export default;';
   }
-
   // Handle export all
-  if (exportKind === 'all') {
+  else if (exportKind === 'all') {
     if (specifiers.length > 0) {
       // export * as name from "module"
       const name = specifiers[0].exported;
-      return `export * as ${name} from "${source}"`;
+      exportStatement = `export * as ${name} from "${source}";`;
+    } else {
+      // export * from "module"
+      exportStatement = `export * from "${source}";`;
     }
-    // export * from "module"
-    return `export * from "${source}"`;
   }
-
   // Handle named exports
-  if (specifiers.length === 0) {
-    return 'export {}';
-  }
+  else {
+    if (specifiers.length === 0) {
+      exportStatement = 'export {};';
+    } else {
+      const specifierStrings = specifiers.map((spec) => {
+        if (spec.exported === spec.local) {
+          return spec.local;
+        }
+        return `${spec.local} as ${spec.exported}`;
+      });
 
-  const specifierStrings = specifiers.map((spec) => {
-    if (spec.exported === spec.local) {
-      return spec.local;
+      const exportList = specifierStrings.join(', ');
+
+      if (source) {
+        // Re-export: export { foo } from "module"
+        exportStatement = `export { ${exportList} } from "${source}";`;
+      } else {
+        // Local export: export { foo }
+        exportStatement = `export { ${exportList} };`;
+      }
     }
-    return `${spec.local} as ${spec.exported}`;
-  });
-
-  const exportList = specifierStrings.join(', ');
-
-  if (source) {
-    // Re-export: export { foo } from "module"
-    return `export { ${exportList} } from "${source}"`;
   }
 
-  // Local export: export { foo }
-  return `export { ${exportList} }`;
+  this._addLine(exportStatement);
 }
