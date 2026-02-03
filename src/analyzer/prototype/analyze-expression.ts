@@ -37,10 +37,10 @@ export function analyzeExpression(this: IAnalyzerInternal, node: IASTNode): IIRN
       // Fallback to literal
       return {
         type: IRNodeType.LITERAL_IR,
-        value: null,
+        literalValue: null,
         rawValue: '',
         metadata: {},
-      };
+      } as any;
   }
 }
 
@@ -101,8 +101,9 @@ function _analyzeCallExpression(this: IAnalyzerInternal, node: any): ICallExpres
   const callee = this._analyzeIdentifier(node.callee) as IIdentifierIR;
   const args = node.arguments.map((arg: any) => this._analyzeNode(arg));
 
-  // Detect signal creation (createSignal, createMemo, createEffect)
+  // Detect signal creation - support both signal() and createSignal()
   const isSignalCreation =
+    callee.name === 'signal' ||
     callee.name === 'createSignal' ||
     callee.name === 'createMemo' ||
     callee.name === 'createEffect';

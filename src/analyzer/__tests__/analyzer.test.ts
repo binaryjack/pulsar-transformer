@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { createParser } from '../../parser.js';
+import { createParser } from '../../parser/index.js';
 import { createAnalyzer } from '../create-analyzer.js';
 import type { IComponentIR, IElementIR, ISignalBindingIR } from '../ir/index.js';
 import { IRNodeType } from '../ir/index.js';

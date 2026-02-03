@@ -252,6 +252,16 @@ export interface IVariableDeclarationIR extends IIRNode {
    * Whether this declares a signal
    */
   isSignalDeclaration: boolean;
+
+  /**
+   * Whether this uses destructuring syntax
+   */
+  isDestructuring?: boolean;
+
+  /**
+   * Names in destructuring pattern (e.g., [a, b])
+   */
+  destructuringNames?: string[];
 }
 
 /**

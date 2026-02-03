@@ -4,6 +4,6 @@
  * Orchestrates IR → TypeScript transformation using strategies
  */
 
-export * from './strategies.js';
-export * from './strategy-manager.js';
+export * from './strategies/index.js';
+export * from './strategy-manager/index.js';
 export * from './transform-strategy.types.js';

@@ -18,6 +18,7 @@ import type {
   IEventHandlerIR,
   ISignalBindingIR,
 } from '../../../analyzer/ir/ir-node-types.js';
+import { IRNodeType } from '../../../analyzer/ir/ir-node-types.js';
 import { createComponentTransformStrategy } from '../strategies/create-component-transform-strategy.js';
 import { ElementTransformStrategy } from '../strategies/element-transform-strategy.js';
 import '../strategies/element-transform-strategy.prototype';
@@ -25,7 +26,7 @@ import { EventTransformStrategy } from '../strategies/event-transform-strategy.j
 import '../strategies/event-transform-strategy.prototype';
 import { SignalTransformStrategy } from '../strategies/signal-transform-strategy.js';
 import '../strategies/signal-transform-strategy.prototype';
-import { createTransformStrategyManager } from '../strategy-manager.js';
+import { createTransformStrategyManager } from '../strategy-manager/index.js';
 import type { ITransformContext } from '../transform-strategy.types.js';
 
 describe('Transform Strategies', () => {
@@ -60,19 +61,24 @@ describe('Transform Strategies', () => {
       const strategy = createComponentTransformStrategy();
 
       const componentIR: IComponentIR = {
-        type: 'ComponentIR',
+        type: IRNodeType.COMPONENT_IR,
         name: 'Counter',
-        parameters: [{ name: 'initialValue', kind: 'parameter', isSignal: false }],
+        params: [
+          {
+            type: IRNodeType.IDENTIFIER_IR,
+            name: 'initialValue',
+            scope: 'parameter',
+            isSignal: false,
+            metadata: {},
+          },
+        ],
         body: [],
+        returnExpression: null,
         reactiveDependencies: [],
         registryKey: 'component:Counter',
         usesSignals: true,
         hasEventHandlers: false,
-        metadata: {
-          canInline: false,
-          isStatic: false,
-          isPure: false,
-        },
+        metadata: {},
       };
 
       const result = strategy.transform(componentIR, context);
@@ -88,15 +94,16 @@ describe('Transform Strategies', () => {
       const strategy = createComponentTransformStrategy();
 
       const componentIR: IComponentIR = {
-        type: 'ComponentIR',
+        type: IRNodeType.COMPONENT_IR,
         name: 'MyComponent',
-        parameters: [],
+        params: [],
         body: [],
+        returnExpression: null,
         reactiveDependencies: [],
         registryKey: 'component:MyComponent',
         usesSignals: false,
         hasEventHandlers: false,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       const registration = strategy.generateRegistration(componentIR, context);
@@ -109,18 +116,31 @@ describe('Transform Strategies', () => {
       const strategy = createComponentTransformStrategy();
 
       const componentIR: IComponentIR = {
-        type: 'ComponentIR',
+        type: IRNodeType.COMPONENT_IR,
         name: 'TestComponent',
-        parameters: [
-          { name: 'prop1', kind: 'parameter', isSignal: false },
-          { name: 'prop2', kind: 'parameter', isSignal: false },
+        params: [
+          {
+            type: IRNodeType.IDENTIFIER_IR,
+            name: 'prop1',
+            scope: 'parameter',
+            isSignal: false,
+            metadata: {},
+          },
+          {
+            type: IRNodeType.IDENTIFIER_IR,
+            name: 'prop2',
+            scope: 'parameter',
+            isSignal: false,
+            metadata: {},
+          },
         ],
         body: [],
+        returnExpression: null,
         reactiveDependencies: [],
         registryKey: 'component:TestComponent',
         usesSignals: false,
         hasEventHandlers: false,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       const params = strategy.generateParameters(componentIR);
@@ -134,15 +154,15 @@ describe('Transform Strategies', () => {
       const strategy = createComponentTransformStrategy();
 
       const componentIR: IComponentIR = {
-        type: 'ComponentIR',
+        type: IRNodeType.COMPONENT_IR,
         name: 'Counter',
-        parameters: [],
+        params: [],
         body: [],
         reactiveDependencies: [],
         registryKey: 'component:Counter',
         usesSignals: true,
         hasEventHandlers: false,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       const imports = strategy.getImports(componentIR);
@@ -158,7 +178,7 @@ describe('Transform Strategies', () => {
       const strategy = new ElementTransformStrategy();
 
       const elementIR: IElementIR = {
-        type: 'ElementIR',
+        type: IRNodeType.ELEMENT_IR,
         tagName: 'div',
         attributes: [],
         children: [],
@@ -179,23 +199,23 @@ describe('Transform Strategies', () => {
       const strategy = new ElementTransformStrategy();
 
       const elementIR: IElementIR = {
-        type: 'ElementIR',
+        type: IRNodeType.ELEMENT_IR,
         tagName: 'span',
         attributes: [],
         children: [],
         signalBindings: [
           {
-            type: 'SignalBindingIR',
+            type: IRNodeType.SIGNAL_BINDING_IR,
             signalName: 'count',
             targetProperty: 'textContent',
             canOptimize: true,
             isExternal: false,
-            metadata: { canInline: false, isStatic: false, isPure: false },
+            metadata: {},
           },
         ],
         eventHandlers: [],
         isStatic: false,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       const result = strategy.transformToDOM(elementIR, context);
@@ -207,23 +227,23 @@ describe('Transform Strategies', () => {
       const strategy = new ElementTransformStrategy();
 
       const elementIR: IElementIR = {
-        type: 'ElementIR',
+        type: IRNodeType.ELEMENT_IR,
         tagName: 'div',
         attributes: [],
         children: [],
         signalBindings: [
           {
-            type: 'SignalBindingIR',
+            type: IRNodeType.SIGNAL_BINDING_IR,
             signalName: 'value',
             targetProperty: 'textContent',
             canOptimize: false,
             isExternal: false,
-            metadata: { canInline: false, isStatic: false, isPure: false },
+            metadata: {},
           },
         ],
         eventHandlers: [],
         isStatic: false,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       const imports = strategy.getImports(elementIR);
@@ -238,12 +258,12 @@ describe('Transform Strategies', () => {
       const strategy = new SignalTransformStrategy();
 
       const signalIR: ISignalBindingIR = {
-        type: 'SignalBindingIR',
+        type: IRNodeType.SIGNAL_BINDING_IR,
         signalName: 'count',
         targetProperty: 'textContent',
         canOptimize: true,
         isExternal: false,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       const result = strategy.transformToSubscription(signalIR, context);
@@ -256,12 +276,12 @@ describe('Transform Strategies', () => {
       const strategy = new SignalTransformStrategy();
 
       const signalIR: ISignalBindingIR = {
-        type: 'SignalBindingIR',
+        type: IRNodeType.SIGNAL_BINDING_IR,
         signalName: 'value',
         targetProperty: 'textContent',
         canOptimize: false,
         isExternal: false,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       const result = strategy.generateSignalRead(signalIR, context);
@@ -276,12 +296,12 @@ describe('Transform Strategies', () => {
       const strategy = new SignalTransformStrategy();
 
       const signalIR: ISignalBindingIR = {
-        type: 'SignalBindingIR',
+        type: IRNodeType.SIGNAL_BINDING_IR,
         signalName: 'count',
         targetProperty: 'textContent',
         canOptimize: true,
         isExternal: false,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       const result = strategy.generateEffect(signalIR, context);
@@ -294,7 +314,7 @@ describe('Transform Strategies', () => {
       const strategy = new SignalTransformStrategy();
 
       const optimizableIR: ISignalBindingIR = {
-        type: 'SignalBindingIR',
+        type: IRNodeType.SIGNAL_BINDING_IR,
         signalName: 'local',
         targetProperty: 'textContent',
         canOptimize: true,
@@ -303,12 +323,12 @@ describe('Transform Strategies', () => {
       };
 
       const nonOptimizableIR: ISignalBindingIR = {
-        type: 'SignalBindingIR',
+        type: IRNodeType.SIGNAL_BINDING_IR,
         signalName: 'external',
         targetProperty: 'textContent',
         canOptimize: false,
         isExternal: true,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       expect(strategy.canOptimize(optimizableIR)).toBe(true);
@@ -321,16 +341,16 @@ describe('Transform Strategies', () => {
       const strategy = new EventTransformStrategy();
 
       const eventIR: IEventHandlerIR = {
-        type: 'EventHandlerIR',
+        type: IRNodeType.EVENT_HANDLER_IR,
         eventName: 'onClick',
         handler: {
           type: 'ArrowFunctionIR',
-          parameters: [{ name: 'e', kind: 'parameter', isSignal: false }],
+          params: [{ name: 'e', kind: 'parameter', isSignal: false }],
           body: [],
-          metadata: { canInline: false, isStatic: false, isPure: false },
+          metadata: {},
         },
         accessesSignals: false,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       const result = strategy.transformToListener(eventIR, context);
@@ -350,16 +370,16 @@ describe('Transform Strategies', () => {
       const strategy = new EventTransformStrategy();
 
       const eventIR: IEventHandlerIR = {
-        type: 'EventHandlerIR',
+        type: IRNodeType.EVENT_HANDLER_IR,
         eventName: 'onClick',
         handler: {
           type: 'ArrowFunctionIR',
-          parameters: [],
+          params: [],
           body: [],
-          metadata: { canInline: false, isStatic: false, isPure: false },
+          metadata: {},
         },
         accessesSignals: false,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       const result = strategy.generateListenerFunction(eventIR, context);
@@ -389,15 +409,15 @@ describe('Transform Strategies', () => {
       manager.registerStrategy(componentStrategy);
 
       const componentIR: IComponentIR = {
-        type: 'ComponentIR',
+        type: IRNodeType.COMPONENT_IR,
         name: 'Test',
-        parameters: [],
+        params: [],
         body: [],
         reactiveDependencies: [],
         registryKey: 'component:Test',
         usesSignals: false,
         hasEventHandlers: false,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       const strategy = manager.getStrategy(componentIR);
@@ -423,7 +443,7 @@ describe('Transform Strategies', () => {
 
       const unknownIR = {
         type: 'UnknownIR',
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       } as any;
 
       const strategy = manager.getStrategy(unknownIR);
@@ -440,23 +460,23 @@ describe('Transform Strategies', () => {
       const eventStrategy = new EventTransformStrategy();
 
       const componentIR: IComponentIR = {
-        type: 'ComponentIR',
+        type: IRNodeType.COMPONENT_IR,
         name: 'InteractiveCounter',
-        parameters: [],
+        params: [],
         body: [
           {
             type: 'VariableDeclarationIR',
             name: 'count',
             kind: 'const',
             isSignal: true,
-            metadata: { canInline: false, isStatic: false, isPure: false },
+            metadata: {},
           },
         ],
         reactiveDependencies: ['count'],
         registryKey: 'component:InteractiveCounter',
         usesSignals: true,
         hasEventHandlers: true,
-        metadata: { canInline: false, isStatic: false, isPure: false },
+        metadata: {},
       };
 
       const result = componentStrategy.transform(componentIR, context);

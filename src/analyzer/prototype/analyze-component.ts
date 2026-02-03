@@ -83,7 +83,7 @@ export function analyzeComponent(
     reactiveDependencies,
     registryKey,
     usesSignals: reactiveDependencies.length > 0,
-    hasEventHandlers: this._detectEventHandlers(body),
+    hasEventHandlers: this._detectEventHandlers(body).length > 0,
     metadata: {
       sourceLocation: node.location?.start,
       optimizations: {

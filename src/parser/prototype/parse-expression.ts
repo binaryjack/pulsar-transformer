@@ -195,7 +195,7 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
       this._expect('RBRACE', 'Expected "}"');
 
       body = {
-        type: ASTNodeType.BLOCK_STATEMENT,
+        type: 'BlockStatement' as any, // TODO: Add to ASTNodeType enum
         body: statements,
       };
     } else {

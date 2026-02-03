@@ -37,6 +37,17 @@ export interface ILexerInternal extends ILexer {
   _column: number;
   _tokens: IToken[];
   _current: number;
+
+  // Private helper methods
+  _recognizeToken(start: number, line: number, column: number): IToken | null;
+  _isAlpha(char: string): boolean;
+  _isDigit(char: string): boolean;
+  _isAlphaNumeric(char: string): boolean;
+  _readIdentifierOrKeyword(start: number, line: number, column: number): IToken;
+  _readNumber(start: number, line: number, column: number): IToken;
+  _readString(start: number, line: number, column: number): IToken;
+  _readSignalBinding(start: number, line: number, column: number): IToken;
+  _readSingleChar(start: number, line: number, column: number): IToken | null;
 }
 
 /**

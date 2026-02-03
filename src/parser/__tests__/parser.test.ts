@@ -152,7 +152,7 @@ describe('createParser', () => {
       expect(element.children).toHaveLength(1);
       const signalBinding = element.children[0] as IPSRSignalBindingNode;
       expect(signalBinding.type).toBe(ASTNodeType.PSR_SIGNAL_BINDING);
-      expect(signalBinding.identifier.name).toBe('count');
+      expect(signalBinding.signal.name).toBe('count');
     });
 
     it('should parse multiple signal bindings', () => {
@@ -182,7 +182,7 @@ describe('createParser', () => {
       const varDecl = ast.body[0];
       expect(varDecl.type).toBe(ASTNodeType.VARIABLE_DECLARATION);
       expect((varDecl as any).kind).toBe('const');
-      expect((varDecl as any).id.name).toBe('count');
+      expect((varDecl as any).declarations[0].id.name).toBe('count');
     });
 
     it('should parse let declaration', () => {
@@ -192,7 +192,7 @@ describe('createParser', () => {
 
       const varDecl = ast.body[0];
       expect((varDecl as any).kind).toBe('let');
-      expect((varDecl as any).id.name).toBe('isOpen');
+      expect((varDecl as any).declarations[0].id.name).toBe('isOpen');
     });
   });
 
@@ -203,9 +203,9 @@ describe('createParser', () => {
       const ast = parser.parse(source) as IProgramNode;
 
       const varDecl = ast.body[0] as any;
-      expect(varDecl.init.type).toBe(ASTNodeType.CALL_EXPRESSION);
-      expect(varDecl.init.callee.name).toBe('createSignal');
-      expect(varDecl.init.arguments).toHaveLength(1);
+      expect(varDecl.declarations[0].init.type).toBe(ASTNodeType.CALL_EXPRESSION);
+      expect(varDecl.declarations[0].init.callee.name).toBe('createSignal');
+      expect(varDecl.declarations[0].init.arguments).toHaveLength(1);
     });
 
     it('should parse number literal', () => {
@@ -214,8 +214,8 @@ describe('createParser', () => {
       const ast = parser.parse(source) as IProgramNode;
 
       const varDecl = ast.body[0] as any;
-      expect(varDecl.init.type).toBe(ASTNodeType.LITERAL);
-      expect(varDecl.init.value).toBe(42);
+      expect(varDecl.declarations[0].init.type).toBe(ASTNodeType.LITERAL);
+      expect(varDecl.declarations[0].init.value).toBe(42);
     });
 
     it('should parse string literal', () => {
@@ -224,8 +224,8 @@ describe('createParser', () => {
       const ast = parser.parse(source) as IProgramNode;
 
       const varDecl = ast.body[0] as any;
-      expect(varDecl.init.type).toBe(ASTNodeType.LITERAL);
-      expect(varDecl.init.value).toBe('hello');
+      expect(varDecl.declarations[0].init.type).toBe(ASTNodeType.LITERAL);
+      expect(varDecl.declarations[0].init.value).toBe('hello');
     });
   });
 

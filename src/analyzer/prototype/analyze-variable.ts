@@ -16,11 +16,28 @@ export function analyzeVariable(
   this: IAnalyzerInternal,
   node: IVariableDeclarationNode
 ): IVariableDeclarationIR {
-  const name = node.id.name;
+  // Access first declaration in array
+  const declaration = node.declarations[0];
+  const id = declaration.id as any;
   const kind = node.kind;
 
+  // Handle both simple identifiers and destructuring patterns
+  let name: string;
+  let isDestructuring = false;
+  let destructuringNames: string[] = [];
+
+  if (id.type === 'ArrayPattern') {
+    // Array destructuring: const [a, b] = value
+    isDestructuring = true;
+    destructuringNames = id.elements.map((el: any) => el.name);
+    name = destructuringNames[0]; // Use first element as primary name
+  } else {
+    // Simple identifier: const x = value
+    name = id.name;
+  }
+
   // Analyze initializer
-  const initializer = node.init ? this._analyzeNode(node.init) : null;
+  const initializer = declaration.init ? this._analyzeNode(declaration.init) : null;
 
   // Detect signal declaration (createSignal, createMemo, etc.)
   const isSignalDeclaration =
@@ -29,12 +46,25 @@ export function analyzeVariable(
   // Register in scope
   const currentScope = this._context.scopes[0];
   if (currentScope) {
-    currentScope.variables.set(name, {
-      name,
-      kind,
-      isSignal: isSignalDeclaration,
-      declarationNode: node,
-    });
+    if (isDestructuring) {
+      // Register all destructured names
+      destructuringNames.forEach((varName) => {
+        currentScope.variables.set(varName, {
+          name: varName,
+          kind,
+          isSignal: isSignalDeclaration,
+          declarationNode: node,
+        });
+      });
+    } else {
+      // Register single variable
+      currentScope.variables.set(name, {
+        name,
+        kind,
+        isSignal: isSignalDeclaration,
+        declarationNode: node,
+      });
+    }
   }
 
   // Register signal if detected
@@ -48,6 +78,8 @@ export function analyzeVariable(
     name,
     initializer,
     isSignalDeclaration,
+    isDestructuring,
+    destructuringNames,
     metadata: {
       sourceLocation: node.location?.start,
       optimizations: {
@@ -55,5 +87,5 @@ export function analyzeVariable(
       },
       dependencies: isSignalDeclaration ? [name] : [],
     },
-  };
+  } as IVariableDeclarationIR;
 }

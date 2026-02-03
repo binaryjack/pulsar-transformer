@@ -5,7 +5,11 @@
  */
 
 import ts from 'typescript';
-import type { IComponentIR, IIRNode } from '../../../analyzer/ir/ir-node-types.js';
+import type {
+  IComponentIR,
+  IIRNode,
+  IVariableDeclarationIR,
+} from '../../../analyzer/ir/ir-node-types.js';
 import type { ITransformContext } from '../transform-strategy.types.js';
 import { ComponentTransformStrategy } from './component-transform-strategy.js';
 import type { IComponentTransformStrategyInternal } from './component-transform-strategy.types.js';
@@ -136,7 +140,7 @@ export function generateParameters(
   this: IComponentTransformStrategyInternal,
   component: IComponentIR
 ): ts.ParameterDeclaration[] {
-  return component.parameters.map((param) =>
+  return component.params.map((param: any) =>
     ts.factory.createParameterDeclaration(
       undefined, // modifiers
       undefined, // dotDotDotToken
@@ -199,41 +203,44 @@ export function _generateSignalDeclarations(
 
   // Process body statements that are signal declarations
   for (const stmt of component.body) {
-    if (stmt.type === 'VariableDeclarationIR' && stmt.isSignal) {
-      // const [count, setCount] = createSignal(0);
-      const declaration = ts.factory.createVariableStatement(
-        undefined,
-        ts.factory.createVariableDeclarationList(
-          [
-            ts.factory.createVariableDeclaration(
-              ts.factory.createArrayBindingPattern([
-                ts.factory.createBindingElement(
-                  undefined,
-                  undefined,
-                  ts.factory.createIdentifier(stmt.name)
-                ),
-                ts.factory.createBindingElement(
-                  undefined,
-                  undefined,
-                  ts.factory.createIdentifier(
-                    `set${stmt.name.charAt(0).toUpperCase()}${stmt.name.slice(1)}`
-                  )
-                ),
-              ]),
-              undefined,
-              undefined,
-              ts.factory.createCallExpression(
-                ts.factory.createIdentifier('createSignal'),
+    if (stmt.type === 'VariableDeclarationIR') {
+      const varDecl = stmt as IVariableDeclarationIR;
+      if (varDecl.isSignalDeclaration) {
+        // const [count, setCount] = createSignal(0);
+        const declaration = ts.factory.createVariableStatement(
+          undefined,
+          ts.factory.createVariableDeclarationList(
+            [
+              ts.factory.createVariableDeclaration(
+                ts.factory.createArrayBindingPattern([
+                  ts.factory.createBindingElement(
+                    undefined,
+                    undefined,
+                    ts.factory.createIdentifier(varDecl.name)
+                  ),
+                  ts.factory.createBindingElement(
+                    undefined,
+                    undefined,
+                    ts.factory.createIdentifier(
+                      `set${varDecl.name.charAt(0).toUpperCase()}${varDecl.name.slice(1)}`
+                    )
+                  ),
+                ]),
                 undefined,
-                [ts.factory.createNumericLiteral(0)] // Default value
-              )
-            ),
-          ],
-          ts.NodeFlags.Const
-        )
-      );
+                undefined,
+                ts.factory.createCallExpression(
+                  ts.factory.createIdentifier('createSignal'),
+                  undefined,
+                  [ts.factory.createNumericLiteral(0)] // Default value
+                )
+              ),
+            ],
+            ts.NodeFlags.Const
+          )
+        );
 
-      declarations.push(declaration);
+        declarations.push(declaration);
+      }
     }
   }
 

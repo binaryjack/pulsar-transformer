@@ -56,7 +56,7 @@ export function parsePSRSignalBinding(this: IParserInternal): IPSRSignalBindingN
 
   return {
     type: ASTNodeType.PSR_SIGNAL_BINDING,
-    identifier,
+    signal: identifier,
     location: {
       start: {
         line: startToken.line,

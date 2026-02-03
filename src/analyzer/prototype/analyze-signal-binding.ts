@@ -16,7 +16,7 @@ export function analyzeSignalBinding(
   this: IAnalyzerInternal,
   node: IPSRSignalBindingNode
 ): ISignalBindingIR {
-  const signalName = node.identifier.name;
+  const signalName = node.signal.name;
 
   // Register signal usage
   this._registerSignal(signalName);

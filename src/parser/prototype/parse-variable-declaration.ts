@@ -25,24 +25,61 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
   const kind = startToken.value as 'const' | 'let';
   this._advance();
 
-  // Parse identifier
-  const idToken = this._expect('IDENTIFIER', 'Expected variable name');
-  const id: IIdentifierNode = {
-    type: ASTNodeType.IDENTIFIER,
-    name: idToken.value,
-    location: {
-      start: {
-        line: idToken.line,
-        column: idToken.column,
-        offset: idToken.start,
+  // Parse identifier or destructuring pattern
+  let id: IIdentifierNode | any;
+
+  // Check for array destructuring: [a, b]
+  if (this._check('LBRACKET')) {
+    this._advance(); // consume [
+
+    const elements: IIdentifierNode[] = [];
+    do {
+      const elemToken = this._expect('IDENTIFIER', 'Expected identifier in destructuring');
+      elements.push({
+        type: ASTNodeType.IDENTIFIER,
+        name: elemToken.value,
+        location: {
+          start: {
+            line: elemToken.line,
+            column: elemToken.column,
+            offset: elemToken.start,
+          },
+          end: {
+            line: elemToken.line,
+            column: elemToken.column + elemToken.value.length,
+            offset: elemToken.end,
+          },
+        },
+      });
+    } while (this._match('COMMA'));
+
+    this._expect('RBRACKET', 'Expected ] after destructuring');
+
+    // Create array pattern node
+    id = {
+      type: 'ArrayPattern' as any,
+      elements,
+    };
+  } else {
+    // Regular identifier
+    const idToken = this._expect('IDENTIFIER', 'Expected variable name');
+    id = {
+      type: ASTNodeType.IDENTIFIER,
+      name: idToken.value,
+      location: {
+        start: {
+          line: idToken.line,
+          column: idToken.column,
+          offset: idToken.start,
+        },
+        end: {
+          line: idToken.line,
+          column: idToken.column + idToken.value.length,
+          offset: idToken.end,
+        },
       },
-      end: {
-        line: idToken.line,
-        column: idToken.column + idToken.value.length,
-        offset: idToken.end,
-      },
-    },
-  };
+    };
+  }
 
   // Parse initializer
   let init: any = null;
@@ -58,8 +95,12 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
   return {
     type: ASTNodeType.VARIABLE_DECLARATION,
     kind,
-    id,
-    init,
+    declarations: [
+      {
+        id,
+        init,
+      },
+    ],
     location: {
       start: {
         line: startToken.line,

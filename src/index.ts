@@ -8,8 +8,8 @@
 // ===== CORE PIPELINE =====
 
 // Lexer exports
-export { createLexer, TokenType } from './parser/lexer.js';
-export type { ILexer, ILexerConfig, IToken } from './parser/lexer.js';
+export { createLexer, TokenType } from './parser/lexer/index.js';
+export type { ILexer, ILexerConfig, IToken } from './parser/lexer/index.js';
 
 // Parser exports
 export { createParser } from './parser/create-parser.js';
@@ -17,18 +17,21 @@ export type { IParser, IParserConfig } from './parser/parser.types.js';
 
 // AST exports
 export type {
-  ArrowFunction,
-  ASTNode,
-  CallExpression,
-  ComponentDeclaration,
-  EventHandler,
-  Identifier,
-  Literal,
-  PSRAttribute,
-  PSRElement,
-  ReturnStatement,
-  SignalBinding,
-  VariableDeclaration,
+  ASTNodeType,
+  IArrowFunctionNode,
+  IASTNode,
+  ICallExpressionNode,
+  IComponentDeclarationNode,
+  IExpressionStatementNode,
+  IIdentifierNode,
+  ILiteralNode,
+  IProgramNode,
+  IPSRAttributeNode,
+  IPSRElementNode,
+  IPSREventHandlerNode,
+  IPSRSignalBindingNode,
+  IReturnStatementNode,
+  IVariableDeclarationNode,
 } from './parser/ast/ast-node-types.js';
 
 // Analyzer exports (IR Builder)
@@ -44,11 +47,11 @@ export type {
   IEventHandlerIR,
   IIdentifierIR,
   IIRMetadata,
+  IIRNode,
   ILiteralIR,
   IRegistryLookupIR,
   IRegistryRegistrationIR,
   IReturnStatementIR,
-  IRNode,
   IRNodeType,
   ISignalBindingIR,
   IVariableDeclarationIR,
@@ -56,7 +59,7 @@ export type {
 
 // Transform exports (Strategy System)
 export { createComponentTransformStrategy } from './transformer/transform/strategies/create-component-transform-strategy.js';
-export { createTransformStrategyManager } from './transformer/transform/strategy-manager.js';
+export { createTransformStrategyManager } from './transformer/transform/strategy-manager/index.js';
 export type {
   IComponentTransformStrategy,
   IElementTransformStrategy,
@@ -68,11 +71,30 @@ export type {
   ITransformStrategyManager,
 } from './transformer/transform/transform-strategy.types.js';
 
+// Emitter exports (Code Generation)
+export { createEmitter } from './emitter/create-emitter.js';
+export { createImportTracker } from './emitter/create-import-tracker.js';
+export type {
+  IEmitContext,
+  IEmitter,
+  IEmitterConfig,
+  IImportTracker,
+} from './emitter/emitter.types.js';
+
+// Pipeline exports (Full Transformation)
+export { createPipeline } from './pipeline/create-pipeline.js';
+export type {
+  IPipeline,
+  IPipelineConfig,
+  IPipelineDiagnostic,
+  IPipelineMetrics,
+  IPipelineResult,
+} from './pipeline/pipeline.types.js';
+
 // ===== UTILITIES =====
 
 // Error handling
 export { TransformerError } from './error/transformer-error.js';
-export type { ErrorCode, IErrorMetadata } from './error/transformer-error.js';
 
 // AST utilities
 export { getASTPath, getNodePosition, getNodeSnippet, getNodeTypeName } from './utils/ast-utils.js';
@@ -89,12 +111,12 @@ export const VERSION = '1.0.0-alpha.1';
  * Pipeline status
  */
 export const PIPELINE_STATUS = {
-  lexer: 'complete', // 14/14 tests
-  parser: 'complete', // 23/23 tests
-  analyzer: 'complete', // 22/22 tests
-  transform: 'partial', // 19/19 tests (4/6 strategies)
-  emitter: 'pending', // Not started
+  lexer: 'complete', // 14/14 tests ✅
+  parser: 'complete', // 23/23 tests ✅
+  analyzer: 'complete', // 22/22 tests ✅
+  transform: 'complete', // 19/19 tests ✅
+  emitter: 'complete', // 25/25 tests ✅
+  pipeline: 'complete', // Integration implemented ✅
   guards: 'pending', // Not started
   debug: 'pending', // Not started
-  pipeline: 'pending', // Not started
 } as const;

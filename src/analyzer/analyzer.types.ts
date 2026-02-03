@@ -53,6 +53,22 @@ export interface IAnalyzerInternal extends IAnalyzer {
   _exitScope(): void;
   _registerSignal(name: string): void;
   _isSignal(name: string): boolean;
+
+  // Expression analysis helpers
+  _analyzeLiteral(node: any): IIRNode;
+  _analyzeIdentifier(node: any): IIRNode;
+  _analyzeCallExpression(node: any): IIRNode;
+  _analyzeArrowFunction(node: any): IIRNode;
+
+  // Component/element analysis helpers
+  _detectEventHandlers(node: any): any[];
+  _isPureComponent(body: any[]): boolean;
+  _handlerAccessesSignals(handler: IIRNode): boolean;
+
+  // Scope helpers
+  _isParameter(name: string): boolean;
+  _isInCurrentScope(name: string): boolean;
+  _isFunctionPure(body: any): boolean;
 }
 
 /**

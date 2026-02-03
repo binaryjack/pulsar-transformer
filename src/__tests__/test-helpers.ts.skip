@@ -3,7 +3,7 @@
  */
 
 import * as ts from 'typescript';
-import { initializeContext } from '../factory.js';
+// import removed - factory.js deleted
 import type { ITransformContext } from '../types.js';
 
 /**

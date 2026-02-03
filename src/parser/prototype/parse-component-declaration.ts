@@ -7,7 +7,11 @@
  * component MyButton() { return <button>Click</button>; }
  */
 
-import type { IComponentDeclarationNode, IIdentifierNode, IReturnStatementNode } from '../ast/index.js';
+import type {
+  IComponentDeclarationNode,
+  IIdentifierNode,
+  IReturnStatementNode,
+} from '../ast/index.js';
 import { ASTNodeType } from '../ast/index.js';
 import type { IParserInternal } from '../parser.types.js';
 
@@ -51,6 +55,15 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
   if (!this._check('RPAREN')) {
     do {
       const paramToken = this._expect('IDENTIFIER', 'Expected parameter name');
+
+      // Skip TypeScript type annotation if present (: type)
+      if (this._match('COLON')) {
+        // Skip type tokens until we hit comma or closing paren
+        while (!this._check('COMMA') && !this._check('RPAREN') && !this._isAtEnd()) {
+          this._advance();
+        }
+      }
+
       params.push({
         type: ASTNodeType.IDENTIFIER,
         name: paramToken.value,

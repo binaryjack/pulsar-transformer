@@ -1,4 +1,4 @@
-import pulsarTransformer from '../index.js';
+import * as pulsarTransformer from '../index.js';
 import { transformSource as transform } from './test-helpers.js';
 
 const source = `

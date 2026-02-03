@@ -6,7 +6,7 @@
 
 import type { IASTNode, IProgramNode } from '../ast/index.js';
 import { ASTNodeType } from '../ast/index.js';
-import { createLexer } from '../lexer.js';
+import { createLexer } from '../lexer/index.js';
 import type { IParserInternal } from '../parser.types.js';
 
 /**

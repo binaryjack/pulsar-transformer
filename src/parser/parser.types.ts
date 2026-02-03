@@ -5,8 +5,8 @@
  * Prototype-based pattern, following Pulsar standards.
  */
 
-import type { IASTNode } from './ast.js';
-import type { IToken } from './lexer.js';
+import type { IASTNode } from './ast/index.js';
+import type { IToken } from './lexer/index.js';
 
 /**
  * Public Parser interface
@@ -41,6 +41,33 @@ export interface IParserInternal extends IParser {
   _current: number;
   _errors: IParserError[];
   _source: string;
+
+  // Private parsing methods
+  _parseStatement(): any;
+  _parseComponentDeclaration(): any;
+  _parseVariableDeclaration(): any;
+  _parseReturnStatement(): any;
+  _parsePSRElement(): any;
+  _parsePSRSignalBinding(): any;
+  _parsePSRAttribute(): any;
+  _parsePSRChild(): any;
+  _parseExpression(): any;
+  _parseExpressionStatement(): any;
+  _parseImportDeclaration(): any;
+  _parseExportDeclaration(): any;
+  _parseArrowFunctionOrGrouping(): any;
+  _parseCallOrIdentifier(): any;
+  _parseLiteral(): any;
+
+  // Helper methods
+  _isAtEnd(): boolean;
+  _getCurrentToken(): IToken | undefined;
+  _advance(): IToken;
+  _check(type: string): boolean;
+  _match(...types: string[]): boolean;
+  _expect(type: string, message: string): IToken;
+  _addError(error: IParserError): void;
+  _isClosingTag(tagName: string): boolean;
 }
 
 /**

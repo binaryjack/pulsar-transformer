@@ -43,7 +43,7 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
     }
 
     // Try to recognize token
-    const token = this._recognizeToken();
+    const token = this._recognizeToken(this._position, this._line, this._column);
 
     if (token) {
       this._tokens.push(token);
@@ -347,6 +347,19 @@ function _readSingleChar(
 
   return null;
 }
+
+// Export helper methods for prototype attachment
+export {
+  _isAlpha,
+  _isAlphaNumeric,
+  _isDigit,
+  _readIdentifierOrKeyword,
+  _readNumber,
+  _readSignalBinding,
+  _readSingleChar,
+  _readString,
+  _recognizeToken,
+};
 
 // Attach private methods to prototype
 Object.assign(Lexer.prototype, {
