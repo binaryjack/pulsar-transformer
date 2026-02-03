@@ -15,6 +15,7 @@ export enum TokenType {
   EXPORT = 'EXPORT',
   FROM = 'FROM',
   AS = 'AS', // as (for namespace imports)
+  TYPE = 'TYPE', // type (for type imports/exports)
 
   // Identifiers and Literals
   IDENTIFIER = 'IDENTIFIER',

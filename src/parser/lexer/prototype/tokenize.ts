@@ -157,6 +157,7 @@ function _readIdentifierOrKeyword(
     export: TokenType.EXPORT,
     from: TokenType.FROM,
     as: TokenType.AS,
+    type: TokenType.TYPE,
   };
 
   const type = keywords[value] || TokenType.IDENTIFIER;

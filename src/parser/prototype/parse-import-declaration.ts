@@ -29,8 +29,19 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
 
   const specifiers: IIdentifierNode[] = [];
   let source: ILiteralNode | null = null;
+  let isTypeOnly = false;
+
+  // Check for type-only import: import type { Foo } from './types'
+  if (this._check('TYPE')) {
+    const nextToken = this._tokens[this._current + 1];
+    if (nextToken && nextToken.type === 'LBRACE') {
+      isTypeOnly = true;
+      this._advance(); // consume 'type'
+    }
+  }
 
   // Check for side-effect import: import 'module';
+  if (this._check('STRING')) {
   if (this._check('STRING')) {
     const sourceToken = this._advance();
     source = {
@@ -154,6 +165,16 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
 
     // Parse specifiers (handle empty case and trailing comma)
     while (!this._check('RBRACE') && !this._isAtEnd()) {
+      // Check for inline type: import { type Foo, Bar }
+      let isSpecifierTypeOnly = false;
+      if (this._check('TYPE')) {
+        const nextToken = this._tokens[this._current + 1];
+        if (nextToken && nextToken.type === 'IDENTIFIER') {
+          isSpecifierTypeOnly = true;
+          this._advance(); // consume 'type'
+        }
+      }
+
       const specToken = this._expect('IDENTIFIER', 'Expected import specifier');
 
       // Check for alias: import { foo as bar }
@@ -167,6 +188,7 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
         type: ASTNodeType.IDENTIFIER,
         name: specToken.value,
         alias,
+        isTypeOnly: isSpecifierTypeOnly,
         location: {
           start: {
             line: specToken.line,
@@ -323,6 +345,7 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     specifiers,
     source,
     importKind,
+    isTypeOnly,
     location: {
       start: {
         line: startToken.line,

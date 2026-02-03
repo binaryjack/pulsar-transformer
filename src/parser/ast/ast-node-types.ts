@@ -114,6 +114,7 @@ export interface IImportDeclarationNode extends IASTNode {
   readonly specifiers: IIdentifierNode[];
   readonly source: ILiteralNode;
   readonly importKind?: 'named' | 'default' | 'side-effect' | 'namespace' | 'mixed'; // Added to distinguish import types
+  readonly isTypeOnly?: boolean; // For: import type { Foo } from './types'
 }
 
 /**
@@ -133,6 +134,7 @@ export interface IExportDeclarationNode extends IASTNode {
   readonly specifiers: IIdentifierNode[]; // For: export { foo, bar };
   readonly source: ILiteralNode | null; // For: export { foo } from './utils';
   readonly exportKind?: 'named' | 'default' | 'all'; // 'all' for export *
+  readonly isTypeOnly?: boolean; // For: export type { Foo } from './types'
 }
 
 /**
@@ -166,8 +168,7 @@ export interface IExpressionStatementNode extends IASTNode {
 export interface IIdentifierNode extends IASTNode {
   readonly type: ASTNodeType.IDENTIFIER;
   readonly name: string;
-  readonly alias?: string; // For import aliases: import { name as alias }
-}
+  readonly alias?: string; // For import aliases: import { name as alias }  readonly isTypeOnly?: boolean; // For type imports/exports: import { type Foo }}
 
 /**
  * Literal value
