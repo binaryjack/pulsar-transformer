@@ -46,8 +46,10 @@ export function analyzeImport(this: IAnalyzerInternal, node: IImportDeclarationN
         type: specifierType,
         imported: spec.name, // Original name from module
         local: spec.alias || spec.name, // Local name (alias if present, otherwise same as imported)
+        isTypeOnly: spec.isTypeOnly,
       };
     }),
+    isTypeOnly: node.isTypeOnly,
     metadata: {
       line: node.location?.start.line,
       column: node.location?.start.column,

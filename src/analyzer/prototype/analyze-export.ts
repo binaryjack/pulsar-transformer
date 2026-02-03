@@ -30,6 +30,7 @@ export function analyzeExport(this: IAnalyzerInternal, node: IExportDeclarationN
         type: 'ExportSpecifier' as const,
         exported: exportedName,
         local: localName,
+        isTypeOnly: spec.isTypeOnly,
       });
 
       // Track exported name in context
@@ -50,5 +51,6 @@ export function analyzeExport(this: IAnalyzerInternal, node: IExportDeclarationN
     exportKind: node.exportKind || 'named',
     specifiers,
     source: node.source?.value || null,
+    isTypeOnly: node.isTypeOnly,
   };
 }

@@ -41,20 +41,33 @@ export function _emitExport(this: IEmitterInternal, ir: IExportIR): void {
       exportStatement = 'export {};';
     } else {
       const specifierStrings = specifiers.map((spec) => {
-        if (spec.exported === spec.local) {
-          return spec.local;
+        let specStr = '';
+
+        // Add 'type' keyword for inline type exports
+        if (spec.isTypeOnly) {
+          specStr = 'type ';
         }
-        return `${spec.local} as ${spec.exported}`;
+
+        if (spec.exported === spec.local) {
+          specStr += spec.local;
+        } else {
+          specStr += `${spec.local} as ${spec.exported}`;
+        }
+
+        return specStr;
       });
 
       const exportList = specifierStrings.join(', ');
 
+      // Add 'type' keyword for full statement type exports
+      const typePrefix = ir.isTypeOnly ? 'type ' : '';
+
       if (source) {
-        // Re-export: export { foo } from "module"
-        exportStatement = `export { ${exportList} } from "${source}";`;
+        // Re-export: export { foo } from "module" or export type { foo } from "module"
+        exportStatement = `export ${typePrefix}{ ${exportList} } from "${source}";`;
       } else {
-        // Local export: export { foo }
-        exportStatement = `export { ${exportList} };`;
+        // Local export: export { foo } or export type { foo }
+        exportStatement = `export ${typePrefix}{ ${exportList} };`;
       }
     }
   }

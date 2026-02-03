@@ -300,6 +300,7 @@ export interface IImportIR extends IIRNode {
   type: IRNodeType.IMPORT;
   source: string;
   specifiers: IImportSpecifierIR[];
+  isTypeOnly?: boolean;
 }
 
 /**
@@ -309,6 +310,7 @@ export interface IImportSpecifierIR {
   type: 'ImportSpecifier' | 'ImportDefaultSpecifier' | 'ImportNamespaceSpecifier';
   imported: string;
   local: string;
+  isTypeOnly?: boolean;
 }
 
 /**
@@ -319,6 +321,7 @@ export interface IExportIR extends IIRNode {
   exportKind: 'named' | 'default' | 'all';
   specifiers: IExportSpecifierIR[];
   source: string | null;
+  isTypeOnly?: boolean;
 }
 
 /**
@@ -328,4 +331,5 @@ export interface IExportSpecifierIR {
   type: 'ExportSpecifier';
   exported: string;
   local: string;
+  isTypeOnly?: boolean;
 }
