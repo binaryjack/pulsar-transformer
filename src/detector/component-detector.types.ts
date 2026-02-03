@@ -131,6 +131,20 @@ export interface IHasJsxInBodyStrategy extends IDetectionStrategy {
 }
 
 /**
+ * S7: Anonymous Callback Strategy (NEGATIVE)
+ *
+ * Prevents false positives by detecting arrow functions used as callbacks.
+ * These should NOT be treated as components.
+ */
+export interface IAnonymousCallbackStrategy extends IDetectionStrategy {
+  /** Check if arrow function is an anonymous callback */
+  isAnonymousCallback(
+    node: ts.FunctionDeclaration | ts.ArrowFunction | ts.FunctionExpression,
+    context: IDetectionContext
+  ): boolean;
+}
+
+/**
  * Aggregated detection result from all strategies
  */
 export interface IAggregatedDetectionResult {

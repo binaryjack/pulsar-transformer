@@ -27,7 +27,7 @@ const SIGNAL_CREATORS = new Set([
 const PULSAR_MODULES = new Set([
   'pulsar.dev',
   '@pulsar-framework/ui',
-  '@pulsar-framework/core',
+  '@pulsar-framework/pulsar.dev',
   '@pulsar-framework/reactivity',
   '@pulsar/core', // Shorthand
   '@pulsar/ui',
@@ -442,11 +442,10 @@ export function hasSignalCalls(expression: ts.Expression, context: ITransformCon
             return;
           }
 
-          // Conservative pattern matching for likely signals
-          if (
-            /^(active|current|selected|is|has|show|get)[A-Z]/.test(name) ||
-            /^[a-z]+[A-Z].*$/.test(name)
-          ) {
+          // ONLY match specific signal naming patterns, NOT all camelCase
+          // Matches: isActive(), hasValue(), showModal(), getCurrentUser(), selectedItem()
+          // Does NOT match: TestNavigation(), bootstrapApp(), runTest(), updateModal()
+          if (/^(active|current|selected|is|has|show|get)[A-Z]/.test(name)) {
             console.log(`[PATTERN-DETECT] 📡 Potential signal call detected: ${name}()`);
             hasSignal = true;
             return;
@@ -554,7 +553,8 @@ export function createSignalDetector(context: ITransformContext) {
 
 /**
  * Detect and track reactive variable declarations
- * Identifies variables that contain signal calls and marks them as reactive functions
+ * Identifies variables that are SIMPLE reactive computations (e.g., filtered = () => items().filter(...))
+ * NOT component functions that happen to call signals internally
  */
 export function detectReactiveVariables(
   sourceFile: ts.SourceFile,
@@ -565,15 +565,21 @@ export function detectReactiveVariables(
     if (ts.isVariableDeclaration(node) && node.initializer && ts.isIdentifier(node.name)) {
       const varName = node.name.text;
 
-      // Check if initializer contains signal calls
-      if (hasSignalCalls(node.initializer, context)) {
-        // Mark this variable as reactive (needs to be wrapped in arrow function)
-        context.reactiveFunctions.add(varName);
+      // ONLY mark as reactive if it's a simple arrow function that returns signal calls
+      // Example: const filtered = () => items().filter(...)
+      // NOT: const TestNavigation = () => { /* complex body */ }
+      if (ts.isArrowFunction(node.initializer)) {
+        const body = node.initializer.body;
 
-        if (context.debugTracker) {
-          const tracker = context.debugTracker as any;
-          if (tracker.options?.enabled && tracker.options?.channels?.detector) {
-            console.log(`[DETECTOR] Reactive variable detected: ${varName}`);
+        // Only if it's a simple expression body (not a block statement)
+        if (!ts.isBlock(body) && hasSignalCalls(body, context)) {
+          context.reactiveFunctions.add(varName);
+
+          if (context.debugTracker) {
+            const tracker = context.debugTracker as any;
+            if (tracker.options?.enabled && tracker.options?.channels?.detector) {
+              console.log(`[DETECTOR] Reactive variable detected: ${varName}`);
+            }
           }
         }
       }

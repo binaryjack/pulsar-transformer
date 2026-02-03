@@ -11,9 +11,9 @@
 import * as ts from 'typescript';
 
 import type {
-  IDirectJsxReturnStrategy,
-  IDetectionResult,
   IDetectionContext,
+  IDetectionResult,
+  IDirectJsxReturnStrategy,
 } from '../component-detector.types.js';
 
 /**
@@ -43,6 +43,18 @@ DirectJsxReturnStrategy.prototype.hasDirectJsxReturn = function (
 ): boolean {
   const body = node.body;
   if (!body) return false;
+
+  // ⭐ SKIP anonymous arrow functions used as callbacks
+  if (ts.isArrowFunction(node)) {
+    const parent = node.parent;
+    if (
+      ts.isCallExpression(parent) ||
+      (ts.isParenthesizedExpression(parent) && ts.isCallExpression(parent.parent))
+    ) {
+      // This is a callback like runTest('test', () => <Component />)
+      return false;
+    }
+  }
 
   // Arrow function with expression body: () => <div>
   if (ts.isJsxElement(body) || ts.isJsxSelfClosingElement(body) || ts.isJsxFragment(body)) {

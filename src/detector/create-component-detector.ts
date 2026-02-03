@@ -10,6 +10,7 @@
 import * as ts from 'typescript';
 
 import { ComponentDetector } from './component-detector.js';
+import { AnonymousCallbackStrategy } from './strategies/anonymous-callback-strategy.js';
 import { ConditionalJsxReturnStrategy } from './strategies/conditional-jsx-return-strategy.js';
 import { DirectJsxReturnStrategy } from './strategies/direct-jsx-return-strategy.js';
 import { HasJsxInBodyStrategy } from './strategies/has-jsx-in-body-strategy.js';
@@ -66,6 +67,7 @@ export function createComponentDetector(config: IComponentDetectorConfig = {}): 
 
   // Register default strategies (or custom if provided)
   const strategies = config.strategies || [
+    new AnonymousCallbackStrategy(), // ⭐ HIGHEST PRIORITY - Prevent false positives
     new ReturnTypeStrategy(),
     new DirectJsxReturnStrategy(),
     new VariableJsxReturnStrategy(), // ⭐ THE BIG FIX
