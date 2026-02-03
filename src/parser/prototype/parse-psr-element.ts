@@ -1,43 +1,43 @@
 /**
  * Parse PSR Element
- * 
+ *
  * Parses JSX-like element syntax into AST node.
- * 
+ *
  * @example
  * <button class="btn" onClick={() => handle()}>Click</button>
  */
 
-import type { IParserInternal } from '../parser.types';
-import type { IPSRElementNode, IPSRAttributeNode } from '../ast';
+import type { IPSRAttributeNode, IPSRElementNode } from '../ast';
 import { ASTNodeType } from '../ast';
+import type { IParserInternal } from '../parser.types';
 
 /**
  * Parse PSR element
- * 
+ *
  * Grammar:
  *   < TagName Attributes? > Children* </ TagName >
  *   < TagName Attributes? />
  */
 export function parsePSRElement(this: IParserInternal): IPSRElementNode {
   const startToken = this._getCurrentToken()!;
-  
+
   // Consume '<'
   this._expect('LT', 'Expected "<"');
-  
+
   // Parse tag name
   const tagToken = this._expect('IDENTIFIER', 'Expected tag name');
   const tagName = tagToken.value;
-  
+
   // Parse attributes
   const attributes: IPSRAttributeNode[] = [];
-  
+
   while (!this._check('GT') && !this._check('SLASH') && !this._isAtEnd()) {
     const attr = this._parsePSRAttribute();
     if (attr) {
       attributes.push(attr);
     }
   }
-  
+
   // Check for self-closing: />
   let selfClosing = false;
   if (this._match('SLASH')) {
@@ -46,10 +46,10 @@ export function parsePSRElement(this: IParserInternal): IPSRElementNode {
   } else {
     this._expect('GT', 'Expected ">"');
   }
-  
+
   // Parse children (if not self-closing)
   const children: any[] = [];
-  
+
   if (!selfClosing) {
     while (!this._isClosingTag(tagName) && !this._isAtEnd()) {
       const child = this._parsePSRChild();
@@ -57,12 +57,12 @@ export function parsePSRElement(this: IParserInternal): IPSRElementNode {
         children.push(child);
       }
     }
-    
+
     // Parse closing tag: </TagName>
     this._expect('LT', 'Expected "<"');
     this._expect('SLASH', 'Expected "/"');
     const closeTag = this._expect('IDENTIFIER', 'Expected closing tag name');
-    
+
     if (closeTag.value !== tagName) {
       this._addError({
         code: 'PSR-E003',
@@ -71,12 +71,12 @@ export function parsePSRElement(this: IParserInternal): IPSRElementNode {
         token: closeTag,
       });
     }
-    
+
     this._expect('GT', 'Expected ">" after closing tag');
   }
-  
+
   const endToken = this._getCurrentToken() || startToken;
-  
+
   return {
     type: ASTNodeType.PSR_ELEMENT,
     tagName,
@@ -103,16 +103,16 @@ export function parsePSRElement(this: IParserInternal): IPSRElementNode {
  */
 function _parsePSRAttribute(this: IParserInternal): IPSRAttributeNode | null {
   const nameToken = this._getCurrentToken();
-  
+
   if (!nameToken || nameToken.type !== 'IDENTIFIER') {
     return null;
   }
-  
+
   this._advance(); // Consume attribute name
-  
+
   let value: any = null;
   let isStatic = true;
-  
+
   // Check for attribute value
   if (this._match('ASSIGN')) {
     // Static string value
@@ -143,7 +143,7 @@ function _parsePSRAttribute(this: IParserInternal): IPSRAttributeNode | null {
       this._expect('RBRACE', 'Expected "}" after expression');
     }
   }
-  
+
   return {
     type: ASTNodeType.PSR_ATTRIBUTE,
     name: nameToken.value,
@@ -169,21 +169,21 @@ function _parsePSRAttribute(this: IParserInternal): IPSRAttributeNode | null {
  */
 function _parsePSRChild(this: IParserInternal): any {
   const token = this._getCurrentToken();
-  
+
   if (!token) {
     return null;
   }
-  
+
   // Signal binding: $(signal)
   if (token.type === 'SIGNAL_BINDING') {
     return this._parsePSRSignalBinding();
   }
-  
+
   // Nested element: <tag>
   if (token.type === 'LT') {
     return this._parsePSRElement();
   }
-  
+
   // Expression: {expr}
   if (token.type === 'LBRACE') {
     this._advance();
@@ -191,7 +191,7 @@ function _parsePSRChild(this: IParserInternal): any {
     this._expect('RBRACE', 'Expected "}" after expression');
     return expr;
   }
-  
+
   // Text content
   if (token.type === 'IDENTIFIER' || token.type === 'STRING') {
     this._advance();
@@ -212,7 +212,7 @@ function _parsePSRChild(this: IParserInternal): any {
       },
     };
   }
-  
+
   // Unknown - skip
   this._advance();
   return null;
@@ -225,16 +225,16 @@ function _isClosingTag(this: IParserInternal, tagName: string): boolean {
   if (!this._check('LT')) {
     return false;
   }
-  
+
   // Peek ahead
   const nextToken = this._tokens[this._current + 1];
   if (!nextToken || nextToken.type !== 'SLASH') {
     return false;
   }
-  
+
   const closeTagToken = this._tokens[this._current + 2];
   return closeTagToken && closeTagToken.value === tagName;
 }
 
 // Export helper methods for prototype attachment
-export { _parsePSRAttribute, _parsePSRChild, _isClosingTag };
+export { _isClosingTag, _parsePSRAttribute, _parsePSRChild };

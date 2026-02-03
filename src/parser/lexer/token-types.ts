@@ -1,6 +1,6 @@
 /**
  * PSR Token Types
- * 
+ *
  * Defines all token types recognized by the PSR lexer.
  * Following Pulsar standards: one item per file, explicit types.
  */
@@ -14,40 +14,40 @@ export enum TokenType {
   IMPORT = 'IMPORT',
   EXPORT = 'EXPORT',
   FROM = 'FROM',
-  
+
   // Identifiers and Literals
   IDENTIFIER = 'IDENTIFIER',
   STRING = 'STRING',
   NUMBER = 'NUMBER',
-  
+
   // Operators
-  ASSIGN = 'ASSIGN',              // =
-  PLUS = 'PLUS',                  // +
-  MINUS = 'MINUS',                // -
-  MULTIPLY = 'MULTIPLY',          // *
-  DIVIDE = 'DIVIDE',              // /
-  ARROW = 'ARROW',                // =>
-  
+  ASSIGN = 'ASSIGN', // =
+  PLUS = 'PLUS', // +
+  MINUS = 'MINUS', // -
+  MULTIPLY = 'MULTIPLY', // *
+  DIVIDE = 'DIVIDE', // /
+  ARROW = 'ARROW', // =>
+
   // Delimiters
-  LPAREN = 'LPAREN',              // (
-  RPAREN = 'RPAREN',              // )
-  LBRACE = 'LBRACE',              // {
-  RBRACE = 'RBRACE',              // }
-  LBRACKET = 'LBRACKET',          // [
-  RBRACKET = 'RBRACKET',          // ]
-  SEMICOLON = 'SEMICOLON',        // ;
-  COMMA = 'COMMA',                // ,
-  DOT = 'DOT',                    // .
-  COLON = 'COLON',                // :
-  
+  LPAREN = 'LPAREN', // (
+  RPAREN = 'RPAREN', // )
+  LBRACE = 'LBRACE', // {
+  RBRACE = 'RBRACE', // }
+  LBRACKET = 'LBRACKET', // [
+  RBRACKET = 'RBRACKET', // ]
+  SEMICOLON = 'SEMICOLON', // ;
+  COMMA = 'COMMA', // ,
+  DOT = 'DOT', // .
+  COLON = 'COLON', // :
+
   // JSX-like
-  LT = 'LT',                      // <
-  GT = 'GT',                      // >
-  SLASH = 'SLASH',                // /
-  
+  LT = 'LT', // <
+  GT = 'GT', // >
+  SLASH = 'SLASH', // /
+
   // PSR-specific
-  SIGNAL_BINDING = 'SIGNAL_BINDING',  // $(identifier)
-  
+  SIGNAL_BINDING = 'SIGNAL_BINDING', // $(identifier)
+
   // Special
   EOF = 'EOF',
   WHITESPACE = 'WHITESPACE',

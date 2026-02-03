@@ -1,12 +1,12 @@
 /**
  * Parser Types
- * 
+ *
  * Type definitions for the PSR parser.
  * Prototype-based pattern, following Pulsar standards.
  */
 
-import type { IToken } from './lexer';
 import type { IASTNode } from './ast';
+import type { IToken } from './lexer';
 
 /**
  * Public Parser interface
@@ -16,17 +16,17 @@ export interface IParser {
    * Parse PSR source code into AST
    */
   parse(source: string): IASTNode;
-  
+
   /**
    * Get current parsing position
    */
   getPosition(): IParserPosition;
-  
+
   /**
    * Check if parser has errors
    */
   hasErrors(): boolean;
-  
+
   /**
    * Get parsing errors
    */
@@ -51,7 +51,7 @@ export interface IParserConfig {
    * Collect errors instead of throwing (default: true)
    */
   collectErrors?: boolean;
-  
+
   /**
    * Maximum number of errors before stopping (default: 10)
    */

@@ -1,18 +1,18 @@
 /**
  * Parser Tests
- * 
+ *
  * Tests for PSR Parser AST construction.
  */
 
-import { describe, it, expect } from 'vitest';
-import { createParser } from '../create-parser';
-import { ASTNodeType } from '../ast';
+import { describe, expect, it } from 'vitest';
 import type {
-  IProgramNode,
   IComponentDeclarationNode,
+  IProgramNode,
   IPSRElementNode,
   IPSRSignalBindingNode,
 } from '../ast';
+import { ASTNodeType } from '../ast';
+import { createParser } from '../create-parser';
 
 describe('createParser', () => {
   describe('basic parsing', () => {

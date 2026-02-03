@@ -1,11 +1,11 @@
 /**
  * Lexer Types
- * 
+ *
  * Type definitions for the PSR lexer.
  * Prototype-based pattern, following Pulsar standards.
  */
 
-import type { IToken, TokenType } from './token-types';
+import type { IToken } from './token-types';
 
 /**
  * Public Lexer interface
@@ -15,12 +15,12 @@ export interface ILexer {
    * Tokenize input source code
    */
   tokenize(source: string): IToken[];
-  
+
   /**
    * Get next token without consuming it
    */
   peek(): IToken | null;
-  
+
   /**
    * Get current position
    */
@@ -47,12 +47,12 @@ export interface ILexerConfig {
    * Skip whitespace tokens (default: true)
    */
   skipWhitespace?: boolean;
-  
+
   /**
    * Skip comment tokens (default: true)
    */
   skipComments?: boolean;
-  
+
   /**
    * Preserve newlines as tokens (default: false)
    */
@@ -71,8 +71,4 @@ export interface ILexerPosition {
 /**
  * Token recognizer function type
  */
-export type TokenRecognizer = (
-  char: string,
-  source: string,
-  position: number
-) => IToken | null;
+export type TokenRecognizer = (char: string, source: string, position: number) => IToken | null;

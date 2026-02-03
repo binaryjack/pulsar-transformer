@@ -1,31 +1,28 @@
 /**
  * Parse Component Declaration
- * 
+ *
  * Parses PSR component syntax into AST node.
- * 
+ *
  * @example
  * component MyButton() { return <button>Click</button>; }
  */
 
-import type { IParserInternal } from '../parser.types';
 import type { IComponentDeclarationNode, IIdentifierNode, IReturnStatementNode } from '../ast';
 import { ASTNodeType } from '../ast';
-import { TokenType } from '../lexer';
+import type { IParserInternal } from '../parser.types';
 
 /**
  * Parse component declaration
- * 
+ *
  * Grammar:
  *   component Identifier ( Params? ) { Statement* }
  */
-export function parseComponentDeclaration(
-  this: IParserInternal
-): IComponentDeclarationNode {
+export function parseComponentDeclaration(this: IParserInternal): IComponentDeclarationNode {
   const startToken = this._getCurrentToken()!;
-  
+
   // Consume 'component' keyword
   this._expect('COMPONENT', 'Expected "component" keyword');
-  
+
   // Parse component name
   const nameToken = this._expect('IDENTIFIER', 'Expected component name');
   const name: IIdentifierNode = {
@@ -44,12 +41,12 @@ export function parseComponentDeclaration(
       },
     },
   };
-  
+
   // Parse parameters: ()
   this._expect('LPAREN', 'Expected "(" after component name');
-  
+
   const params: IIdentifierNode[] = [];
-  
+
   // Parse parameter list (if any)
   if (!this._check('RPAREN')) {
     do {
@@ -72,15 +69,15 @@ export function parseComponentDeclaration(
       });
     } while (this._match('COMMA'));
   }
-  
+
   this._expect('RPAREN', 'Expected ")" after parameters');
-  
+
   // Parse body: { ... }
   this._expect('LBRACE', 'Expected "{" before component body');
-  
+
   const body: any[] = [];
   let returnStatement: IReturnStatementNode | null = null;
-  
+
   while (!this._check('RBRACE') && !this._isAtEnd()) {
     const statement = this._parseStatement();
     if (statement) {
@@ -90,9 +87,9 @@ export function parseComponentDeclaration(
       body.push(statement);
     }
   }
-  
+
   const endToken = this._expect('RBRACE', 'Expected "}" after component body');
-  
+
   return {
     type: ASTNodeType.COMPONENT_DECLARATION,
     name,

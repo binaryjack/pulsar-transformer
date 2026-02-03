@@ -1,6 +1,6 @@
 /**
  * PSR AST Node Types
- * 
+ *
  * Abstract Syntax Tree node type definitions for PSR syntax.
  * Each node represents a syntactic construct in PSR code.
  */
@@ -37,24 +37,24 @@ export interface IPosition {
 export enum ASTNodeType {
   // Program
   PROGRAM = 'Program',
-  
+
   // Declarations
   COMPONENT_DECLARATION = 'ComponentDeclaration',
   VARIABLE_DECLARATION = 'VariableDeclaration',
   IMPORT_DECLARATION = 'ImportDeclaration',
   EXPORT_DECLARATION = 'ExportDeclaration',
-  
+
   // Statements
   RETURN_STATEMENT = 'ReturnStatement',
   EXPRESSION_STATEMENT = 'ExpressionStatement',
-  
+
   // Expressions
   IDENTIFIER = 'Identifier',
   LITERAL = 'Literal',
   CALL_EXPRESSION = 'CallExpression',
   ARROW_FUNCTION = 'ArrowFunction',
   ARRAY_PATTERN = 'ArrayPattern',
-  
+
   // PSR-specific
   PSR_ELEMENT = 'PSRElement',
   PSR_ATTRIBUTE = 'PSRAttribute',
@@ -74,7 +74,7 @@ export interface IProgramNode extends IASTNode {
 
 /**
  * Component Declaration
- * 
+ *
  * @example
  * component MyButton() { return <button>Click</button>; }
  */
@@ -88,7 +88,7 @@ export interface IComponentDeclarationNode extends IASTNode {
 
 /**
  * Variable Declaration
- * 
+ *
  * @example
  * const [count, setCount] = createSignal(0);
  */
@@ -103,7 +103,7 @@ export interface IVariableDeclarationNode extends IASTNode {
 
 /**
  * Import Declaration
- * 
+ *
  * @example
  * import { createSignal } from '@pulsar/runtime';
  */
@@ -115,7 +115,7 @@ export interface IImportDeclarationNode extends IASTNode {
 
 /**
  * Export Declaration
- * 
+ *
  * @example
  * export { MyButton };
  */
@@ -127,7 +127,7 @@ export interface IExportDeclarationNode extends IASTNode {
 
 /**
  * Return Statement
- * 
+ *
  * @example
  * return <button>Click</button>;
  */
@@ -138,7 +138,7 @@ export interface IReturnStatementNode extends IASTNode {
 
 /**
  * Expression Statement
- * 
+ *
  * @example
  * console.log("Hello");
  */
@@ -149,7 +149,7 @@ export interface IExpressionStatementNode extends IASTNode {
 
 /**
  * Identifier
- * 
+ *
  * @example
  * count, setCount, MyButton
  */
@@ -160,7 +160,7 @@ export interface IIdentifierNode extends IASTNode {
 
 /**
  * Literal value
- * 
+ *
  * @example
  * 0, "hello", true
  */
@@ -172,7 +172,7 @@ export interface ILiteralNode extends IASTNode {
 
 /**
  * Call Expression
- * 
+ *
  * @example
  * createSignal(0)
  */
@@ -184,7 +184,7 @@ export interface ICallExpressionNode extends IASTNode {
 
 /**
  * Arrow Function
- * 
+ *
  * @example
  * () => setCount(count() + 1)
  */
@@ -196,7 +196,7 @@ export interface IArrowFunctionNode extends IASTNode {
 
 /**
  * Array Pattern (destructuring)
- * 
+ *
  * @example
  * [count, setCount]
  */
@@ -207,7 +207,7 @@ export interface IArrayPatternNode extends IASTNode {
 
 /**
  * PSR Element
- * 
+ *
  * @example
  * <button class="btn">Click</button>
  */
@@ -221,7 +221,7 @@ export interface IPSRElementNode extends IASTNode {
 
 /**
  * PSR Attribute
- * 
+ *
  * @example
  * class="btn", disabled={loading}
  */
@@ -234,7 +234,7 @@ export interface IPSRAttributeNode extends IASTNode {
 
 /**
  * PSR Signal Binding
- * 
+ *
  * @example
  * $(count)
  */
@@ -245,7 +245,7 @@ export interface IPSRSignalBindingNode extends IASTNode {
 
 /**
  * PSR Event Handler
- * 
+ *
  * @example
  * onClick={() => handleClick()}
  */
@@ -257,7 +257,7 @@ export interface IPSREventHandlerNode extends IASTNode {
 
 /**
  * PSR Text Node
- * 
+ *
  * @example
  * "Click me"
  */

@@ -1,42 +1,40 @@
 /**
  * Parse Return Statement
- * 
+ *
  * Parses return statements (commonly used in component bodies).
- * 
+ *
  * @example
  * return <button>Click</button>;
  */
 
-import type { IParserInternal } from '../parser.types';
 import type { IReturnStatementNode } from '../ast';
 import { ASTNodeType } from '../ast';
+import type { IParserInternal } from '../parser.types';
 
 /**
  * Parse return statement
- * 
+ *
  * Grammar:
  *   return Expression? ;
  */
-export function parseReturnStatement(
-  this: IParserInternal
-): IReturnStatementNode {
+export function parseReturnStatement(this: IParserInternal): IReturnStatementNode {
   const startToken = this._getCurrentToken()!;
-  
+
   // Consume 'return' keyword
   this._expect('RETURN', 'Expected "return" keyword');
-  
+
   let argument: any = null;
-  
+
   // Check for return value
   if (!this._check('SEMICOLON') && !this._isAtEnd()) {
     argument = this._parseExpression();
   }
-  
+
   // Consume optional semicolon
   this._match('SEMICOLON');
-  
+
   const endToken = this._getCurrentToken() || startToken;
-  
+
   return {
     type: ASTNodeType.RETURN_STATEMENT,
     argument,

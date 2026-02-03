@@ -1,21 +1,18 @@
 /**
  * PSR Lexer Constructor
- * 
+ *
  * Prototype-based lexer for PSR syntax.
  * Tokenizes PSR source code into tokens for parser consumption.
  */
 
-import type { ILexerInternal, ILexerConfig } from './lexer.types';
+import type { ILexerConfig, ILexerInternal } from './lexer.types';
 
 /**
  * Lexer constructor function
- * 
+ *
  * @param config - Lexer configuration
  */
-export const Lexer = function (
-  this: ILexerInternal,
-  config: ILexerConfig = {}
-) {
+export const Lexer = function (this: ILexerInternal, config: ILexerConfig = {}) {
   // Private properties using Object.defineProperty for encapsulation
   Object.defineProperty(this, '_source', {
     value: '',
@@ -23,35 +20,35 @@ export const Lexer = function (
     enumerable: false,
     configurable: false,
   });
-  
+
   Object.defineProperty(this, '_position', {
     value: 0,
     writable: true,
     enumerable: false,
     configurable: false,
   });
-  
+
   Object.defineProperty(this, '_line', {
     value: 1,
     writable: true,
     enumerable: false,
     configurable: false,
   });
-  
+
   Object.defineProperty(this, '_column', {
     value: 1,
     writable: true,
     enumerable: false,
     configurable: false,
   });
-  
+
   Object.defineProperty(this, '_tokens', {
     value: [],
     writable: true,
     enumerable: false,
     configurable: false,
   });
-  
+
   Object.defineProperty(this, '_current', {
     value: 0,
     writable: true,

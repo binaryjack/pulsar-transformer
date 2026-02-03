@@ -1,40 +1,45 @@
 /**
  * Prototype method attachment for Parser
- * 
+ *
  * Attaches all parsing methods to Parser.prototype
  */
 
 import { Parser } from '../parser';
 
 // Import all parsing methods
+import { getErrors } from './get-errors';
+import { getPosition } from './get-position';
+import { hasErrors } from './has-errors';
 import {
-  parse,
-  _parseStatement,
-  _isAtEnd,
-  _getCurrentToken,
+  _addError,
   _advance,
   _check,
-  _match,
   _expect,
-  _addError,
+  _getCurrentToken,
+  _isAtEnd,
+  _match,
+  _parseStatement,
+  parse,
 } from './parse';
 import { parseComponentDeclaration } from './parse-component-declaration';
-import { parsePSRElement, _parsePSRAttribute, _parsePSRChild, _isClosingTag } from './parse-psr-element';
+import {
+  _parseArrowFunctionOrGrouping,
+  _parseCallOrIdentifier,
+  _parseExportDeclaration,
+  _parseExpressionStatement,
+  _parseImportDeclaration,
+  _parseLiteral,
+  parseExpression,
+} from './parse-expression';
+import {
+  _isClosingTag,
+  _parsePSRAttribute,
+  _parsePSRChild,
+  parsePSRElement,
+} from './parse-psr-element';
 import { parsePSRSignalBinding } from './parse-psr-signal-binding';
 import { parseReturnStatement } from './parse-return-statement';
 import { parseVariableDeclaration } from './parse-variable-declaration';
-import {
-  parseExpression,
-  _parseLiteral,
-  _parseCallOrIdentifier,
-  _parseArrowFunctionOrGrouping,
-  _parseExpressionStatement,
-  _parseImportDeclaration,
-  _parseExportDeclaration,
-} from './parse-expression';
-import { getPosition } from './get-position';
-import { hasErrors } from './has-errors';
-import { getErrors } from './get-errors';
 
 // Attach public methods to Parser.prototype
 Parser.prototype.parse = parse;

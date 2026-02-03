@@ -1,0 +1,84 @@
+/**
+ * Main Analyze Method
+ * 
+ * Entry point for AST to IR conversion.
+ */
+
+import type { IAnalyzerInternal } from '../analyzer.types';
+import type { IASTNode, IProgramNode } from '../../parser/ast';
+import type { IIRNode } from '../ir';
+import { ASTNodeType } from '../../parser/ast';
+
+/**
+ * Analyze AST and build IR
+ */
+export function analyze(this: IAnalyzerInternal, ast: IASTNode): IIRNode {
+  // Reset state
+  this._context.scopes = [];
+  this._context.currentComponent = null;
+  this._context.signals.clear();
+  this._errors = [];
+  
+  // Analyze root program node
+  if (ast.type !== ASTNodeType.PROGRAM) {
+    this._addError({
+      code: 'PSR-A001',
+      message: 'AST root must be a Program node',
+      severity: 'error',
+    });
+    throw new Error('Invalid AST: expected Program node');
+  }
+  
+  const program = ast as IProgramNode;
+  const irNodes: IIRNode[] = [];
+  
+  // Analyze each top-level statement
+  for (const statement of program.body) {
+    const irNode = this._analyzeNode(statement);
+    if (irNode) {
+      irNodes.push(irNode);
+    }
+  }
+  
+  // Return IR program (for now, return first node or compound)
+  return irNodes[0] || {
+    type: 'ProgramIR' as any,
+    body: irNodes,
+    metadata: {},
+  };
+}
+
+/**
+ * Analyze a single AST node and convert to IR
+ */
+function _analyzeNode(this: IAnalyzerInternal, node: IASTNode): IIRNode | null {
+  switch (node.type) {
+    case ASTNodeType.COMPONENT_DECLARATION:
+      return this._analyzeComponent(node);
+      
+    case ASTNodeType.VARIABLE_DECLARATION:
+      return this._analyzeVariable(node);
+      
+    case ASTNodeType.RETURN_STATEMENT:
+      return this._analyzeReturn(node);
+      
+    case ASTNodeType.PSR_ELEMENT:
+      return this._analyzeElement(node);
+      
+    case ASTNodeType.PSR_SIGNAL_BINDING:
+      return this._analyzeSignalBinding(node);
+      
+    case ASTNodeType.CALL_EXPRESSION:
+    case ASTNodeType.LITERAL:
+    case ASTNodeType.IDENTIFIER:
+    case ASTNodeType.ARROW_FUNCTION:
+      return this._analyzeExpression(node);
+      
+    default:
+      // Unknown node type - skip
+      return null;
+  }
+}
+
+// Export helper
+export { _analyzeNode };

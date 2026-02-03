@@ -1,6 +1,6 @@
 /**
  * Parser factory function
- * 
+ *
  * Creates a Parser instance for parsing PSR source code.
  */
 
@@ -10,10 +10,10 @@ import './prototype'; // Ensure prototype methods are attached
 
 /**
  * Create a Parser instance
- * 
+ *
  * @param config - Parser configuration
  * @returns Parser instance
- * 
+ *
  * @example
  * const parser = createParser();
  * const ast = parser.parse('component MyButton() { return <button>Click</button>; }');

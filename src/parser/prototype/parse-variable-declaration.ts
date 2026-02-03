@@ -1,32 +1,30 @@
 /**
  * Parse Variable Declaration
- * 
+ *
  * Parses const/let variable declarations.
- * 
+ *
  * @example
  * const count = createSignal(0);
  */
 
-import type { IParserInternal } from '../parser.types';
-import type { IVariableDeclarationNode, IIdentifierNode } from '../ast';
+import type { IIdentifierNode, IVariableDeclarationNode } from '../ast';
 import { ASTNodeType } from '../ast';
+import type { IParserInternal } from '../parser.types';
 
 /**
  * Parse variable declaration
- * 
+ *
  * Grammar:
  *   const Identifier = Expression ;
  *   let Identifier = Expression ;
  */
-export function parseVariableDeclaration(
-  this: IParserInternal
-): IVariableDeclarationNode {
+export function parseVariableDeclaration(this: IParserInternal): IVariableDeclarationNode {
   const startToken = this._getCurrentToken()!;
-  
+
   // const or let
   const kind = startToken.value as 'const' | 'let';
   this._advance();
-  
+
   // Parse identifier
   const idToken = this._expect('IDENTIFIER', 'Expected variable name');
   const id: IIdentifierNode = {
@@ -45,18 +43,18 @@ export function parseVariableDeclaration(
       },
     },
   };
-  
+
   // Parse initializer
   let init: any = null;
   if (this._match('ASSIGN')) {
     init = this._parseExpression();
   }
-  
+
   // Consume semicolon
   this._match('SEMICOLON');
-  
+
   const endToken = this._getCurrentToken() || startToken;
-  
+
   return {
     type: ASTNodeType.VARIABLE_DECLARATION,
     kind,

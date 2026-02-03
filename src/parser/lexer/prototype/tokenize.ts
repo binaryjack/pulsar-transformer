@@ -1,17 +1,17 @@
 /**
  * Lexer tokenize method
- * 
+ *
  * Main tokenization logic - converts source string into token array.
  */
 
+import { Lexer } from '../lexer';
 import type { ILexerInternal } from '../lexer.types';
 import type { IToken } from '../token-types';
 import { TokenType } from '../token-types';
-import { Lexer } from '../lexer';
 
 /**
  * Tokenize source code into tokens
- * 
+ *
  * @param source - PSR source code
  * @returns Array of tokens
  */
@@ -23,17 +23,17 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
   this._column = 1;
   this._tokens = [];
   this._current = 0;
-  
+
   while (this._position < source.length) {
     const char = source[this._position];
-    
+
     // Skip whitespace (spaces, tabs)
     if (char === ' ' || char === '\t') {
       this._position++;
       this._column++;
       continue;
     }
-    
+
     // Handle newlines
     if (char === '\n' || char === '\r') {
       this._position++;
@@ -41,10 +41,10 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
       this._column = 1;
       continue;
     }
-    
+
     // Try to recognize token
     const token = this._recognizeToken();
-    
+
     if (token) {
       this._tokens.push(token);
     } else {
@@ -54,7 +54,7 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
       );
     }
   }
-  
+
   // Add EOF token
   this._tokens.push({
     type: TokenType.EOF,
@@ -64,13 +64,13 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
     start: this._position,
     end: this._position,
   });
-  
+
   return this._tokens;
 }
 
 /**
  * Internal token recognition
- * 
+ *
  * @returns Recognized token or null
  */
 function _recognizeToken(this: ILexerInternal): IToken | null {
@@ -78,27 +78,27 @@ function _recognizeToken(this: ILexerInternal): IToken | null {
   const start = this._position;
   const line = this._line;
   const column = this._column;
-  
+
   // Keywords and identifiers
   if (this._isAlpha(char)) {
     return this._readIdentifierOrKeyword(start, line, column);
   }
-  
+
   // Numbers
   if (this._isDigit(char)) {
     return this._readNumber(start, line, column);
   }
-  
+
   // Strings
-  if (char === '"' || char === '\'' || char === '`') {
+  if (char === '"' || char === "'" || char === '`') {
     return this._readString(start, line, column);
   }
-  
+
   // Signal binding: $(identifier)
   if (char === '$' && this._source[this._position + 1] === '(') {
     return this._readSignalBinding(start, line, column);
   }
-  
+
   // Single character tokens
   return this._readSingleChar(start, line, column);
 }
@@ -134,10 +134,10 @@ function _readIdentifierOrKeyword(
   column: number
 ): IToken {
   let value = '';
-  
+
   while (this._position < this._source.length) {
     const char = this._source[this._position];
-    
+
     if (this._isAlphaNumeric(char)) {
       value += char;
       this._position++;
@@ -146,20 +146,20 @@ function _readIdentifierOrKeyword(
       break;
     }
   }
-  
+
   // Check if it's a keyword
   const keywords: Record<string, TokenType> = {
-    'component': TokenType.COMPONENT,
-    'const': TokenType.CONST,
-    'let': TokenType.LET,
-    'return': TokenType.RETURN,
-    'import': TokenType.IMPORT,
-    'export': TokenType.EXPORT,
-    'from': TokenType.FROM,
+    component: TokenType.COMPONENT,
+    const: TokenType.CONST,
+    let: TokenType.LET,
+    return: TokenType.RETURN,
+    import: TokenType.IMPORT,
+    export: TokenType.EXPORT,
+    from: TokenType.FROM,
   };
-  
+
   const type = keywords[value] || TokenType.IDENTIFIER;
-  
+
   return {
     type,
     value,
@@ -173,17 +173,12 @@ function _readIdentifierOrKeyword(
 /**
  * Read number literal
  */
-function _readNumber(
-  this: ILexerInternal,
-  start: number,
-  line: number,
-  column: number
-): IToken {
+function _readNumber(this: ILexerInternal, start: number, line: number, column: number): IToken {
   let value = '';
-  
+
   while (this._position < this._source.length) {
     const char = this._source[this._position];
-    
+
     if (this._isDigit(char) || char === '.') {
       value += char;
       this._position++;
@@ -192,7 +187,7 @@ function _readNumber(
       break;
     }
   }
-  
+
   return {
     type: TokenType.NUMBER,
     value,
@@ -206,27 +201,22 @@ function _readNumber(
 /**
  * Read string literal
  */
-function _readString(
-  this: ILexerInternal,
-  start: number,
-  line: number,
-  column: number
-): IToken {
+function _readString(this: ILexerInternal, start: number, line: number, column: number): IToken {
   const quote = this._source[this._position];
   let value = '';
-  
+
   this._position++; // Skip opening quote
   this._column++;
-  
+
   while (this._position < this._source.length) {
     const char = this._source[this._position];
-    
+
     if (char === quote) {
       this._position++; // Skip closing quote
       this._column++;
       break;
     }
-    
+
     if (char === '\\') {
       // Handle escape sequences
       this._position++;
@@ -242,7 +232,7 @@ function _readString(
       this._column++;
     }
   }
-  
+
   return {
     type: TokenType.STRING,
     value,
@@ -265,11 +255,11 @@ function _readSignalBinding(
   let value = '$(';
   this._position += 2; // Skip $(
   this._column += 2;
-  
+
   // Read identifier
   while (this._position < this._source.length) {
     const char = this._source[this._position];
-    
+
     if (this._isAlphaNumeric(char)) {
       value += char;
       this._position++;
@@ -280,12 +270,10 @@ function _readSignalBinding(
       this._column++;
       break;
     } else {
-      throw new Error(
-        `PSR-E002: Invalid signal binding at line ${line}, column ${column}`
-      );
+      throw new Error(`PSR-E002: Invalid signal binding at line ${line}, column ${column}`);
     }
   }
-  
+
   return {
     type: TokenType.SIGNAL_BINDING,
     value,
@@ -306,7 +294,7 @@ function _readSingleChar(
   column: number
 ): IToken | null {
   const char = this._source[this._position];
-  
+
   const singleCharTokens: Record<string, TokenType> = {
     '(': TokenType.LPAREN,
     ')': TokenType.RPAREN,
@@ -326,13 +314,13 @@ function _readSingleChar(
     '*': TokenType.MULTIPLY,
     '=': TokenType.ASSIGN,
   };
-  
+
   const type = singleCharTokens[char];
-  
+
   if (type) {
     this._position++;
     this._column++;
-    
+
     // Check for multi-char operators
     if (char === '=' && this._source[this._position] === '>') {
       this._position++;
@@ -346,7 +334,7 @@ function _readSingleChar(
         end: this._position,
       };
     }
-    
+
     return {
       type,
       value: char,
@@ -356,7 +344,7 @@ function _readSingleChar(
       end: this._position,
     };
   }
-  
+
   return null;
 }
 
