@@ -17,10 +17,7 @@ import { IRNodeType } from '../ir/index.js';
 /**
  * Analyze export declaration
  */
-export function analyzeExport(
-  this: IAnalyzerInternal,
-  node: IExportDeclarationNode
-): IExportIR {
+export function analyzeExport(this: IAnalyzerInternal, node: IExportDeclarationNode): IExportIR {
   const specifiers: IExportSpecifierIR[] = [];
 
   // Handle named exports with specifiers

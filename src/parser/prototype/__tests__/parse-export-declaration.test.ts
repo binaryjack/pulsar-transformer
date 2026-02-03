@@ -2,8 +2,8 @@
  * Tests for parse-export-declaration
  */
 
-import { createParser } from '../../create-parser.js';
 import { ASTNodeType } from '../../ast/index.js';
+import { createParser } from '../../create-parser.js';
 
 describe('parseExportDeclaration', () => {
   describe('named exports', () => {
@@ -141,7 +141,7 @@ describe('parseExportDeclaration', () => {
   describe('error handling', () => {
     it('should handle missing closing brace', () => {
       const parser = createParser();
-      
+
       expect(() => {
         parser.parse('export { foo');
       }).toThrow('Expected } after export specifiers');
@@ -158,7 +158,7 @@ describe('parseExportDeclaration', () => {
 
     it('should handle invalid export specifier', () => {
       const parser = createParser();
-      
+
       expect(() => {
         parser.parse('export { 123 };');
       }).toThrow('Expected export specifier');

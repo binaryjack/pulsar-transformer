@@ -4,7 +4,6 @@
 
 import { createParser } from '../../../parser/create-parser.js';
 import { createAnalyzer } from '../../create-analyzer.js';
-import { IRNodeType } from '../../ir/index.js';
 
 describe('analyzeExport', () => {
   describe('named exports', () => {
