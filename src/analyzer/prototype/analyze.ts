@@ -42,14 +42,22 @@ export function analyze(this: IAnalyzerInternal, ast: IASTNode): IIRNode {
     }
   }
 
-  // Return IR program (for now, return first node or compound)
-  return (
-    irNodes[0] || {
+  // Return single node, multiple nodes as ProgramIR, or empty ProgramIR
+  if (irNodes.length === 0) {
+    return {
+      type: 'ProgramIR' as any,
+      body: [],
+      metadata: {},
+    };
+  } else if (irNodes.length === 1) {
+    return irNodes[0];
+  } else {
+    return {
       type: 'ProgramIR' as any,
       body: irNodes,
       metadata: {},
-    }
-  );
+    };
+  }
 }
 
 /**

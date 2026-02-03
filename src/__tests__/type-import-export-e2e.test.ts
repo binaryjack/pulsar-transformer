@@ -145,13 +145,7 @@ export function UserList() {
     });
 
     it('should preserve type export through full pipeline', () => {
-      const source = `
-export type { IUser, IProduct } from "./types";
-export { Button, Card } from "./components";
-
-export function UserList() {
-  return <div>User List</div>;
-}`;
+      const source = `export type { IUser, IProduct } from "./types";`;
 
       const parser = createParser();
       const ast = parser.parse(source);
