@@ -60,6 +60,7 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
       type: ASTNodeType.IMPORT_DECLARATION,
       specifiers,
       source,
+      importKind: 'side-effect',
       location: {
         start: {
           line: startToken.line,
@@ -75,16 +76,97 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     };
   }
 
-  // Check for named imports: { name1, name2 }
-  if (this._check('LBRACE')) {
+  // Track import kind
+  let importKind: 'named' | 'default' | 'side-effect' | 'namespace' | 'mixed' = 'named';
+
+  // Check for default import first (could be alone or followed by named imports)
+  if (this._check('IDENTIFIER')) {
+    // Default import: import name from 'module'
+    // OR mixed: import name, { named } from 'module'
+    const specToken = this._advance();
+    specifiers.push({
+      type: ASTNodeType.IDENTIFIER,
+      name: specToken.value,
+      location: {
+        start: {
+          line: specToken.line,
+          column: specToken.column,
+          offset: specToken.start,
+        },
+        end: {
+          line: specToken.line,
+          column: specToken.column + specToken.value.length,
+          offset: specToken.end,
+        },
+      },
+    });
+
+    // Check for comma indicating mixed import
+    if (this._match('COMMA')) {
+      // Mixed import - both default and named
+      importKind = 'mixed';
+      this._expect('LBRACE', 'Expected { after comma in mixed import');
+
+      // Parse named imports
+      while (!this._check('RBRACE') && !this._isAtEnd()) {
+        const namedToken = this._expect('IDENTIFIER', 'Expected import specifier');
+
+        // Check for alias: import { foo as bar }
+        let alias: string | undefined;
+        if (this._match('AS')) {
+          const aliasToken = this._expect('IDENTIFIER', 'Expected identifier after as');
+          alias = aliasToken.value;
+        }
+
+        specifiers.push({
+          type: ASTNodeType.IDENTIFIER,
+          name: namedToken.value,
+          alias,
+          location: {
+            start: {
+              line: namedToken.line,
+              column: namedToken.column,
+              offset: namedToken.start,
+            },
+            end: {
+              line: namedToken.line,
+              column: namedToken.column + namedToken.value.length,
+              offset: namedToken.end,
+            },
+          },
+        });
+
+        // If no comma, we're done
+        if (!this._match('COMMA')) {
+          break;
+        }
+      }
+
+      this._expect('RBRACE', 'Expected } after named import specifiers');
+    } else {
+      // Pure default import
+      importKind = 'default';
+    }
+  } else if (this._check('LBRACE')) {
+    // Named imports: { name1, name2 }
     this._advance(); // consume {
+    importKind = 'named';
 
     // Parse specifiers (handle empty case and trailing comma)
     while (!this._check('RBRACE') && !this._isAtEnd()) {
       const specToken = this._expect('IDENTIFIER', 'Expected import specifier');
+
+      // Check for alias: import { foo as bar }
+      let alias: string | undefined;
+      if (this._match('AS')) {
+        const aliasToken = this._expect('IDENTIFIER', 'Expected identifier after as');
+        alias = aliasToken.value;
+      }
+
       specifiers.push({
         type: ASTNodeType.IDENTIFIER,
         name: specToken.value,
+        alias,
         location: {
           start: {
             line: specToken.line,
@@ -106,8 +188,32 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     }
 
     this._expect('RBRACE', 'Expected } after import specifiers');
+  } else if (this._check('MULTIPLY')) {
+    // Namespace import: import * as name from 'module'
+    importKind = 'namespace';
+    this._advance(); // consume *
+    this._expect('AS', 'Expected as after * in namespace import');
+    const specToken = this._expect('IDENTIFIER', 'Expected identifier after as');
+    specifiers.push({
+      type: ASTNodeType.IDENTIFIER,
+      name: specToken.value,
+      location: {
+        start: {
+          line: specToken.line,
+          column: specToken.column,
+          offset: specToken.start,
+        },
+        end: {
+          line: specToken.line,
+          column: specToken.column + specToken.value.length,
+          offset: specToken.end,
+        },
+      },
+    });
   } else if (this._check('IDENTIFIER')) {
-    // Default import: import name from 'module'
+    // This branch is now unreachable as IDENTIFIER is handled first above
+    // Keeping for safety but default imports are handled earlier
+    importKind = 'default';
     const specToken = this._advance();
     specifiers.push({
       type: ASTNodeType.IDENTIFIER,
@@ -216,6 +322,7 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     type: ASTNodeType.IMPORT_DECLARATION,
     specifiers,
     source,
+    importKind,
     location: {
       start: {
         line: startToken.line,

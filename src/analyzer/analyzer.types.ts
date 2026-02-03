@@ -47,6 +47,7 @@ export interface IAnalyzerInternal extends IAnalyzer {
   _analyzeVariable(node: any): IIRNode;
   _analyzeReturn(node: any): IIRNode;
   _analyzeImport(node: any): IIRNode;
+  _analyzeExport(node: any): IIRNode;
 
   // Helper methods
   _addError(error: IAnalyzerError): void;
@@ -120,6 +121,11 @@ export interface IAnalyzerContext {
    * Imported identifiers
    */
   imports: Map<string, string>;
+
+  /**
+   * Exported identifiers
+   */
+  exports: Set<string>;
 
   /**
    * Registry keys generated

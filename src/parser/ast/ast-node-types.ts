@@ -106,23 +106,33 @@ export interface IVariableDeclarationNode extends IASTNode {
  *
  * @example
  * import { createSignal } from '@pulsar/runtime';
+ * import React from 'react';
+ * import './styles.css';
  */
 export interface IImportDeclarationNode extends IASTNode {
   readonly type: ASTNodeType.IMPORT_DECLARATION;
   readonly specifiers: IIdentifierNode[];
   readonly source: ILiteralNode;
+  readonly importKind?: 'named' | 'default' | 'side-effect' | 'namespace' | 'mixed'; // Added to distinguish import types
 }
 
 /**
  * Export Declaration
  *
  * @example
- * export { MyButton };
+ * export { foo, bar };
+ * export { foo as bar };
+ * export const x = 1;
+ * export default Component;
+ * export * from './utils';
+ * export { foo } from './utils';
  */
 export interface IExportDeclarationNode extends IASTNode {
   readonly type: ASTNodeType.EXPORT_DECLARATION;
-  readonly declaration: IASTNode | null;
-  readonly specifiers: IIdentifierNode[];
+  readonly declaration: IASTNode | null; // For: export const x = 1;
+  readonly specifiers: IIdentifierNode[]; // For: export { foo, bar };
+  readonly source: ILiteralNode | null; // For: export { foo } from './utils';
+  readonly exportKind?: 'named' | 'default' | 'all'; // 'all' for export *
 }
 
 /**
@@ -156,6 +166,7 @@ export interface IExpressionStatementNode extends IASTNode {
 export interface IIdentifierNode extends IASTNode {
   readonly type: ASTNodeType.IDENTIFIER;
   readonly name: string;
+  readonly alias?: string; // For import aliases: import { name as alias }
 }
 
 /**

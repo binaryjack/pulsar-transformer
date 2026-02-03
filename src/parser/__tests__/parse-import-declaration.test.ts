@@ -116,6 +116,32 @@ describe('parseImportDeclaration', () => {
     });
   });
 
+  describe('namespace imports', () => {
+    it('should parse namespace import', () => {
+      const parser = createParser();
+      const source = `import * as utils from './utils';`;
+      const ast = parser.parse(source) as IProgramNode;
+
+      const importDecl = ast.body[0] as IImportDeclarationNode;
+      expect(importDecl.specifiers).toHaveLength(1);
+      expect(importDecl.specifiers[0].name).toBe('utils');
+      expect(importDecl.source.value).toBe('./utils');
+      expect((importDecl as any).importKind).toBe('namespace');
+    });
+
+    it('should parse namespace import from npm package', () => {
+      const parser = createParser();
+      const source = `import * as React from 'react';`;
+      const ast = parser.parse(source) as IProgramNode;
+
+      const importDecl = ast.body[0] as IImportDeclarationNode;
+      expect(importDecl.specifiers).toHaveLength(1);
+      expect(importDecl.specifiers[0].name).toBe('React');
+      expect(importDecl.source.value).toBe('react');
+      expect((importDecl as any).importKind).toBe('namespace');
+    });
+  });
+
   describe('side-effect imports', () => {
     it('should parse side-effect import (CSS)', () => {
       const parser = createParser();

@@ -17,22 +17,37 @@ export function analyzeImport(this: IAnalyzerInternal, node: IImportDeclarationN
 
   // Track each imported identifier in context
   for (const specifier of specifiers) {
-    // Map local name → source module
-    this._context.imports.set(specifier.name, source.value);
+    // Map local name → source module (use alias if present)
+    const localName = specifier.alias || specifier.name;
+    this._context.imports.set(localName, source.value);
   }
 
   // Build IR node for import
   const importIR: IImportIR = {
     type: IRNodeType.IMPORT,
     source: source.value,
-    specifiers: specifiers.map((spec) => ({
-      // Determine type based on specifier name/position
-      // For now, treat all as ImportSpecifier (named import)
-      // TODO: Distinguish default vs named imports
-      type: 'ImportSpecifier',
-      imported: spec.name,
-      local: spec.name,
-    })),
+    specifiers: specifiers.map((spec, index) => {
+      // Determine specifier type based on import kind
+      let specifierType: 'ImportSpecifier' | 'ImportDefaultSpecifier' | 'ImportNamespaceSpecifier';
+
+      if (node.importKind === 'default') {
+        specifierType = 'ImportDefaultSpecifier';
+      } else if (node.importKind === 'namespace') {
+        specifierType = 'ImportNamespaceSpecifier';
+      } else if (node.importKind === 'mixed') {
+        // Mixed import: first specifier is default, rest are named
+        specifierType = index === 0 ? 'ImportDefaultSpecifier' : 'ImportSpecifier';
+      } else {
+        // Pure named import
+        specifierType = 'ImportSpecifier';
+      }
+
+      return {
+        type: specifierType,
+        imported: spec.name, // Original name from module
+        local: spec.alias || spec.name, // Local name (alias if present, otherwise same as imported)
+      };
+    }),
     metadata: {
       line: node.location?.start.line,
       column: node.location?.start.column,

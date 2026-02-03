@@ -24,6 +24,7 @@ export enum IRNodeType {
   VARIABLE_DECLARATION_IR = 'VariableDeclarationIR',
   RETURN_STATEMENT_IR = 'ReturnStatementIR',
   IMPORT = 'ImportIR',
+  EXPORT = 'ExportIR',
 
   // Registry Pattern IR
   REGISTRY_REGISTRATION_IR = 'RegistryRegistrationIR',
@@ -307,5 +308,24 @@ export interface IImportIR extends IIRNode {
 export interface IImportSpecifierIR {
   type: 'ImportSpecifier' | 'ImportDefaultSpecifier' | 'ImportNamespaceSpecifier';
   imported: string;
+  local: string;
+}
+
+/**
+ * Export IR Node
+ */
+export interface IExportIR extends IIRNode {
+  type: IRNodeType.EXPORT;
+  exportKind: 'named' | 'default' | 'all';
+  specifiers: IExportSpecifierIR[];
+  source: string | null;
+}
+
+/**
+ * Export Specifier IR
+ */
+export interface IExportSpecifierIR {
+  type: 'ExportSpecifier';
+  exported: string;
   local: string;
 }

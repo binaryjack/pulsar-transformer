@@ -140,9 +140,9 @@ describe('Import Analysis', () => {
       const importIR = ir as IImportIR;
       expect(importIR.source).toBe('react');
       expect(importIR.specifiers).toHaveLength(1);
-      // Note: Parser doesn't distinguish default vs named imports in AST
-      // Both are represented as IIdentifierNode[], so IR treats as ImportSpecifier
-      expect(importIR.specifiers[0].type).toBe('ImportSpecifier');
+      // Parser now distinguishes default imports via importKind field
+      // Default imports should have type 'ImportDefaultSpecifier'
+      expect(importIR.specifiers[0].type).toBe('ImportDefaultSpecifier');
       expect(importIR.specifiers[0].local).toBe('React');
       expect(importIR.specifiers[0].imported).toBe('React');
     });

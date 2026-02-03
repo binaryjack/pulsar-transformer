@@ -12,6 +12,7 @@
 
 import { ASTNodeType } from '../ast/index.js';
 import type { IParserInternal } from '../parser.types.js';
+import { parseExportDeclaration } from './parse-export-declaration.js';
 
 /**
  * Parse expression
@@ -250,31 +251,9 @@ function _parseExpressionStatement(this: IParserInternal): any {
 }
 
 /**
- * Parse export declaration (stub - not implemented yet)
+ * Parse export declaration - delegates to dedicated parser
  */
-function _parseExportDeclaration(this: IParserInternal): any {
-  const startToken = this._advance(); // consume 'export'
-
-  // Parse exported declaration
-  const declaration = this._parseStatement();
-
-  return {
-    type: ASTNodeType.EXPORT_DECLARATION,
-    declaration,
-    location: {
-      start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
-      },
-      end: declaration?.location?.end || {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.end,
-      },
-    },
-  };
-}
+const _parseExportDeclaration = parseExportDeclaration;
 
 // Export helper methods for prototype attachment
 export {

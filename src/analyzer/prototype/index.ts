@@ -7,6 +7,7 @@ import { Analyzer } from '../analyzer.js';
 // Import analysis methods
 import { _detectEventHandlers, _isPureComponent, analyzeComponent } from './analyze-component.js';
 import { _handlerAccessesSignals, analyzeElement } from './analyze-element.js';
+import { analyzeExport } from './analyze-export.js';
 import {
   _analyzeArrowFunction,
   _analyzeCallExpression,
@@ -82,6 +83,13 @@ Object.defineProperty(Analyzer.prototype, '_analyzeReturn', {
 
 Object.defineProperty(Analyzer.prototype, '_analyzeImport', {
   value: analyzeImport,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Analyzer.prototype, '_analyzeExport', {
+  value: analyzeExport,
   writable: true,
   enumerable: false,
   configurable: false,

@@ -25,6 +25,7 @@ export const Analyzer = function (this: IAnalyzerInternal, config: IAnalyzerConf
       currentComponent: null,
       signals: new Set(),
       imports: new Map(),
+      exports: new Set(),
       registryKeys: new Map(),
     } as IAnalyzerContext,
     writable: true,
