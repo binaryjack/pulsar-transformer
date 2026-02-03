@@ -24,5 +24,6 @@ export type {
   IPosition,
   IProgramNode,
   IReturnStatementNode,
+  ITypeAnnotationNode,
   IVariableDeclarationNode,
 } from './ast-node-types.js';

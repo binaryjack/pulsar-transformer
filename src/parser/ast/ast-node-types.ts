@@ -41,6 +41,7 @@ export enum ASTNodeType {
   // Declarations
   COMPONENT_DECLARATION = 'ComponentDeclaration',
   VARIABLE_DECLARATION = 'VariableDeclaration',
+  TYPE_ANNOTATION = 'TypeAnnotation',
   IMPORT_DECLARATION = 'ImportDeclaration',
   EXPORT_DECLARATION = 'ExportDeclaration',
 
@@ -91,6 +92,7 @@ export interface IComponentDeclarationNode extends IASTNode {
  *
  * @example
  * const [count, setCount] = createSignal(0);
+ * const value: number = 42;
  */
 export interface IVariableDeclarationNode extends IASTNode {
   readonly type: ASTNodeType.VARIABLE_DECLARATION;
@@ -98,6 +100,7 @@ export interface IVariableDeclarationNode extends IASTNode {
   readonly declarations: Array<{
     id: IIdentifierNode | IArrayPatternNode;
     init: ICallExpressionNode | ILiteralNode | null;
+    typeAnnotation?: ITypeAnnotationNode;
   }>;
 }
 
@@ -135,6 +138,19 @@ export interface IExportDeclarationNode extends IASTNode {
   readonly source: ILiteralNode | null; // For: export { foo } from './utils';
   readonly exportKind?: 'named' | 'default' | 'all'; // 'all' for export *
   readonly isTypeOnly?: boolean; // For: export type { Foo } from './types'
+}
+
+/**
+ * Type Annotation
+ *
+ * @example
+ * : number
+ * : string
+ * : Array<T>
+ */
+export interface ITypeAnnotationNode extends IASTNode {
+  readonly type: ASTNodeType.TYPE_ANNOTATION;
+  readonly typeString: string; // Raw type string for now
 }
 
 /**

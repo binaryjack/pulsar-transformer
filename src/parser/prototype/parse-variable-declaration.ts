@@ -81,6 +81,32 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
     };
   }
 
+  // Parse optional type annotation: : Type
+  let typeAnnotation: any = null;
+  if (this._check('COLON')) {
+    this._advance(); // consume :
+
+    // Read type tokens until we hit = or ;
+    const typeTokens: string[] = [];
+    while (!this._check('ASSIGN') && !this._check('SEMICOLON') && !this._isAtEnd()) {
+      const token = this._getCurrentToken();
+      if (token) {
+        typeTokens.push(token.value);
+        this._advance();
+      } else {
+        break;
+      }
+    }
+
+    if (typeTokens.length > 0) {
+      const typeString = typeTokens.join(' ');
+      typeAnnotation = {
+        type: ASTNodeType.TYPE_ANNOTATION,
+        typeString,
+      };
+    }
+  }
+
   // Parse initializer
   let init: any = null;
   if (this._match('ASSIGN')) {
@@ -99,6 +125,7 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
       {
         id,
         init,
+        typeAnnotation,
       },
     ],
     location: {
