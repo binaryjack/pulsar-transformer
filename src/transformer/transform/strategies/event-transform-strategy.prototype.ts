@@ -3,14 +3,14 @@
  */
 
 import ts from 'typescript';
-import type { IEventHandlerIR, IRNode } from '../../../analyzer/ir/ir-node-types';
-import type { ITransformContext } from '../transform-strategy.types';
-import { EventTransformStrategy } from './event-transform-strategy';
-import type { IEventTransformStrategyInternal } from './event-transform-strategy.types';
+import type { IEventHandlerIR, IIRNode } from '../../../analyzer/ir/ir-node-types.js';
+import type { ITransformContext } from '../transform-strategy.types.js';
+import { EventTransformStrategy } from './event-transform-strategy.js';
+import type { IEventTransformStrategyInternal } from './event-transform-strategy.types.js';
 
 export function canTransform(
   this: IEventTransformStrategyInternal,
-  node: IRNode
+  node: IIRNode
 ): node is IEventHandlerIR {
   return node.type === 'EventHandlerIR';
 }

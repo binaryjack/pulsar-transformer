@@ -4,10 +4,10 @@
  * Entry point for AST to IR conversion.
  */
 
-import type { IASTNode, IProgramNode } from '../../parser/ast';
-import { ASTNodeType } from '../../parser/ast';
-import type { IAnalyzerInternal } from '../analyzer.types';
-import type { IIRNode } from '../ir';
+import type { IASTNode, IProgramNode } from '../../parser/ast/index.js';
+import { ASTNodeType } from '../../parser/ast/index.js';
+import type { IAnalyzerInternal } from '../analyzer.types.js';
+import type { IIRNode } from '../ir/index.js';
 
 /**
  * Analyze AST and build IR

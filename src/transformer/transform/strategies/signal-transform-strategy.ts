@@ -5,7 +5,7 @@
 import type {
   ISignalTransformConfig,
   ISignalTransformStrategyInternal,
-} from './signal-transform-strategy.types';
+} from './signal-transform-strategy.types.js';
 
 export const SignalTransformStrategy = function (
   this: ISignalTransformStrategyInternal,

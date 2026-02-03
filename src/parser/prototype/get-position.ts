@@ -4,8 +4,8 @@
  * Returns current parsing position information.
  */
 
-import type { INodeLocation } from '../ast';
-import type { IParserInternal } from '../parser.types';
+import type { INodeLocation } from '../ast/index.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Get current parser position

@@ -4,8 +4,8 @@
  * Creates a Parser instance for parsing PSR source code.
  */
 
-import { Parser } from './parser';
-import type { IParser, IParserConfig } from './parser.types';
+import { Parser } from './parser.js';
+import type { IParser, IParserConfig } from './parser.types.js';
 import './prototype'; // Ensure prototype methods are attached
 
 /**

@@ -5,8 +5,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { createLexer } from '../create-lexer';
-import { TokenType } from '../token-types';
+import { createLexer } from '../create-lexer.js';
+import { TokenType } from '../token-types.js';
 
 describe('Lexer', () => {
   describe('tokenize', () => {

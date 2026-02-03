@@ -4,7 +4,7 @@
  * Scope management, signal tracking, error handling.
  */
 
-import type { IAnalyzerError, IAnalyzerInternal, IScope } from '../analyzer.types';
+import type { IAnalyzerError, IAnalyzerInternal, IScope } from '../analyzer.types.js';
 
 /**
  * Add analysis error

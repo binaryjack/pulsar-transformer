@@ -5,7 +5,7 @@
  * Converts tokens into Abstract Syntax Tree (AST).
  */
 
-import type { IParserConfig, IParserInternal } from './parser.types';
+import type { IParserConfig, IParserInternal } from './parser.types.js';
 
 /**
  * Parser constructor function

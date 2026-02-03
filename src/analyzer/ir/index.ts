@@ -2,4 +2,4 @@
  * IR exports
  */
 
-export * from './ir-node-types';
+export * from './ir-node-types.js';

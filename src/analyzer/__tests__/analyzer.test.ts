@@ -5,10 +5,10 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { createParser } from '../../parser';
-import { createAnalyzer } from '../create-analyzer';
-import type { IComponentIR, IElementIR, ISignalBindingIR } from '../ir';
-import { IRNodeType } from '../ir';
+import { createParser } from '../../parser.js';
+import { createAnalyzer } from '../create-analyzer.js';
+import type { IComponentIR, IElementIR, ISignalBindingIR } from '../ir/index.js';
+import { IRNodeType } from '../ir/index.js';
 
 describe('createAnalyzer', () => {
   describe('basic analysis', () => {

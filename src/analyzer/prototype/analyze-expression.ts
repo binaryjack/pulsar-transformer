@@ -4,17 +4,17 @@
  * Converts expression AST nodes to IR.
  */
 
-import type { IASTNode } from '../../parser/ast';
-import { ASTNodeType } from '../../parser/ast';
-import type { IAnalyzerInternal } from '../analyzer.types';
+import type { IASTNode } from '../../parser/ast/index.js';
+import { ASTNodeType } from '../../parser/ast/index.js';
+import type { IAnalyzerInternal } from '../analyzer.types.js';
 import type {
   IArrowFunctionIR,
   ICallExpressionIR,
   IIdentifierIR,
   IIRNode,
   ILiteralIR,
-} from '../ir';
-import { IRNodeType } from '../ir';
+} from '../ir/index.js';
+import { IRNodeType } from '../ir/index.js';
 
 /**
  * Analyze expression node

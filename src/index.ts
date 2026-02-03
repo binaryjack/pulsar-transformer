@@ -8,12 +8,12 @@
 // ===== CORE PIPELINE =====
 
 // Lexer exports
-export { createLexer, TokenType } from './parser/lexer';
-export type { ILexer, ILexerConfig, IToken } from './parser/lexer';
+export { createLexer, TokenType } from './parser/lexer.js';
+export type { ILexer, ILexerConfig, IToken } from './parser/lexer.js';
 
 // Parser exports
-export { createParser } from './parser/create-parser';
-export type { IParser, IParserConfig } from './parser/parser.types';
+export { createParser } from './parser/create-parser.js';
+export type { IParser, IParserConfig } from './parser/parser.types.js';
 
 // AST exports
 export type {
@@ -29,11 +29,11 @@ export type {
   ReturnStatement,
   SignalBinding,
   VariableDeclaration,
-} from './parser/ast/ast-node-types';
+} from './parser/ast/ast-node-types.js';
 
 // Analyzer exports (IR Builder)
-export type { IAnalyzer, IAnalyzerConfig, IAnalyzerContext } from './analyzer/analyzer.types';
-export { createAnalyzer } from './analyzer/create-analyzer';
+export type { IAnalyzer, IAnalyzerConfig, IAnalyzerContext } from './analyzer/analyzer.types.js';
+export { createAnalyzer } from './analyzer/create-analyzer.js';
 
 // IR exports
 export type {
@@ -52,11 +52,11 @@ export type {
   IRNodeType,
   ISignalBindingIR,
   IVariableDeclarationIR,
-} from './analyzer/ir/ir-node-types';
+} from './analyzer/ir/ir-node-types.js';
 
 // Transform exports (Strategy System)
-export { createComponentTransformStrategy } from './transformer/transform/strategies/create-component-transform-strategy';
-export { createTransformStrategyManager } from './transformer/transform/strategy-manager';
+export { createComponentTransformStrategy } from './transformer/transform/strategies/create-component-transform-strategy.js';
+export { createTransformStrategyManager } from './transformer/transform/strategy-manager.js';
 export type {
   IComponentTransformStrategy,
   IElementTransformStrategy,
@@ -66,19 +66,19 @@ export type {
   ITransformResult,
   ITransformStrategy,
   ITransformStrategyManager,
-} from './transformer/transform/transform-strategy.types';
+} from './transformer/transform/transform-strategy.types.js';
 
 // ===== UTILITIES =====
 
 // Error handling
-export { TransformerError } from './error/transformer-error';
-export type { ErrorCode, IErrorMetadata } from './error/transformer-error';
+export { TransformerError } from './error/transformer-error.js';
+export type { ErrorCode, IErrorMetadata } from './error/transformer-error.js';
 
 // AST utilities
-export { getASTPath, getNodePosition, getNodeSnippet, getNodeTypeName } from './utils/ast-utils';
+export { getASTPath, getNodePosition, getNodeSnippet, getNodeTypeName } from './utils/ast-utils.js';
 
 // Import injection (legacy - will be replaced by emitter)
-export { addPulsarImports } from './utils/import-injector';
+export { addPulsarImports } from './utils/import-injector.js';
 
 /**
  * Version information

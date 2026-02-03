@@ -3,14 +3,14 @@
  */
 
 import ts from 'typescript';
-import type { IRNode, ISignalBindingIR } from '../../../analyzer/ir/ir-node-types';
-import type { ITransformContext } from '../transform-strategy.types';
-import { SignalTransformStrategy } from './signal-transform-strategy';
-import type { ISignalTransformStrategyInternal } from './signal-transform-strategy.types';
+import type { IIRNode, ISignalBindingIR } from '../../../analyzer/ir/ir-node-types.js';
+import type { ITransformContext } from '../transform-strategy.types.js';
+import { SignalTransformStrategy } from './signal-transform-strategy.js';
+import type { ISignalTransformStrategyInternal } from './signal-transform-strategy.types.js';
 
 export function canTransform(
   this: ISignalTransformStrategyInternal,
-  node: IRNode
+  node: IIRNode
 ): node is ISignalBindingIR {
   return node.type === 'SignalBindingIR';
 }

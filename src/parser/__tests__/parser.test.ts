@@ -10,9 +10,9 @@ import type {
   IProgramNode,
   IPSRElementNode,
   IPSRSignalBindingNode,
-} from '../ast';
-import { ASTNodeType } from '../ast';
-import { createParser } from '../create-parser';
+} from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import { createParser } from '../create-parser.js';
 
 describe('createParser', () => {
   describe('basic parsing', () => {

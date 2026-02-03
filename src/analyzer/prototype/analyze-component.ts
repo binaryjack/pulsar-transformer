@@ -4,10 +4,10 @@
  * Converts component AST to ComponentIR with optimization metadata.
  */
 
-import type { IComponentDeclarationNode } from '../../parser/ast';
-import type { IAnalyzerInternal } from '../analyzer.types';
-import type { IComponentIR, IIdentifierIR, IIRNode } from '../ir';
-import { IRNodeType } from '../ir';
+import type { IComponentDeclarationNode } from '../../parser/ast/index.js';
+import type { IAnalyzerInternal } from '../analyzer.types.js';
+import type { IComponentIR, IIdentifierIR, IIRNode } from '../ir/index.js';
+import { IRNodeType } from '../ir/index.js';
 
 /**
  * Analyze component declaration

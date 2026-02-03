@@ -5,8 +5,8 @@
  * Prototype-based pattern, following Pulsar standards.
  */
 
-import type { IASTNode } from './ast';
-import type { IToken } from './lexer';
+import type { IASTNode } from './ast.js';
+import type { IToken } from './lexer.js';
 
 /**
  * Public Parser interface

@@ -7,7 +7,7 @@
 import type {
   IElementTransformConfig,
   IElementTransformStrategyInternal,
-} from './element-transform-strategy.types';
+} from './element-transform-strategy.types.js';
 
 export const ElementTransformStrategy = function (
   this: IElementTransformStrategyInternal,

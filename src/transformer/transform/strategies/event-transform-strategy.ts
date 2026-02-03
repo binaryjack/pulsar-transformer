@@ -5,7 +5,7 @@
 import type {
   IEventTransformConfig,
   IEventTransformStrategyInternal,
-} from './event-transform-strategy.types';
+} from './event-transform-strategy.types.js';
 
 export const EventTransformStrategy = function (
   this: IEventTransformStrategyInternal,

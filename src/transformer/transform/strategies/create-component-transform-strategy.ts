@@ -4,10 +4,10 @@
  * Creates instances of ComponentTransformStrategy
  */
 
-import type { IComponentTransformStrategy } from '../transform-strategy.types';
-import { ComponentTransformStrategy } from './component-transform-strategy';
+import type { IComponentTransformStrategy } from '../transform-strategy.types.js';
+import { ComponentTransformStrategy } from './component-transform-strategy.js';
 import './component-transform-strategy.prototype';
-import type { IComponentTransformConfig } from './component-transform-strategy.types';
+import type { IComponentTransformConfig } from './component-transform-strategy.types.js';
 
 /**
  * Create component transformation strategy

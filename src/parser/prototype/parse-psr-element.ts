@@ -7,9 +7,9 @@
  * <button class="btn" onClick={() => handle()}>Click</button>
  */
 
-import type { IPSRAttributeNode, IPSRElementNode } from '../ast';
-import { ASTNodeType } from '../ast';
-import type { IParserInternal } from '../parser.types';
+import type { IPSRAttributeNode, IPSRElementNode } from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Parse PSR element

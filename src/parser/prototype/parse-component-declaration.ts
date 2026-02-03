@@ -7,9 +7,9 @@
  * component MyButton() { return <button>Click</button>; }
  */
 
-import type { IComponentDeclarationNode, IIdentifierNode, IReturnStatementNode } from '../ast';
-import { ASTNodeType } from '../ast';
-import type { IParserInternal } from '../parser.types';
+import type { IComponentDeclarationNode, IIdentifierNode, IReturnStatementNode } from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Parse component declaration

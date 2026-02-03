@@ -4,8 +4,8 @@
  * Look ahead at next token without consuming it.
  */
 
-import type { ILexerInternal } from '../lexer.types';
-import type { IToken } from '../token-types';
+import type { ILexerInternal } from '../lexer.types.js';
+import type { IToken } from '../token-types.js';
 
 /**
  * Peek at current token without consuming

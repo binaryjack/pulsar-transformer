@@ -2,7 +2,7 @@
  * AST Node Exports
  */
 
-export { ASTNodeType } from './ast-node-types';
+export { ASTNodeType } from './ast-node-types.js';
 export type {
   IASTNode,
   IArrayPatternNode,
@@ -25,4 +25,4 @@ export type {
   IProgramNode,
   IReturnStatementNode,
   IVariableDeclarationNode,
-} from './ast-node-types';
+} from './ast-node-types.js';

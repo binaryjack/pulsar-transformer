@@ -7,9 +7,9 @@
  * const count = createSignal(0);
  */
 
-import type { IIdentifierNode, IVariableDeclarationNode } from '../ast';
-import { ASTNodeType } from '../ast';
-import type { IParserInternal } from '../parser.types';
+import type { IIdentifierNode, IVariableDeclarationNode } from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Parse variable declaration

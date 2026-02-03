@@ -4,10 +4,10 @@
  * Converts variable declaration AST to IR and tracks signals.
  */
 
-import type { IVariableDeclarationNode } from '../../parser/ast';
-import type { IAnalyzerInternal } from '../analyzer.types';
-import type { IVariableDeclarationIR } from '../ir';
-import { IRNodeType } from '../ir';
+import type { IVariableDeclarationNode } from '../../parser/ast/index.js';
+import type { IAnalyzerInternal } from '../analyzer.types.js';
+import type { IVariableDeclarationIR } from '../ir/index.js';
+import { IRNodeType } from '../ir/index.js';
 
 /**
  * Analyze variable declaration

@@ -4,10 +4,10 @@
  * Main entry point - converts PSR source code into AST.
  */
 
-import type { IASTNode, IProgramNode } from '../ast';
-import { ASTNodeType } from '../ast';
-import { createLexer } from '../lexer';
-import type { IParserInternal } from '../parser.types';
+import type { IASTNode, IProgramNode } from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import { createLexer } from '../lexer.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Parse PSR source code into AST

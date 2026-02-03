@@ -4,7 +4,7 @@
  * Get current lexer position.
  */
 
-import type { ILexerInternal, ILexerPosition } from '../lexer.types';
+import type { ILexerInternal, ILexerPosition } from '../lexer.types.js';
 
 /**
  * Get current position in source

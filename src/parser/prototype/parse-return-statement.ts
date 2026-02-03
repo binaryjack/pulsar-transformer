@@ -7,9 +7,9 @@
  * return <button>Click</button>;
  */
 
-import type { IReturnStatementNode } from '../ast';
-import { ASTNodeType } from '../ast';
-import type { IParserInternal } from '../parser.types';
+import type { IReturnStatementNode } from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Parse return statement

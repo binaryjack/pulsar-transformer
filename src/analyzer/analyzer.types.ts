@@ -2,8 +2,8 @@
  * Analyzer Type Definitions
  */
 
-import type { IASTNode } from '../parser/ast';
-import type { IIRNode } from './ir';
+import type { IASTNode } from '../parser/ast/index.js';
+import type { IIRNode } from './ir/index.js';
 
 /**
  * Analyzer Interface

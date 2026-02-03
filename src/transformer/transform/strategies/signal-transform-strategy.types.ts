@@ -6,8 +6,8 @@
  */
 
 import type ts from 'typescript';
-import type { ISignalBindingIR } from '../../../analyzer/ir/ir-node-types';
-import type { ISignalTransformStrategy, ITransformContext } from '../transform-strategy.types';
+import type { ISignalBindingIR } from '../../../analyzer/ir/ir-node-types.js';
+import type { ISignalTransformStrategy, ITransformContext } from '../transform-strategy.types.js';
 
 export interface ISignalTransformStrategyInternal extends ISignalTransformStrategy {
   _generateSubscription(binding: ISignalBindingIR, context: ITransformContext): ts.CallExpression;

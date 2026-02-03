@@ -4,8 +4,8 @@
  * Factory function to create lexer instances.
  */
 
-import { Lexer } from './lexer';
-import type { ILexer, ILexerConfig } from './lexer.types';
+import { Lexer } from './lexer.js';
+import type { ILexer, ILexerConfig } from './lexer.types.js';
 import './prototype'; // Ensure prototype methods are attached
 
 /**

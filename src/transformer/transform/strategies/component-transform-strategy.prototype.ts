@@ -5,17 +5,17 @@
  */
 
 import ts from 'typescript';
-import type { IComponentIR, IRNode } from '../../../analyzer/ir/ir-node-types';
-import type { ITransformContext } from '../transform-strategy.types';
-import { ComponentTransformStrategy } from './component-transform-strategy';
-import type { IComponentTransformStrategyInternal } from './component-transform-strategy.types';
+import type { IComponentIR, IIRNode } from '../../../analyzer/ir/ir-node-types.js';
+import type { ITransformContext } from '../transform-strategy.types.js';
+import { ComponentTransformStrategy } from './component-transform-strategy.js';
+import type { IComponentTransformStrategyInternal } from './component-transform-strategy.types.js';
 
 /**
  * Can this strategy transform the given node?
  */
 export function canTransform(
   this: IComponentTransformStrategyInternal,
-  node: IRNode
+  node: IIRNode
 ): node is IComponentIR {
   return node.type === 'ComponentIR';
 }

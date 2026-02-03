@@ -4,7 +4,7 @@
  * Checks if parser encountered any errors.
  */
 
-import type { IParserInternal } from '../parser.types';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Check if parser has errors

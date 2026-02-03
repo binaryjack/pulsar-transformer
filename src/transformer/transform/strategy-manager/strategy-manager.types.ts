@@ -6,7 +6,7 @@ import type {
   ITransformStrategy,
   ITransformStrategyConfig,
   ITransformStrategyManager,
-} from '../transform-strategy.types';
+} from '../transform-strategy.types.js';
 
 export interface ITransformStrategyManagerInternal extends ITransformStrategyManager {
   _strategies: Map<string, ITransformStrategy>;

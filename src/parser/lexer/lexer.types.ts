@@ -5,7 +5,7 @@
  * Prototype-based pattern, following Pulsar standards.
  */
 
-import type { IToken } from './token-types';
+import type { IToken } from './token-types.js';
 
 /**
  * Public Lexer interface

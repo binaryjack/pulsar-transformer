@@ -5,7 +5,7 @@
  * Tokenizes PSR source code into tokens for parser consumption.
  */
 
-import type { ILexerConfig, ILexerInternal } from './lexer.types';
+import type { ILexerConfig, ILexerInternal } from './lexer.types.js';
 
 /**
  * Lexer constructor function

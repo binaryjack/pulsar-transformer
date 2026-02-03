@@ -2,8 +2,8 @@
  * Analyzer factory function
  */
 
-import { Analyzer } from './analyzer';
-import type { IAnalyzer, IAnalyzerConfig } from './analyzer.types';
+import { Analyzer } from './analyzer.js';
+import type { IAnalyzer, IAnalyzerConfig } from './analyzer.types.js';
 import './prototype'; // Ensure prototype methods attached
 
 /**

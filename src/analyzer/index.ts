@@ -7,6 +7,6 @@ export type {
   IAnalyzerConfig,
   IAnalyzerContext,
   IAnalyzerError,
-} from './analyzer.types';
-export { createAnalyzer } from './create-analyzer';
-export * from './ir';
+} from './analyzer.types.js';
+export { createAnalyzer } from './create-analyzer.js';
+export * from './ir/index.js';

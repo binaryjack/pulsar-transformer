@@ -4,10 +4,10 @@
  * Converts element AST to ElementIR with static/dynamic classification.
  */
 
-import type { IPSRElementNode } from '../../parser/ast';
-import type { IAnalyzerInternal } from '../analyzer.types';
-import type { IAttributeIR, IElementIR, IEventHandlerIR, IIRNode, ISignalBindingIR } from '../ir';
-import { IRNodeType } from '../ir';
+import type { IPSRElementNode } from '../../parser/ast/index.js';
+import type { IAnalyzerInternal } from '../analyzer.types.js';
+import type { IAttributeIR, IElementIR, IEventHandlerIR, IIRNode, ISignalBindingIR } from '../ir/index.js';
+import { IRNodeType } from '../ir/index.js';
 
 /**
  * Analyze PSR element

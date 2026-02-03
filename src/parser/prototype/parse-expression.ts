@@ -10,8 +10,8 @@
  * "hello"
  */
 
-import { ASTNodeType } from '../ast';
-import type { IParserInternal } from '../parser.types';
+import { ASTNodeType } from '../ast/index.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Parse expression

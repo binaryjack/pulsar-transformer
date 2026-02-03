@@ -6,8 +6,8 @@
  */
 
 import type ts from 'typescript';
-import type { IComponentIR } from '../../../analyzer/ir/ir-node-types';
-import type { IComponentTransformStrategy, ITransformContext } from '../transform-strategy.types';
+import type { IComponentIR } from '../../../analyzer/ir/ir-node-types.js';
+import type { IComponentTransformStrategy, ITransformContext } from '../transform-strategy.types.js';
 
 /**
  * Component transform strategy internal interface

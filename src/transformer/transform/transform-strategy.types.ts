@@ -27,8 +27,8 @@ import type {
   IReturnStatementIR,
   IRegistryRegistrationIR,
   IRegistryLookupIR,
-  IRNode,
-} from '../../analyzer/ir/ir-node-types';
+  IIRNode,
+} from '../../analyzer/ir/ir-node-types.js';
 
 /**
  * Transform context passed to strategies
@@ -71,7 +71,7 @@ export interface ITransformError {
   message: string;
 
   /** IR node that caused error */
-  node: IRNode;
+  node: IIRNode;
 
   /** Severity */
   severity: 'error' | 'warning';
@@ -86,7 +86,7 @@ export interface ITransformError {
 /**
  * Base transform strategy
  */
-export interface ITransformStrategy<T extends IRNode = IRNode> {
+export interface ITransformStrategy<T extends IIRNode = IIRNode> {
   /** Strategy name */
   readonly name: string;
 
@@ -94,7 +94,7 @@ export interface ITransformStrategy<T extends IRNode = IRNode> {
   readonly handles: string[];
 
   /** Can this strategy transform the given node? */
-  canTransform(node: IRNode): node is T;
+  canTransform(node: IIRNode): node is T;
 
   /** Transform IR node to TypeScript AST */
   transform(node: T, context: ITransformContext): ts.Node | ts.Node[];
@@ -210,7 +210,7 @@ export interface ITransformStrategyManager {
   registerStrategy(strategy: ITransformStrategy): void;
 
   /** Get strategy for IR node */
-  getStrategy(node: IRNode): ITransformStrategy | undefined;
+  getStrategy(node: IIRNode): ITransformStrategy | undefined;
 
   /** Get all strategies */
   getAllStrategies(): ITransformStrategy[];

@@ -4,7 +4,7 @@
  * Get context, check errors, retrieve errors.
  */
 
-import type { IAnalyzerContext, IAnalyzerError, IAnalyzerInternal } from '../analyzer.types';
+import type { IAnalyzerContext, IAnalyzerError, IAnalyzerInternal } from '../analyzer.types.js';
 
 /**
  * Get analyzer context

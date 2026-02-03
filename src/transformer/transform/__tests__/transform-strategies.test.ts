@@ -17,16 +17,16 @@ import type {
   IElementIR,
   IEventHandlerIR,
   ISignalBindingIR,
-} from '../../../analyzer/ir/ir-node-types';
-import { createComponentTransformStrategy } from '../strategies/create-component-transform-strategy';
-import { ElementTransformStrategy } from '../strategies/element-transform-strategy';
+} from '../../../analyzer/ir/ir-node-types.js';
+import { createComponentTransformStrategy } from '../strategies/create-component-transform-strategy.js';
+import { ElementTransformStrategy } from '../strategies/element-transform-strategy.js';
 import '../strategies/element-transform-strategy.prototype';
-import { EventTransformStrategy } from '../strategies/event-transform-strategy';
+import { EventTransformStrategy } from '../strategies/event-transform-strategy.js';
 import '../strategies/event-transform-strategy.prototype';
-import { SignalTransformStrategy } from '../strategies/signal-transform-strategy';
+import { SignalTransformStrategy } from '../strategies/signal-transform-strategy.js';
 import '../strategies/signal-transform-strategy.prototype';
-import { createTransformStrategyManager } from '../strategy-manager';
-import type { ITransformContext } from '../transform-strategy.types';
+import { createTransformStrategyManager } from '../strategy-manager.js';
+import type { ITransformContext } from '../transform-strategy.types.js';
 
 describe('Transform Strategies', () => {
   let context: ITransformContext;

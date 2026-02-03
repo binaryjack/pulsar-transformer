@@ -4,10 +4,10 @@
  * Converts signal binding AST to SignalBindingIR.
  */
 
-import type { IPSRSignalBindingNode } from '../../parser/ast';
-import type { IAnalyzerInternal } from '../analyzer.types';
-import type { ISignalBindingIR } from '../ir';
-import { IRNodeType } from '../ir';
+import type { IPSRSignalBindingNode } from '../../parser/ast/index.js';
+import type { IAnalyzerInternal } from '../analyzer.types.js';
+import type { ISignalBindingIR } from '../ir/index.js';
+import { IRNodeType } from '../ir/index.js';
 
 /**
  * Analyze signal binding $(signal)

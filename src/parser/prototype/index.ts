@@ -4,12 +4,12 @@
  * Attaches all parsing methods to Parser.prototype
  */
 
-import { Parser } from '../parser';
+import { Parser } from '../parser.js';
 
 // Import all parsing methods
-import { getErrors } from './get-errors';
-import { getPosition } from './get-position';
-import { hasErrors } from './has-errors';
+import { getErrors } from './get-errors.js';
+import { getPosition } from './get-position.js';
+import { hasErrors } from './has-errors.js';
 import {
   _addError,
   _advance,
@@ -20,8 +20,8 @@ import {
   _match,
   _parseStatement,
   parse,
-} from './parse';
-import { parseComponentDeclaration } from './parse-component-declaration';
+} from './parse.js';
+import { parseComponentDeclaration } from './parse-component-declaration.js';
 import {
   _parseArrowFunctionOrGrouping,
   _parseCallOrIdentifier,
@@ -30,16 +30,16 @@ import {
   _parseImportDeclaration,
   _parseLiteral,
   parseExpression,
-} from './parse-expression';
+} from './parse-expression.js';
 import {
   _isClosingTag,
   _parsePSRAttribute,
   _parsePSRChild,
   parsePSRElement,
-} from './parse-psr-element';
-import { parsePSRSignalBinding } from './parse-psr-signal-binding';
-import { parseReturnStatement } from './parse-return-statement';
-import { parseVariableDeclaration } from './parse-variable-declaration';
+} from './parse-psr-element.js';
+import { parsePSRSignalBinding } from './parse-psr-signal-binding.js';
+import { parseReturnStatement } from './parse-return-statement.js';
+import { parseVariableDeclaration } from './parse-variable-declaration.js';
 
 // Attach public methods to Parser.prototype
 Parser.prototype.parse = parse;

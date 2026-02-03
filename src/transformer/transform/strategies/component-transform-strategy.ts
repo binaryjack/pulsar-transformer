@@ -16,7 +16,7 @@
 import type {
   IComponentTransformConfig,
   IComponentTransformStrategyInternal,
-} from './component-transform-strategy.types';
+} from './component-transform-strategy.types.js';
 
 /**
  * Component transformation strategy constructor

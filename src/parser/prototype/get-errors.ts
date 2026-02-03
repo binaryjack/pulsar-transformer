@@ -4,7 +4,7 @@
  * Returns all parsing errors.
  */
 
-import type { IParserError, IParserInternal } from '../parser.types';
+import type { IParserError, IParserInternal } from '../parser.types.js';
 
 /**
  * Get all parser errors

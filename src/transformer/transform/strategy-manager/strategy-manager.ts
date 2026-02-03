@@ -4,8 +4,8 @@
  * Manages registration and selection of transformation strategies
  */
 
-import type { ITransformStrategyConfig } from '../transform-strategy.types';
-import type { ITransformStrategyManagerInternal } from './strategy-manager.types';
+import type { ITransformStrategyConfig } from '../transform-strategy.types.js';
+import type { ITransformStrategyManagerInternal } from './strategy-manager.types.js';
 
 export const TransformStrategyManager = function (
   this: ITransformStrategyManagerInternal,

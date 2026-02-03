@@ -4,7 +4,7 @@
  * Builds IR from AST with optimization analysis.
  */
 
-import type { IAnalyzerConfig, IAnalyzerContext, IAnalyzerInternal } from './analyzer.types';
+import type { IAnalyzerConfig, IAnalyzerContext, IAnalyzerInternal } from './analyzer.types.js';
 
 /**
  * Analyzer constructor function

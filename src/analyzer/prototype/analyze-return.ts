@@ -4,10 +4,10 @@
  * Converts return statement AST to IR.
  */
 
-import type { IReturnStatementNode } from '../../parser/ast';
-import type { IAnalyzerInternal } from '../analyzer.types';
-import type { IReturnStatementIR } from '../ir';
-import { IRNodeType } from '../ir';
+import type { IReturnStatementNode } from '../../parser/ast/index.js';
+import type { IAnalyzerInternal } from '../analyzer.types.js';
+import type { IReturnStatementIR } from '../ir/index.js';
+import { IRNodeType } from '../ir/index.js';
 
 /**
  * Analyze return statement

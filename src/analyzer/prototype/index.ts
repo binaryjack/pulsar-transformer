@@ -2,12 +2,12 @@
  * Prototype method attachment for Analyzer
  */
 
-import { Analyzer } from '../analyzer';
+import { Analyzer } from '../analyzer.js';
 
 // Import analysis methods
-import { _analyzeNode, analyze } from './analyze';
-import { _detectEventHandlers, _isPureComponent, analyzeComponent } from './analyze-component';
-import { _handlerAccessesSignals, analyzeElement } from './analyze-element';
+import { _analyzeNode, analyze } from './analyze.js';
+import { _detectEventHandlers, _isPureComponent, analyzeComponent } from './analyze-component.js';
+import { _handlerAccessesSignals, analyzeElement } from './analyze-element.js';
 import {
   _analyzeArrowFunction,
   _analyzeCallExpression,
@@ -16,12 +16,12 @@ import {
   _isFunctionPure,
   _isParameter,
   analyzeExpression,
-} from './analyze-expression';
-import { analyzeReturn } from './analyze-return';
-import { _isInCurrentScope, analyzeSignalBinding } from './analyze-signal-binding';
-import { analyzeVariable } from './analyze-variable';
-import { getContext, getErrors, hasErrors } from './context';
-import { addError, enterScope, exitScope, isSignal, registerSignal } from './helpers';
+} from './analyze-expression.js';
+import { analyzeReturn } from './analyze-return.js';
+import { _isInCurrentScope, analyzeSignalBinding } from './analyze-signal-binding.js';
+import { analyzeVariable } from './analyze-variable.js';
+import { getContext, getErrors, hasErrors } from './context.js';
+import { addError, enterScope, exitScope, isSignal, registerSignal } from './helpers.js';
 
 // Attach public methods
 Analyzer.prototype.analyze = analyze;

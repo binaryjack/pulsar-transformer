@@ -4,10 +4,10 @@
  * Main tokenization logic - converts source string into token array.
  */
 
-import { Lexer } from '../lexer';
-import type { ILexerInternal } from '../lexer.types';
-import type { IToken } from '../token-types';
-import { TokenType } from '../token-types';
+import { Lexer } from '../lexer.js';
+import type { ILexerInternal } from '../lexer.types.js';
+import type { IToken } from '../token-types.js';
+import { TokenType } from '../token-types.js';
 
 /**
  * Tokenize source code into tokens
