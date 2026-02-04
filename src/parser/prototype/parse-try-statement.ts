@@ -13,14 +13,17 @@ import type { IParserInternal } from '../parser.types.js';
  * Supports: try { } catch (e) { } finally { }
  */
 export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
-  const startToken = this.currentToken;
+  const startToken = this._getCurrentToken();
 
   // Expect 'try'
-  if (this.currentToken.type !== TokenType.IDENTIFIER || this.currentToken.value !== 'try') {
-    throw new Error(`Expected 'try', got ${this.currentToken.value}`);
+  if (
+    this._getCurrentToken()!.type !== TokenType.IDENTIFIER ||
+    this._getCurrentToken()!.value !== 'try'
+  ) {
+    throw new Error(`Expected 'try', got ${this._getCurrentToken()!.value}`);
   }
 
-  this.advance(); // Consume 'try'
+  this._advance(); // Consume 'try'
 
   // Parse try block
   const block = this._parseBlockStatement();
@@ -28,18 +31,21 @@ export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
   // Parse catch clause (optional)
   let handler: ICatchClauseNode | null = null;
 
-  if (this.currentToken.type === TokenType.IDENTIFIER && this.currentToken.value === 'catch') {
-    const catchStart = this.currentToken;
-    this.advance(); // Consume 'catch'
+  if (
+    this._getCurrentToken()!.type === TokenType.IDENTIFIER &&
+    this._getCurrentToken()!.value === 'catch'
+  ) {
+    const catchStart = this._getCurrentToken();
+    this._advance(); // Consume 'catch'
 
     // Parse parameter (optional in modern TS)
     let param: IIdentifierNode | null = null;
 
-    if (this.currentToken.type === TokenType.PAREN_OPEN) {
-      this.advance(); // Consume '('
+    if (this._getCurrentToken()!.type === TokenType.LPAREN) {
+      this._advance(); // Consume '('
 
-      if (this.currentToken.type === TokenType.IDENTIFIER) {
-        const paramToken = this.currentToken;
+      if (this._getCurrentToken()!.type === TokenType.IDENTIFIER) {
+        const paramToken = this._getCurrentToken();
         param = {
           type: ASTNodeType.IDENTIFIER,
           name: paramToken.value,
@@ -56,21 +62,21 @@ export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
             },
           },
         };
-        this.advance(); // Consume parameter name
+        this._advance(); // Consume parameter name
       }
 
       // Expect closing paren
-      if (this.currentToken.type !== TokenType.PAREN_CLOSE) {
-        throw new Error(`Expected ')' after catch parameter, got ${this.currentToken.value}`);
+      if (this._getCurrentToken()!.type !== TokenType.RPAREN) {
+        throw new Error(`Expected ')' after catch parameter, got ${this._getCurrentToken()!.value}`);
       }
 
-      this.advance(); // Consume ')'
+      this._advance(); // Consume ')'
     }
 
     // Parse catch body
     const body = this._parseBlockStatement();
 
-    const catchEnd = this.currentToken;
+    const catchEnd = this._getCurrentToken();
 
     handler = {
       type: ASTNodeType.CATCH_CLAUSE,
@@ -94,8 +100,11 @@ export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
   // Parse finally block (optional)
   let finalizer: IBlockStatementNode | null = null;
 
-  if (this.currentToken.type === TokenType.IDENTIFIER && this.currentToken.value === 'finally') {
-    this.advance(); // Consume 'finally'
+  if (
+    this._getCurrentToken()!.type === TokenType.IDENTIFIER &&
+    this._getCurrentToken()!.value === 'finally'
+  ) {
+    this._advance(); // Consume 'finally'
     finalizer = this._parseBlockStatement();
   }
 
@@ -104,19 +113,19 @@ export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
     throw new Error('Try statement must have at least a catch or finally clause');
   }
 
-  const endToken = this.currentToken;
+  const endToken = this._getCurrentToken();
 
   // Build location
   const start = {
-    line: startToken.line,
-    column: startToken.column,
-    offset: startToken.start,
+    line: startToken!.line,
+    column: startToken!.column,
+    offset: startToken!.start,
   };
 
   const end = {
-    line: endToken.line,
-    column: endToken.column,
-    offset: endToken.end,
+    line: endToken!.line,
+    column: endToken!.column,
+    offset: endToken!.end,
   };
 
   return {
@@ -135,46 +144,46 @@ export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
  * Helper: Parse block statement { ... }
  */
 function _parseBlockStatement(this: IParserInternal): IBlockStatementNode {
-  const startToken = this.currentToken;
+  const startToken = this._getCurrentToken();
 
   // Expect opening brace
-  if (this.currentToken.type !== TokenType.BRACE_OPEN) {
-    throw new Error(`Expected '{', got ${this.currentToken.value}`);
+  if (this._getCurrentToken()!.type !== TokenType.LBRACE) {
+    throw new Error(`Expected '{', got ${this._getCurrentToken()!.value}`);
   }
 
-  this.advance(); // Consume '{'
+  this._advance(); // Consume '{'
 
   // Parse statements
   const body = [];
 
   while (
-    this.currentToken.type !== TokenType.BRACE_CLOSE &&
-    this.currentToken.type !== TokenType.EOF
+    this._getCurrentToken()!.type !== TokenType.RBRACE &&
+    this._getCurrentToken()!.type !== TokenType.EOF
   ) {
     body.push(this._parseStatement());
   }
 
   // Expect closing brace
-  if (this.currentToken.type !== TokenType.BRACE_CLOSE) {
-    throw new Error(`Expected '}', got ${this.currentToken.value}`);
+  if (this._getCurrentToken()!.type !== TokenType.RBRACE) {
+    throw new Error(`Expected '}', got ${this._getCurrentToken()!.value}`);
   }
 
-  const endToken = this.currentToken;
-  this.advance(); // Consume '}'
+  const endToken = this._getCurrentToken();
+  this._advance(); // Consume '}'
 
   return {
     type: ASTNodeType.BLOCK_STATEMENT,
     body,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: endToken.line,
-        column: endToken.column + 1,
-        offset: endToken.end,
+        line: endToken!.line,
+        column: endToken!.column + 1,
+        offset: endToken!.end,
       },
     },
   };

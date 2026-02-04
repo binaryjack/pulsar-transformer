@@ -8,42 +8,42 @@ import type { IParserInternal } from '../parser.types.js';
  * Supports: namespace Utils { }, module Utils { }
  */
 export function _parseNamespaceDeclaration(this: IParserInternal): INamespaceDeclarationNode {
-  const startToken = this.currentToken;
+  const startToken = this._getCurrentToken();
 
   // Expect 'namespace' or 'module'
   if (
-    this.currentToken.type !== TokenType.IDENTIFIER ||
-    (this.currentToken.value !== 'namespace' && this.currentToken.value !== 'module')
+    this._getCurrentToken()!.type !== TokenType.IDENTIFIER ||
+    (this._getCurrentToken()!.value !== 'namespace' && this._getCurrentToken()!.value !== 'module')
   ) {
-    throw new Error(`Expected 'namespace' or 'module', got ${this.currentToken.value}`);
+    throw new Error(`Expected 'namespace' or 'module', got ${this._getCurrentToken()!.value}`);
   }
 
-  this.advance(); // Consume 'namespace' or 'module'
+  this._advance(); // Consume 'namespace' or 'module'
 
   // Parse name (identifier)
-  if (this.currentToken.type !== TokenType.IDENTIFIER) {
-    throw new Error(`Expected namespace name, got ${this.currentToken.value}`);
+  if (this._getCurrentToken()!.type !== TokenType.IDENTIFIER) {
+    throw new Error(`Expected namespace name, got ${this._getCurrentToken()!.value}`);
   }
 
-  const name = this.currentToken.value;
-  this.advance(); // Consume name
+  const name = this._getCurrentToken()!.value;
+  this._advance(); // Consume name
 
   // Expect opening brace
-  if (this.currentToken.type !== TokenType.BRACE_OPEN) {
-    throw new Error(`Expected '{' after namespace name, got ${this.currentToken.value}`);
+  if (this._getCurrentToken()!.type !== TokenType.LBRACE) {
+    throw new Error(`Expected '{' after namespace name, got ${this._getCurrentToken()!.value}`);
   }
 
-  this.advance(); // Consume '{'
+  this._advance(); // Consume '{'
 
   // Parse body (all declarations inside namespace)
   const body: IASTNode[] = [];
 
   while (
-    this.currentToken.type !== TokenType.BRACE_CLOSE &&
-    this.currentToken.type !== TokenType.EOF
+    this._getCurrentToken()!.type !== TokenType.RBRACE &&
+    this._getCurrentToken()!.type !== TokenType.EOF
   ) {
     // Parse each declaration
-    const token = this.currentToken;
+    const token = this._getCurrentToken();
 
     if (token.type === TokenType.IDENTIFIER) {
       // Variable, function, class, interface, enum, namespace, etc.
@@ -62,40 +62,40 @@ export function _parseNamespaceDeclaration(this: IParserInternal): INamespaceDec
         body.push(this._parseNamespaceDeclaration());
       } else if (token.value === 'export') {
         // Skip export keyword and parse next
-        this.advance();
+        this._advance();
         continue;
       } else if (token.value === 'type') {
         // Type alias - skip for now
         this._skipTypeAlias();
       } else {
         // Unknown - skip
-        this.advance();
+        this._advance();
       }
     } else {
       // Skip unknown tokens
-      this.advance();
+      this._advance();
     }
   }
 
   // Expect closing brace
-  if (this.currentToken.type !== TokenType.BRACE_CLOSE) {
-    throw new Error(`Expected '}' to close namespace, got ${this.currentToken.value}`);
+  if (this._getCurrentToken()!.type !== TokenType.RBRACE) {
+    throw new Error(`Expected '}' to close namespace, got ${this._getCurrentToken()!.value}`);
   }
 
-  const endToken = this.currentToken;
-  this.advance(); // Consume '}'
+  const endToken = this._getCurrentToken();
+  this._advance(); // Consume '}'
 
   // Build location
   const start = {
-    line: startToken.line,
-    column: startToken.column,
-    offset: startToken.start,
+    line: startToken!.line,
+    column: startToken!.column,
+    offset: startToken!.start,
   };
 
   const end = {
-    line: endToken.line,
-    column: endToken.column + endToken.value.length,
-    offset: endToken.end,
+    line: endToken!.line,
+    column: endToken!.column + endToken!.value.length,
+    offset: endToken!.end,
   };
 
   return {
@@ -114,56 +114,56 @@ export function _parseNamespaceDeclaration(this: IParserInternal): INamespaceDec
  */
 function _skipTypeAlias(this: IParserInternal): void {
   // Skip 'type'
-  this.advance();
+  this._advance();
 
   // Skip name
-  if (this.currentToken.type === TokenType.IDENTIFIER) {
-    this.advance();
+  if (this._getCurrentToken()!.type === TokenType.IDENTIFIER) {
+    this._advance();
   }
 
   // Skip generic parameters
-  if (this.currentToken.type === TokenType.LESS_THAN) {
+  if (this._getCurrentToken()!.type === TokenType.LT) {
     let depth = 1;
-    this.advance();
+    this._advance();
 
-    while (depth > 0 && this.currentToken.type !== TokenType.EOF) {
-      if (this.currentToken.type === TokenType.LESS_THAN) {
+    while (depth > 0 && this._getCurrentToken()!.type !== TokenType.EOF) {
+      if (this._getCurrentToken()!.type === TokenType.LT) {
         depth++;
-      } else if (this.currentToken.type === TokenType.GREATER_THAN) {
+      } else if (this._getCurrentToken()!.type === TokenType.GT) {
         depth--;
       }
-      this.advance();
+      this._advance();
     }
   }
 
   // Skip '='
-  if (this.currentToken.type === TokenType.EQUALS) {
-    this.advance();
+  if (this._getCurrentToken()!.type === TokenType.ASSIGN) {
+    this._advance();
   }
 
   // Skip type definition until semicolon or closing brace
   let depth = 0;
-  while (this.currentToken.type !== TokenType.EOF) {
+  while (this._getCurrentToken()!.type !== TokenType.EOF) {
     if (
-      this.currentToken.type === TokenType.BRACE_OPEN ||
-      this.currentToken.type === TokenType.PAREN_OPEN ||
-      this.currentToken.type === TokenType.BRACKET_OPEN
+      this._getCurrentToken()!.type === TokenType.LBRACE ||
+      this._getCurrentToken()!.type === TokenType.LPAREN ||
+      this._getCurrentToken()!.type === TokenType.LBRACKET
     ) {
       depth++;
     } else if (
-      this.currentToken.type === TokenType.BRACE_CLOSE ||
-      this.currentToken.type === TokenType.PAREN_CLOSE ||
-      this.currentToken.type === TokenType.BRACKET_CLOSE
+      this._getCurrentToken()!.type === TokenType.RBRACE ||
+      this._getCurrentToken()!.type === TokenType.RPAREN ||
+      this._getCurrentToken()!.type === TokenType.RBRACKET
     ) {
       if (depth === 0) {
         break; // Reached end of namespace
       }
       depth--;
-    } else if (this.currentToken.type === TokenType.SEMICOLON && depth === 0) {
-      this.advance(); // Consume semicolon
+    } else if (this._getCurrentToken()!.type === TokenType.SEMICOLON && depth === 0) {
+      this._advance(); // Consume semicolon
       break;
     }
 
-    this.advance();
+    this._advance();
   }
 }
