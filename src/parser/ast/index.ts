@@ -15,6 +15,7 @@ export type {
   IFunctionDeclarationNode,
   IIdentifierNode,
   IImportDeclarationNode,
+  IInterfaceDeclarationNode,
   ILiteralNode,
   INodeLocation,
   IObjectPatternNode,
@@ -27,6 +28,7 @@ export type {
   IPosition,
   IProgramNode,
   IReturnStatementNode,
+  ITypeAliasNode,
   ITypeAnnotationNode,
   IVariableDeclarationNode,
 } from './ast-node-types.js';

@@ -359,3 +359,36 @@ export interface IPSRChildrenNode extends IASTNode {
   readonly type: ASTNodeType.PSR_CHILDREN;
   readonly children: IASTNode[];
 }
+
+/**
+ * Interface Declaration
+ *
+ * @example
+ * interface IUser {
+ *   name: string;
+ *   age: number;
+ * }
+ *
+ * interface IExtended extends IBase {
+ *   extra: string;
+ * }
+ */
+export interface IInterfaceDeclarationNode extends IASTNode {
+  readonly type: ASTNodeType.INTERFACE_DECLARATION;
+  readonly name: IIdentifierNode;
+  readonly extends?: IIdentifierNode[];
+  readonly body: string; // Raw interface body as string for now
+}
+
+/**
+ * Type Alias Declaration
+ *
+ * @example
+ * type Status = 'idle' | 'loading' | 'success';
+ * type Nullable<T> = T | null;
+ */
+export interface ITypeAliasNode extends IASTNode {
+  readonly type: ASTNodeType.TYPE_ALIAS;
+  readonly name: IIdentifierNode;
+  readonly typeAnnotation: string; // Raw type definition as string
+}
