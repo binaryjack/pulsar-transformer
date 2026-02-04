@@ -160,6 +160,8 @@ function _readIdentifierOrKeyword(
     from: TokenType.FROM,
     as: TokenType.AS,
     type: TokenType.TYPE,
+    interface: TokenType.INTERFACE,
+    extends: TokenType.EXTENDS,
   };
 
   const type = keywords[value] || TokenType.IDENTIFIER;

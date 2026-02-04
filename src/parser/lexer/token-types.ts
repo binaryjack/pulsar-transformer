@@ -18,6 +18,8 @@ export enum TokenType {
   FROM = 'FROM',
   AS = 'AS', // as (for namespace imports)
   TYPE = 'TYPE', // type (for type imports/exports)
+  INTERFACE = 'INTERFACE', // interface (for interface declarations)
+  EXTENDS = 'EXTENDS', // extends (for interface inheritance)
 
   // Identifiers and Literals
   IDENTIFIER = 'IDENTIFIER',
