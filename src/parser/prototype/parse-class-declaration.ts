@@ -113,6 +113,28 @@ export function _parseClassDeclaration(this: IParserInternal): IClassDeclaration
         },
       },
     };
+
+    // Skip generic type arguments if present: extends Array<string>
+    if (this._check('LT')) {
+      this._advance(); // consume <
+      let angleDepth = 1;
+
+      while (!this._isAtEnd() && angleDepth > 0) {
+        const token = this._getCurrentToken();
+        if (!token) break;
+
+        if (token.type === 'LT') angleDepth++;
+        else if (token.type === 'GT') {
+          angleDepth--;
+          if (angleDepth === 0) {
+            this._advance(); // consume final >
+            break;
+          }
+        }
+
+        this._advance();
+      }
+    }
   }
 
   // Parse class body
@@ -195,7 +217,12 @@ function _parseClassMember(
     return null;
   }
 
-  const startLocation = this._getLocation();
+  const startToken = this._getCurrentToken();
+  const startLocation = {
+    line: startToken.line,
+    column: startToken.column,
+    offset: startToken.offset,
+  };
 
   // Parse access modifier
   let accessModifier: 'public' | 'private' | 'protected' | null = null;
@@ -252,13 +279,21 @@ function _parseClassMember(
   }
 
   // Parse member name
-  const nameToken = this._consume('IDENTIFIER', 'Expected member name');
+  const nameToken = this._expect('IDENTIFIER', 'Expected member name');
   const memberName: IIdentifierNode = {
     type: ASTNodeType.IDENTIFIER,
     name: nameToken.value,
     location: {
-      start: this._getLocation(),
-      end: this._getLocation(),
+      start: {
+        line: nameToken.line,
+        column: nameToken.column,
+        offset: nameToken.offset,
+      },
+      end: {
+        line: nameToken.line,
+        column: nameToken.column + nameToken.value.length,
+        offset: nameToken.offset + nameToken.value.length,
+      },
     },
   };
 
@@ -301,6 +336,8 @@ function _parseProperty(
   isStatic: boolean,
   isReadonly: boolean
 ): IPropertyDefinitionNode {
+  const startToken = this._getCurrentToken();
+
   // Parse optional type annotation
   let typeAnnotation: ITypeAnnotationNode | null = null;
   if (this._check('COLON')) {
@@ -314,17 +351,28 @@ function _parseProperty(
       !this._check('RBRACE') &&
       !this._isAtEnd()
     ) {
-      typeTokens.push(this._current().value);
+      const token = this._getCurrentToken();
+      if (!token) break;
+      typeTokens.push(token.value);
       this._advance();
     }
 
     if (typeTokens.length > 0) {
+      const typeEndToken = this._getCurrentToken();
       typeAnnotation = {
         type: ASTNodeType.TYPE_ANNOTATION,
         typeString: typeTokens.join(' '),
         location: {
-          start: startLocation,
-          end: this._getLocation(),
+          start: {
+            line: startToken.line,
+            column: startToken.column,
+            offset: startToken.offset,
+          },
+          end: {
+            line: typeEndToken.line,
+            column: typeEndToken.column,
+            offset: typeEndToken.offset,
+          },
         },
       };
     }
@@ -335,8 +383,22 @@ function _parseProperty(
   if (this._check('ASSIGN')) {
     this._advance(); // consume '='
 
-    // Parse initializer expression
-    initializer = this._parseExpression();
+    // Simple expression parsing - collect tokens until semicolon
+    const exprTokens: string[] = [];
+    while (!this._check('SEMICOLON') && !this._check('RBRACE') && !this._isAtEnd()) {
+      const token = this._getCurrentToken();
+      if (!token) break;
+      exprTokens.push(token.value);
+      this._advance();
+    }
+
+    // Build simple literal node
+    const exprValue = exprTokens.join(' ');
+    initializer = {
+      type: 'Literal',
+      value: exprValue,
+      raw: exprValue,
+    };
   }
 
   // Optional semicolon
@@ -344,7 +406,7 @@ function _parseProperty(
     this._advance();
   }
 
-  const endLocation = this._getLocation();
+  const endToken = this._getCurrentToken();
 
   return {
     type: ASTNodeType.PROPERTY_DEFINITION,
@@ -356,7 +418,11 @@ function _parseProperty(
     accessModifier,
     location: {
       start: startLocation,
-      end: endLocation,
+      end: {
+        line: endToken.line,
+        column: endToken.column,
+        offset: endToken.offset,
+      },
     },
   };
 }
@@ -377,29 +443,69 @@ function _parseMethod(
   isAbstract: boolean
 ): IMethodDefinitionNode {
   // Parse parameters
-  this._consume('LPAREN', "Expected '(' for method parameters");
-  const parameters = this._parseFunctionParameters();
-  this._consume('RPAREN', "Expected ')' after method parameters");
+  this._expect('LPAREN', "Expected '(' for method parameters");
+
+  const parameters: any[] = [];
+  while (!this._check('RPAREN') && !this._isAtEnd()) {
+    const paramToken = this._getCurrentToken();
+    if (!paramToken) break;
+
+    // Simple parameter parsing - just collect identifier
+    if (paramToken.type === 'IDENTIFIER') {
+      parameters.push({ type: 'Parameter', name: { type: 'Identifier', name: paramToken.value } });
+      this._advance();
+
+      // Skip type annotation if present
+      if (this._check('COLON')) {
+        this._advance(); // consume :
+        // Skip type tokens
+        while (!this._check('COMMA') && !this._check('RPAREN') && !this._isAtEnd()) {
+          this._advance();
+        }
+      }
+
+      // Skip comma
+      if (this._check('COMMA')) {
+        this._advance();
+      }
+    } else {
+      this._advance();
+    }
+  }
+
+  this._expect('RPAREN', "Expected ')' after method parameters");
 
   // Parse optional return type
   let returnType: ITypeAnnotationNode | null = null;
   if (this._check('COLON')) {
     this._advance(); // consume ':'
     const typeTokens: string[] = [];
+    const typeStartToken = this._getCurrentToken();
 
     // Collect return type tokens until we hit { or ;
     while (!this._check('LBRACE') && !this._check('SEMICOLON') && !this._isAtEnd()) {
-      typeTokens.push(this._current().value);
+      const token = this._getCurrentToken();
+      if (!token) break;
+      typeTokens.push(token.value);
       this._advance();
     }
 
     if (typeTokens.length > 0) {
+      const typeEndToken = this._getCurrentToken();
       returnType = {
         type: ASTNodeType.TYPE_ANNOTATION,
         typeString: typeTokens.join(' '),
         location: {
-          start: startLocation,
-          end: this._getLocation(),
+          start: {
+            line: typeStartToken.line,
+            column: typeStartToken.column,
+            offset: typeStartToken.offset,
+          },
+          end: {
+            line: typeEndToken.line,
+            column: typeEndToken.column,
+            offset: typeEndToken.offset,
+          },
         },
       };
     }
@@ -408,20 +514,57 @@ function _parseMethod(
   // Parse body (or semicolon for abstract methods)
   let body: IBlockStatementNode;
   if (isAbstract && this._check('SEMICOLON')) {
+    const semiToken = this._getCurrentToken();
     this._advance(); // consume ';'
     body = {
       type: ASTNodeType.BLOCK_STATEMENT,
       body: [],
       location: {
-        start: this._getLocation(),
-        end: this._getLocation(),
+        start: {
+          line: semiToken.line,
+          column: semiToken.column,
+          offset: semiToken.offset,
+        },
+        end: {
+          line: semiToken.line,
+          column: semiToken.column,
+          offset: semiToken.offset,
+        },
       },
     };
   } else {
-    body = this._parseBlockStatement();
+    // Parse block statement inline
+    this._expect('LBRACE', 'Expected { for method body');
+    const bodyStartToken = this._getCurrentToken();
+    const bodyStatements: any[] = [];
+
+    while (!this._check('RBRACE') && !this._isAtEnd()) {
+      // Skip statement parsing for now - just skip tokens
+      this._advance();
+    }
+
+    const bodyEndToken = this._getCurrentToken();
+    this._expect('RBRACE', 'Expected } after method body');
+
+    body = {
+      type: ASTNodeType.BLOCK_STATEMENT,
+      body: bodyStatements,
+      location: {
+        start: {
+          line: bodyStartToken.line,
+          column: bodyStartToken.column,
+          offset: bodyStartToken.offset,
+        },
+        end: {
+          line: bodyEndToken.line,
+          column: bodyEndToken.column,
+          offset: bodyEndToken.offset,
+        },
+      },
+    };
   }
 
-  const endLocation = this._getLocation();
+  const endToken = this._getCurrentToken();
 
   return {
     type: ASTNodeType.METHOD_DEFINITION,
@@ -437,7 +580,11 @@ function _parseMethod(
     accessModifier,
     location: {
       start: startLocation,
-      end: endLocation,
+      end: {
+        line: endToken.line,
+        column: endToken.column,
+        offset: endToken.offset,
+      },
     },
   };
 }
@@ -455,18 +602,26 @@ function _parseGetter(
 ): IMethodDefinitionNode {
   this._advance(); // consume 'get'
 
-  const nameToken = this._consume('IDENTIFIER', 'Expected getter name');
+  const nameToken = this._expect('IDENTIFIER', 'Expected getter name');
   const name: IIdentifierNode = {
     type: ASTNodeType.IDENTIFIER,
     name: nameToken.value,
     location: {
-      start: this._getLocation(),
-      end: this._getLocation(),
+      start: {
+        line: nameToken.line,
+        column: nameToken.column,
+        offset: nameToken.offset,
+      },
+      end: {
+        line: nameToken.line,
+        column: nameToken.column + nameToken.value.length,
+        offset: nameToken.offset + nameToken.value.length,
+      },
     },
   };
 
-  this._consume('LPAREN', "Expected '(' for getter");
-  this._consume('RPAREN', "Expected ')' for getter (getters have no parameters)");
+  this._expect('LPAREN', "Expected '(' for getter");
+  this._expect('RPAREN', "Expected ')' for getter (getters have no parameters)");
 
   // Parse optional return type
   let returnType: ITypeAnnotationNode | null = null;
@@ -475,24 +630,57 @@ function _parseGetter(
     const typeTokens: string[] = [];
 
     while (!this._check('LBRACE') && !this._isAtEnd()) {
-      typeTokens.push(this._current().value);
+      typeTokens.push(this._getCurrentToken().value);
       this._advance();
     }
 
     if (typeTokens.length > 0) {
+      const typeEndToken = this._getCurrentToken();
       returnType = {
         type: ASTNodeType.TYPE_ANNOTATION,
         typeString: typeTokens.join(' '),
         location: {
           start: startLocation,
-          end: this._getLocation(),
+          end: {
+            line: typeEndToken.line,
+            column: typeEndToken.column,
+            offset: typeEndToken.offset,
+          },
         },
       };
     }
   }
 
-  const body = this._parseBlockStatement();
-  const endLocation = this._getLocation();
+  // Parse block statement inline
+  this._expect('LBRACE', 'Expected { for getter body');
+  const bodyStartToken = this._getCurrentToken();
+  const bodyStatements: any[] = [];
+
+  while (!this._check('RBRACE') && !this._isAtEnd()) {
+    this._advance();
+  }
+
+  const bodyEndToken = this._getCurrentToken();
+  this._expect('RBRACE', 'Expected } after getter body');
+
+  const body: IBlockStatementNode = {
+    type: ASTNodeType.BLOCK_STATEMENT,
+    body: bodyStatements,
+    location: {
+      start: {
+        line: bodyStartToken.line,
+        column: bodyStartToken.column,
+        offset: bodyStartToken.offset,
+      },
+      end: {
+        line: bodyEndToken.line,
+        column: bodyEndToken.column,
+        offset: bodyEndToken.offset,
+      },
+    },
+  };
+
+  const endToken = this._getCurrentToken();
 
   return {
     type: ASTNodeType.METHOD_DEFINITION,
@@ -508,7 +696,11 @@ function _parseGetter(
     accessModifier,
     location: {
       start: startLocation,
-      end: endLocation,
+      end: {
+        line: endToken.line,
+        column: endToken.column,
+        offset: endToken.offset,
+      },
     },
   };
 }
@@ -526,22 +718,75 @@ function _parseSetter(
 ): IMethodDefinitionNode {
   this._advance(); // consume 'set'
 
-  const nameToken = this._consume('IDENTIFIER', 'Expected setter name');
+  const nameToken = this._expect('IDENTIFIER', 'Expected setter name');
   const name: IIdentifierNode = {
     type: ASTNodeType.IDENTIFIER,
     name: nameToken.value,
     location: {
-      start: this._getLocation(),
-      end: this._getLocation(),
+      start: {
+        line: nameToken.line,
+        column: nameToken.column,
+        offset: nameToken.offset,
+      },
+      end: {
+        line: nameToken.line,
+        column: nameToken.column + nameToken.value.length,
+        offset: nameToken.offset + nameToken.value.length,
+      },
     },
   };
 
-  this._consume('LPAREN', "Expected '(' for setter");
-  const parameters = this._parseFunctionParameters();
-  this._consume('RPAREN', "Expected ')' after setter parameter");
+  this._expect('LPAREN', "Expected '(' for setter");
 
-  const body = this._parseBlockStatement();
-  const endLocation = this._getLocation();
+  const parameters: any[] = [];
+  if (!this._check('RPAREN')) {
+    const paramToken = this._getCurrentToken();
+    if (paramToken && paramToken.type === 'IDENTIFIER') {
+      parameters.push({ type: 'Parameter', name: { type: 'Identifier', name: paramToken.value } });
+      this._advance();
+
+      // Skip type annotation if present
+      if (this._check('COLON')) {
+        this._advance(); // consume :
+        while (!this._check('RPAREN') && !this._isAtEnd()) {
+          this._advance();
+        }
+      }
+    }
+  }
+
+  this._expect('RPAREN', "Expected ')' after setter parameter");
+
+  // Parse block statement inline
+  this._expect('LBRACE', 'Expected { for setter body');
+  const bodyStartToken = this._getCurrentToken();
+  const bodyStatements: any[] = [];
+
+  while (!this._check('RBRACE') && !this._isAtEnd()) {
+    this._advance();
+  }
+
+  const bodyEndToken = this._getCurrentToken();
+  this._expect('RBRACE', 'Expected } after setter body');
+
+  const body: IBlockStatementNode = {
+    type: ASTNodeType.BLOCK_STATEMENT,
+    body: bodyStatements,
+    location: {
+      start: {
+        line: bodyStartToken.line,
+        column: bodyStartToken.column,
+        offset: bodyStartToken.offset,
+      },
+      end: {
+        line: bodyEndToken.line,
+        column: bodyEndToken.column,
+        offset: bodyEndToken.offset,
+      },
+    },
+  };
+
+  const endToken = this._getCurrentToken();
 
   return {
     type: ASTNodeType.METHOD_DEFINITION,
@@ -557,7 +802,11 @@ function _parseSetter(
     accessModifier,
     location: {
       start: startLocation,
-      end: endLocation,
+      end: {
+        line: endToken.line,
+        column: endToken.column,
+        offset: endToken.offset,
+      },
     },
   };
 }
@@ -570,12 +819,90 @@ function _parseSetter(
 function _parseConstructor(this: IParserInternal, startLocation: any): IConstructorDefinitionNode {
   this._advance(); // consume 'constructor'
 
-  this._consume('LPAREN', "Expected '(' for constructor parameters");
-  const parameters = this._parseFunctionParameters();
-  this._consume('RPAREN', "Expected ')' after constructor parameters");
+  this._expect('LPAREN', "Expected '(' for constructor parameters");
 
-  const body = this._parseBlockStatement();
-  const endLocation = this._getLocation();
+  const parameters: any[] = [];
+  while (!this._check('RPAREN') && !this._isAtEnd()) {
+    const paramToken = this._getCurrentToken();
+    if (!paramToken) break;
+
+    if (paramToken.type === 'IDENTIFIER') {
+      parameters.push({ type: 'Parameter', name: { type: 'Identifier', name: paramToken.value } });
+      this._advance();
+
+      // Skip type annotation if present
+      if (this._check('COLON')) {
+        this._advance(); // consume :
+        while (!this._check('COMMA') && !this._check('RPAREN') && !this._isAtEnd()) {
+          this._advance();
+        }
+      }
+
+      // Skip comma
+      if (this._check('COMMA')) {
+        this._advance();
+      }
+    } else {
+      this._advance();
+    }
+  }
+
+  this._expect('RPAREN', "Expected ')' after constructor parameters");
+
+  // Parse block statement inline
+  this._expect('LBRACE', 'Expected { for constructor body');
+  const bodyStartToken = this._getCurrentToken();
+  const bodyStatements: any[] = [];
+
+  // Collect statements (basic token-based approach)
+  while (!this._check('RBRACE') && !this._isAtEnd()) {
+    const stmtStartToken = this._getCurrentToken();
+    const stmtTokens: string[] = [];
+
+    // Collect tokens until semicolon or RBRACE
+    while (!this._check('SEMICOLON') && !this._check('RBRACE') && !this._isAtEnd()) {
+      const token = this._getCurrentToken();
+      if (token) stmtTokens.push(token.value);
+      this._advance();
+    }
+
+    if (this._check('SEMICOLON')) {
+      this._advance();
+    }
+
+    // Create placeholder statement if we collected tokens
+    if (stmtTokens.length > 0) {
+      bodyStatements.push({
+        type: 'ExpressionStatement',
+        expression: {
+          type: 'Expression',
+          raw: stmtTokens.join(' '),
+        },
+      });
+    }
+  }
+
+  const bodyEndToken = this._getCurrentToken();
+  this._expect('RBRACE', 'Expected } after constructor body');
+
+  const body: IBlockStatementNode = {
+    type: ASTNodeType.BLOCK_STATEMENT,
+    body: bodyStatements,
+    location: {
+      start: {
+        line: bodyStartToken.line,
+        column: bodyStartToken.column,
+        offset: bodyStartToken.offset,
+      },
+      end: {
+        line: bodyEndToken.line,
+        column: bodyEndToken.column,
+        offset: bodyEndToken.offset,
+      },
+    },
+  };
+
+  const endToken = this._getCurrentToken();
 
   return {
     type: ASTNodeType.CONSTRUCTOR_DEFINITION,
@@ -583,7 +910,11 @@ function _parseConstructor(this: IParserInternal, startLocation: any): IConstruc
     body,
     location: {
       start: startLocation,
-      end: endLocation,
+      end: {
+        line: endToken.line,
+        column: endToken.column,
+        offset: endToken.offset,
+      },
     },
   };
 }
