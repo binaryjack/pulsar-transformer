@@ -37,7 +37,7 @@ export function _parseAwaitExpression(this: IParserInternal): IAwaitExpressionNo
       end: {
         line: endToken!.line,
         column: endToken!.column,
-        offset: endToken!.offset,
+        offset: endToken!.start,
       },
     },
   };

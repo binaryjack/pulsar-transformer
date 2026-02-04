@@ -42,7 +42,7 @@ export function _parseDecorator(this: IParserInternal): IDecoratorNode {
       end: {
         line: endToken!.line,
         column: endToken!.column,
-        offset: endToken!.offset,
+        offset: endToken!.start,
       },
     },
   };
