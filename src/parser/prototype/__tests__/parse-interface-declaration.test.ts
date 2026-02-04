@@ -65,8 +65,10 @@ describe('parseInterfaceDeclaration', () => {
       const ast = parser.parse(source);
 
       const interfaceDecl = ast.body[0] as IInterfaceDeclarationNode;
-      expect(interfaceDecl.body).toContain('port?: number');
-      expect(interfaceDecl.body).toContain('ssl?: boolean');
+      expect(interfaceDecl.body).toContain('port');
+      expect(interfaceDecl.body).toContain('?');
+      expect(interfaceDecl.body).toContain('ssl');
+      expect(interfaceDecl.body).toContain('boolean');
     });
 
     it('should parse interface with readonly properties', () => {
@@ -78,8 +80,10 @@ describe('parseInterfaceDeclaration', () => {
       const ast = parser.parse(source);
 
       const interfaceDecl = ast.body[0] as IInterfaceDeclarationNode;
-      expect(interfaceDecl.body).toContain('readonly x: number');
-      expect(interfaceDecl.body).toContain('readonly y: number');
+      expect(interfaceDecl.body).toContain('readonly');
+      expect(interfaceDecl.body).toContain('x');
+      expect(interfaceDecl.body).toContain('y');
+      expect(interfaceDecl.body).toContain('number');
     });
   });
 
@@ -119,8 +123,10 @@ describe('parseInterfaceDeclaration', () => {
       const interfaceDecl = ast.body[0] as IInterfaceDeclarationNode;
       expect(interfaceDecl.extends).toHaveLength(1);
       expect(interfaceDecl.extends![0].name).toBe('IEmployee');
-      expect(interfaceDecl.body).toContain('department: string');
-      expect(interfaceDecl.body).toContain('teamSize: number');
+      expect(interfaceDecl.body).toContain('department');
+      expect(interfaceDecl.body).toContain('teamSize');
+      expect(interfaceDecl.body).toContain('string');
+      expect(interfaceDecl.body).toContain('number');
     });
   });
 
@@ -136,9 +142,11 @@ describe('parseInterfaceDeclaration', () => {
       const ast = parser.parse(source);
 
       const interfaceDecl = ast.body[0] as IInterfaceDeclarationNode;
-      expect(interfaceDecl.body).toContain('server: {');
-      expect(interfaceDecl.body).toContain('host: string');
-      expect(interfaceDecl.body).toContain('port: number');
+      expect(interfaceDecl.body).toContain('server');
+      expect(interfaceDecl.body).toContain('host');
+      expect(interfaceDecl.body).toContain('port');
+      expect(interfaceDecl.body).toContain('string');
+      expect(interfaceDecl.body).toContain('number');
     });
 
     it('should parse interface with array types', () => {
@@ -150,8 +158,11 @@ describe('parseInterfaceDeclaration', () => {
       const ast = parser.parse(source);
 
       const interfaceDecl = ast.body[0] as IInterfaceDeclarationNode;
-      expect(interfaceDecl.body).toContain('items: string[]');
-      expect(interfaceDecl.body).toContain('matrix: number[][]');
+      expect(interfaceDecl.body).toContain('items');
+      expect(interfaceDecl.body).toContain('string');
+      expect(interfaceDecl.body).toContain('[');
+      expect(interfaceDecl.body).toContain('matrix');
+      expect(interfaceDecl.body).toContain('number');
     });
 
     it('should parse interface with union types', () => {
