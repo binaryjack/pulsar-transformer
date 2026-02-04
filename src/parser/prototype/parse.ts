@@ -86,6 +86,17 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
     return this._parseComponentDeclaration();
   }
 
+  // Enum declaration (including const enums) - MUST come before variable declaration
+  if (token.value === 'enum') {
+    return this._parseEnumDeclaration();
+  }
+  if (token.value === 'const') {
+    const nextToken = this._peek(1);
+    if (nextToken?.value === 'enum') {
+      return this._parseEnumDeclaration();
+    }
+  }
+
   // Variable declaration
   if (token.value === 'const' || token.value === 'let') {
     return this._parseVariableDeclaration();
@@ -104,11 +115,6 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
   // Interface declaration
   if (token.value === 'interface') {
     return this._parseInterfaceDeclaration();
-  }
-
-  // Enum declaration (including const enums)
-  if (token.value === 'enum' || (token.value === 'const' && this._peek(1)?.value === 'enum')) {
-    return this._parseEnumDeclaration();
   }
 
   // Namespace/Module declaration

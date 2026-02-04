@@ -86,7 +86,7 @@ export function _parseEnumDeclaration(this: IParserInternal): IEnumDeclarationNo
     };
 
     // Parse optional initializer
-    let initializer: any = null;
+    let initializer: any = undefined; // undefined when no initializer
     if (this._check('ASSIGN')) {
       this._advance(); // consume =
 
