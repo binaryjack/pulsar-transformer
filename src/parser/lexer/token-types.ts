@@ -10,6 +10,8 @@ export enum TokenType {
   COMPONENT = 'COMPONENT',
   CONST = 'CONST',
   LET = 'LET',
+  FUNCTION = 'FUNCTION',
+  ASYNC = 'ASYNC',
   RETURN = 'RETURN',
   IMPORT = 'IMPORT',
   EXPORT = 'EXPORT',
@@ -27,8 +29,10 @@ export enum TokenType {
   PLUS = 'PLUS', // +
   MINUS = 'MINUS', // -
   MULTIPLY = 'MULTIPLY', // *
+  ASTERISK = 'ASTERISK', // * (for generator functions and namespace imports)
   DIVIDE = 'DIVIDE', // /
   ARROW = 'ARROW', // =>
+  PIPE = 'PIPE', // | (for union types)
 
   // Delimiters
   LPAREN = 'LPAREN', // (

@@ -152,6 +152,8 @@ function _readIdentifierOrKeyword(
     component: TokenType.COMPONENT,
     const: TokenType.CONST,
     let: TokenType.LET,
+    function: TokenType.FUNCTION,
+    async: TokenType.ASYNC,
     return: TokenType.RETURN,
     import: TokenType.IMPORT,
     export: TokenType.EXPORT,
@@ -313,8 +315,9 @@ function _readSingleChar(
     '/': TokenType.SLASH,
     '+': TokenType.PLUS,
     '-': TokenType.MINUS,
-    '*': TokenType.MULTIPLY,
+    '*': TokenType.ASTERISK,
     '=': TokenType.ASSIGN,
+    '|': TokenType.PIPE,
   };
 
   const type = singleCharTokens[char];

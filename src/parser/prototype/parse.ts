@@ -73,6 +73,11 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
     return this._parseVariableDeclaration();
   }
 
+  // Function declaration (including async functions)
+  if (token.value === 'function' || token.value === 'async') {
+    return this._parseFunctionDeclaration();
+  }
+
   // Import declaration
   if (token.value === 'import') {
     return this._parseImportDeclaration();

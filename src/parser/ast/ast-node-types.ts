@@ -41,11 +41,13 @@ export enum ASTNodeType {
   // Declarations
   COMPONENT_DECLARATION = 'ComponentDeclaration',
   VARIABLE_DECLARATION = 'VariableDeclaration',
+  FUNCTION_DECLARATION = 'FunctionDeclaration',
   TYPE_ANNOTATION = 'TypeAnnotation',
   IMPORT_DECLARATION = 'ImportDeclaration',
   EXPORT_DECLARATION = 'ExportDeclaration',
 
   // Statements
+  BLOCK_STATEMENT = 'BlockStatement',
   RETURN_STATEMENT = 'ReturnStatement',
   EXPRESSION_STATEMENT = 'ExpressionStatement',
 
@@ -54,7 +56,11 @@ export enum ASTNodeType {
   LITERAL = 'Literal',
   CALL_EXPRESSION = 'CallExpression',
   ARROW_FUNCTION = 'ArrowFunction',
+  BINARY_EXPRESSION = 'BinaryExpression',
+  MEMBER_EXPRESSION = 'MemberExpression',
+  AWAIT_EXPRESSION = 'AwaitExpression',
   ARRAY_PATTERN = 'ArrayPattern',
+  OBJECT_PATTERN = 'ObjectPattern',
 
   // PSR-specific
   PSR_ELEMENT = 'PSRElement',
@@ -93,15 +99,47 @@ export interface IComponentDeclarationNode extends IASTNode {
  * @example
  * const [count, setCount] = createSignal(0);
  * const value: number = 42;
+ * const { name, age } = user;
  */
 export interface IVariableDeclarationNode extends IASTNode {
   readonly type: ASTNodeType.VARIABLE_DECLARATION;
   readonly kind: 'const' | 'let';
   readonly declarations: Array<{
-    id: IIdentifierNode | IArrayPatternNode;
+    id: IIdentifierNode | IArrayPatternNode | IObjectPatternNode;
     init: ICallExpressionNode | ILiteralNode | null;
     typeAnnotation?: ITypeAnnotationNode;
   }>;
+}
+
+/**
+ * Function Declaration
+ *
+ * @example
+ * function greet(name: string): string { return `Hello, ${name}`; }
+ * async function fetchData(): Promise<Data> { ... }
+ */
+export interface IFunctionDeclarationNode extends IASTNode {
+  readonly type: ASTNodeType.FUNCTION_DECLARATION;
+  readonly name: IIdentifierNode;
+  readonly params: Array<{
+    name: IIdentifierNode;
+    typeAnnotation?: ITypeAnnotationNode;
+  }>;
+  readonly returnType?: ITypeAnnotationNode;
+  readonly body: IBlockStatementNode;
+  readonly async?: boolean;
+  readonly generator?: boolean;
+}
+
+/**
+ * Block Statement
+ *
+ * @example
+ * { return true; }
+ */
+export interface IBlockStatementNode extends IASTNode {
+  readonly type: ASTNodeType.BLOCK_STATEMENT;
+  readonly body: IASTNode[];
 }
 
 /**
@@ -233,6 +271,22 @@ export interface IArrowFunctionNode extends IASTNode {
 export interface IArrayPatternNode extends IASTNode {
   readonly type: ASTNodeType.ARRAY_PATTERN;
   readonly elements: IIdentifierNode[];
+}
+
+/**
+ * Object Pattern (destructuring)
+ *
+ * @example
+ * { name, age }
+ * { name: firstName, age: userAge }
+ */
+export interface IObjectPatternNode extends IASTNode {
+  readonly type: ASTNodeType.OBJECT_PATTERN;
+  readonly properties: Array<{
+    key: IIdentifierNode;
+    value: IIdentifierNode;
+    shorthand: boolean; // true for { name }, false for { name: firstName }
+  }>;
 }
 
 /**

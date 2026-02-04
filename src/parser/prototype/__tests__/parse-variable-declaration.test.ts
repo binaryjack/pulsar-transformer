@@ -224,5 +224,46 @@ describe('parseVariableDeclaration', () => {
       expect(varDecl.declarations[0].typeAnnotation.typeString).toContain('<');
       expect(varDecl.declarations[0].typeAnnotation.typeString).toContain('>');
     });
+
+    it('should parse const with union type annotation', () => {
+      const source = 'const value: string | number = 42;';
+      const parser = createParser();
+      const ast = parser.parse(source);
+
+      const varDecl = ast.body[0];
+      expect(varDecl.declarations[0].typeAnnotation).toBeDefined();
+      expect(varDecl.declarations[0].typeAnnotation.typeString).toBe('string | number');
+    });
+
+    it('should parse const with nullable union type', () => {
+      const source = 'const user: IUser | null = null;';
+      const parser = createParser();
+      const ast = parser.parse(source);
+
+      const varDecl = ast.body[0];
+      expect(varDecl.declarations[0].typeAnnotation.typeString).toBe('IUser | null');
+    });
+
+    it('should parse const with multi-way union type', () => {
+      const source = 'const status: "idle" | "loading" | "success" | "error" = "idle";';
+      const parser = createParser();
+      const ast = parser.parse(source);
+
+      const varDecl = ast.body[0];
+      expect(varDecl.declarations[0].typeAnnotation).toBeDefined();
+      expect(varDecl.declarations[0].typeAnnotation.typeString).toContain('|');
+      expect(varDecl.declarations[0].typeAnnotation.typeString).toContain('idle');
+    });
+
+    it('should parse const with complex union including generics', () => {
+      const source = 'const data: Array<string> | null | undefined = null;';
+      const parser = createParser();
+      const ast = parser.parse(source);
+
+      const varDecl = ast.body[0];
+      expect(varDecl.declarations[0].typeAnnotation.typeString).toContain('Array');
+      expect(varDecl.declarations[0].typeAnnotation.typeString).toContain('|');
+      expect(varDecl.declarations[0].typeAnnotation.typeString).toContain('null');
+    });
   });
 });

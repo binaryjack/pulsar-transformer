@@ -19,6 +19,7 @@ import {
   _parseLiteral,
   parseExpression,
 } from './parse-expression.js';
+import { parseFunctionDeclaration } from './parse-function-declaration.js';
 import { parseImportDeclaration } from './parse-import-declaration.js';
 import {
   _isClosingTag,
@@ -136,6 +137,13 @@ Object.defineProperty(Parser.prototype, '_parseReturnStatement', {
 
 Object.defineProperty(Parser.prototype, '_parseVariableDeclaration', {
   value: parseVariableDeclaration,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseFunctionDeclaration', {
+  value: parseFunctionDeclaration,
   writable: true,
   enumerable: false,
   configurable: false,

@@ -87,6 +87,19 @@ describe('Lexer', () => {
       expect(tokens[0].value).toBe('=>');
     });
 
+    it('should tokenize pipe for union types', () => {
+      const lexer = createLexer();
+      const tokens = lexer.tokenize('string | number');
+
+      expect(tokens).toHaveLength(4); // IDENTIFIER + PIPE + IDENTIFIER + EOF
+      expect(tokens[0].type).toBe(TokenType.IDENTIFIER);
+      expect(tokens[0].value).toBe('string');
+      expect(tokens[1].type).toBe(TokenType.PIPE);
+      expect(tokens[1].value).toBe('|');
+      expect(tokens[2].type).toBe(TokenType.IDENTIFIER);
+      expect(tokens[2].value).toBe('number');
+    });
+
     it('should tokenize simple component', () => {
       const lexer = createLexer();
       const source = 'component MyButton() { return <button>Click</button>; }';

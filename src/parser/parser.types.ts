@@ -46,6 +46,7 @@ export interface IParserInternal extends IParser {
   _parseStatement(): any;
   _parseComponentDeclaration(): any;
   _parseVariableDeclaration(): any;
+  _parseFunctionDeclaration(): any;
   _parseReturnStatement(): any;
   _parsePSRElement(): any;
   _parsePSRSignalBinding(): any;

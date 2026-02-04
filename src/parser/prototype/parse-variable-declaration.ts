@@ -7,7 +7,11 @@
  * const count = createSignal(0);
  */
 
-import type { IIdentifierNode, IVariableDeclarationNode } from '../ast/index.js';
+import type {
+  IIdentifierNode,
+  IObjectPatternNode,
+  IVariableDeclarationNode,
+} from '../ast/index.js';
 import { ASTNodeType } from '../ast/index.js';
 import type { IParserInternal } from '../parser.types.js';
 
@@ -17,6 +21,8 @@ import type { IParserInternal } from '../parser.types.js';
  * Grammar:
  *   const Identifier = Expression ;
  *   let Identifier = Expression ;
+ *   const [a, b] = array;
+ *   const { name, age } = user;
  */
 export function parseVariableDeclaration(this: IParserInternal): IVariableDeclarationNode {
   const startToken = this._getCurrentToken()!;
@@ -28,8 +34,84 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
   // Parse identifier or destructuring pattern
   let id: IIdentifierNode | any;
 
+  // Check for object destructuring: { a, b }
+  if (this._check('LBRACE')) {
+    this._advance(); // consume {
+
+    const properties: IObjectPatternNode['properties'] = [];
+
+    // Handle empty object destructuring: const { } = user;
+    if (!this._check('RBRACE')) {
+      do {
+        const keyToken = this._expect('IDENTIFIER', 'Expected property name in destructuring');
+        const key: IIdentifierNode = {
+          type: ASTNodeType.IDENTIFIER,
+          name: keyToken.value,
+          location: {
+            start: {
+              line: keyToken.line,
+              column: keyToken.column,
+              offset: keyToken.start,
+            },
+            end: {
+              line: keyToken.line,
+              column: keyToken.column + keyToken.value.length,
+              offset: keyToken.end,
+            },
+          },
+        };
+
+        // Check for renaming: { name: firstName }
+        let value: IIdentifierNode = key;
+        let shorthand = true;
+
+        if (this._match('COLON')) {
+          shorthand = false;
+          const valueToken = this._expect('IDENTIFIER', 'Expected identifier after colon');
+          value = {
+            type: ASTNodeType.IDENTIFIER,
+            name: valueToken.value,
+            location: {
+              start: {
+                line: valueToken.line,
+                column: valueToken.column,
+                offset: valueToken.start,
+              },
+              end: {
+                line: valueToken.line,
+                column: valueToken.column + valueToken.value.length,
+                offset: valueToken.end,
+              },
+            },
+          };
+        }
+
+        properties.push({ key, value, shorthand });
+      } while (this._match('COMMA'));
+    }
+
+    this._expect('RBRACE', 'Expected } after destructuring');
+
+    // Create object pattern node
+    id = {
+      type: ASTNodeType.OBJECT_PATTERN,
+      properties,
+      location: {
+        start: {
+          line: startToken.line,
+          column: startToken.column,
+          offset: startToken.start,
+        },
+        end: {
+          line: this._getCurrentToken()!.line,
+          column: this._getCurrentToken()!.column,
+          offset: this._getCurrentToken()!.end,
+        },
+      },
+    };
+  }
   // Check for array destructuring: [a, b]
-  if (this._check('LBRACKET')) {
+  else if (this._check('LBRACKET')) {
     this._advance(); // consume [
 
     const elements: IIdentifierNode[] = [];
@@ -86,16 +168,33 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
   if (this._check('COLON')) {
     this._advance(); // consume :
 
-    // Read type tokens until we hit = or ;
+    // Read type tokens until we hit = or ; (but handle balanced braces/brackets/parens)
     const typeTokens: string[] = [];
-    while (!this._check('ASSIGN') && !this._check('SEMICOLON') && !this._isAtEnd()) {
+    let braceDepth = 0;
+    let bracketDepth = 0;
+    let parenDepth = 0;
+
+    while (!this._isAtEnd()) {
       const token = this._getCurrentToken();
-      if (token) {
-        typeTokens.push(token.value);
-        this._advance();
-      } else {
-        break;
+      if (!token) break;
+
+      // Track depth for balanced parsing
+      if (token.type === 'LBRACE') braceDepth++;
+      else if (token.type === 'RBRACE') braceDepth--;
+      else if (token.type === 'LBRACKET') bracketDepth++;
+      else if (token.type === 'RBRACKET') bracketDepth--;
+      else if (token.type === 'LPAREN') parenDepth++;
+      else if (token.type === 'RPAREN') parenDepth--;
+
+      // Stop at = or ; only if all brackets are balanced
+      if (braceDepth === 0 && bracketDepth === 0 && parenDepth === 0) {
+        if (token.type === 'ASSIGN' || token.type === 'SEMICOLON') {
+          break;
+        }
       }
+
+      typeTokens.push(token.value);
+      this._advance();
     }
 
     if (typeTokens.length > 0) {
