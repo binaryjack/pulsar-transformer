@@ -47,6 +47,7 @@ export enum TokenType {
   COMMA = 'COMMA', // ,
   DOT = 'DOT', // .
   COLON = 'COLON', // :
+  QUESTION = 'QUESTION', // ? (for optional properties)
 
   // JSX-like
   LT = 'LT', // <
