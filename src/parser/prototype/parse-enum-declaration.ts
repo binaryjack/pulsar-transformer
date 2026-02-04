@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse Enum Declaration
  *
  * Parses TypeScript enum declarations including:
@@ -44,17 +44,17 @@ export function _parseEnumDeclaration(this: IParserInternal): IEnumDeclarationNo
   const nameToken = this._expect('IDENTIFIER', 'Expected enum name');
   const name: IIdentifierNode = {
     type: ASTNodeType.IDENTIFIER,
-    name: nameToken.value,
+    name: nameToken!.value,
     location: {
       start: {
-        line: nameToken.line,
-        column: nameToken.column,
-        offset: nameToken.offset,
+        line: nameToken!.line,
+        column: nameToken!.column,
+        offset: nameToken!.start,
       },
       end: {
-        line: nameToken.line,
-        column: nameToken.column + nameToken.value.length,
-        offset: nameToken.offset + nameToken.value.length,
+        line: nameToken!.line,
+        column: nameToken!.column + nameToken!.value.length,
+        offset: nameToken!.start + nameToken!.value.length,
       },
     },
   };
@@ -70,17 +70,17 @@ export function _parseEnumDeclaration(this: IParserInternal): IEnumDeclarationNo
 
     const memberName: IIdentifierNode = {
       type: ASTNodeType.IDENTIFIER,
-      name: memberNameToken.value,
+      name: memberNameToken!.value,
       location: {
         start: {
-          line: memberNameToken.line,
-          column: memberNameToken.column,
-          offset: memberNameToken.offset,
+          line: memberNameToken!.line,
+          column: memberNameToken!.column,
+          offset: memberNameToken!.start,
         },
         end: {
-          line: memberNameToken.line,
-          column: memberNameToken.column + memberNameToken.value.length,
-          offset: memberNameToken.offset + memberNameToken.value.length,
+          line: memberNameToken!.line,
+          column: memberNameToken!.column + memberNameToken!.value.length,
+          offset: memberNameToken!.start + memberNameToken!.value.length,
         },
       },
     };
@@ -115,14 +115,14 @@ export function _parseEnumDeclaration(this: IParserInternal): IEnumDeclarationNo
       initializer,
       location: {
         start: {
-          line: memberStartToken.line,
-          column: memberStartToken.column,
-          offset: memberStartToken.offset,
+          line: memberStartToken!.line,
+          column: memberStartToken!.column,
+          offset: memberStartToken!.start,
         },
         end: {
-          line: memberEndToken.line,
-          column: memberEndToken.column,
-          offset: memberEndToken.offset,
+          line: memberEndToken!.line,
+          column: memberEndToken!.column,
+          offset: memberEndToken!.start,
         },
       },
     });
@@ -144,14 +144,14 @@ export function _parseEnumDeclaration(this: IParserInternal): IEnumDeclarationNo
     isConst,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.offset,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.offset,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.start,
       },
     },
   };

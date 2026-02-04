@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse Component Declaration
  *
  * Parses PSR component syntax into AST node.
@@ -31,17 +31,17 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
   const nameToken = this._expect('IDENTIFIER', 'Expected component name');
   const name: IIdentifierNode = {
     type: ASTNodeType.IDENTIFIER,
-    name: nameToken.value,
+    name: nameToken!.value,
     location: {
       start: {
-        line: nameToken.line,
-        column: nameToken.column,
-        offset: nameToken.start,
+        line: nameToken!.line,
+        column: nameToken!.column,
+        offset: nameToken!.start,
       },
       end: {
-        line: nameToken.line,
-        column: nameToken.column + nameToken.value.length,
-        offset: nameToken.end,
+        line: nameToken!.line,
+        column: nameToken!.column + nameToken!.value.length,
+        offset: nameToken!.end,
       },
     },
   };
@@ -66,17 +66,17 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
 
       params.push({
         type: ASTNodeType.IDENTIFIER,
-        name: paramToken.value,
+        name: paramToken!.value,
         location: {
           start: {
-            line: paramToken.line,
-            column: paramToken.column,
-            offset: paramToken.start,
+            line: paramToken!.line,
+            column: paramToken!.column,
+            offset: paramToken!.start,
           },
           end: {
-            line: paramToken.line,
-            column: paramToken.column + paramToken.value.length,
-            offset: paramToken.end,
+            line: paramToken!.line,
+            column: paramToken!.column + paramToken!.value.length,
+            offset: paramToken!.end,
           },
         },
       });
@@ -111,14 +111,14 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
     returnStatement,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: endToken.line,
-        column: endToken.column + 1,
-        offset: endToken.end,
+        line: endToken!.line,
+        column: endToken!.column + 1,
+        offset: endToken!.end,
       },
     },
   };

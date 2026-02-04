@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   IASTNode,
   IBreakStatementNode,
   IContinueStatementNode,
@@ -80,17 +80,17 @@ export function _parseBreakStatement(this: IParserInternal): IBreakStatementNode
     const labelToken = this._getCurrentToken();
     label = {
       type: ASTNodeType.IDENTIFIER,
-      name: labelToken.value,
+      name: labelToken!.value,
       location: {
         start: {
-          line: labelToken.line,
-          column: labelToken.column,
-          offset: labelToken.start,
+          line: labelToken!.line,
+          column: labelToken!.column,
+          offset: labelToken!.start,
         },
         end: {
-          line: labelToken.line,
-          column: labelToken.column + labelToken.value.length,
-          offset: labelToken.end,
+          line: labelToken!.line,
+          column: labelToken!.column + labelToken!.value.length,
+          offset: labelToken!.end,
         },
       },
     };
@@ -149,17 +149,17 @@ export function _parseContinueStatement(this: IParserInternal): IContinueStateme
     const labelToken = this._getCurrentToken();
     label = {
       type: ASTNodeType.IDENTIFIER,
-      name: labelToken.value,
+      name: labelToken!.value,
       location: {
         start: {
-          line: labelToken.line,
-          column: labelToken.column,
-          offset: labelToken.start,
+          line: labelToken!.line,
+          column: labelToken!.column,
+          offset: labelToken!.start,
         },
         end: {
-          line: labelToken.line,
-          column: labelToken.column + labelToken.value.length,
-          offset: labelToken.end,
+          line: labelToken!.line,
+          column: labelToken!.column + labelToken!.value.length,
+          offset: labelToken!.end,
         },
       },
     };
@@ -247,7 +247,7 @@ function _parseSimpleExpression(this: IParserInternal): IASTNode {
     this._advance(); // Consume 'new'
 
     const constructorToken = this._getCurrentToken();
-    if (constructorToken.type !== TokenType.IDENTIFIER) {
+    if (constructorToken!.type !== TokenType.IDENTIFIER) {
       throw new Error(`Expected constructor name after 'new'`);
     }
 
@@ -270,7 +270,7 @@ function _parseSimpleExpression(this: IParserInternal): IASTNode {
 
     return {
       type: ASTNodeType.IDENTIFIER,
-      name: `new ${constructorToken.value}`,
+      name: `new ${constructorToken!.value}`,
       location: {
         start: {
           line: token.line,

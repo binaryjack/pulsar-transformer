@@ -1,4 +1,4 @@
-import type { IASTNode, INamespaceDeclarationNode } from '../ast/ast-node-types.js';
+﻿import type { IASTNode, INamespaceDeclarationNode } from '../ast/ast-node-types.js';
 import { ASTNodeType } from '../ast/ast-node-types.js';
 import { TokenType } from '../lexer/token-types.js';
 import type { IParserInternal } from '../parser.types.js';

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse Interface Declaration
  *
  * Parses TypeScript interface declarations including inheritance.
@@ -26,11 +26,11 @@ export function parseInterfaceDeclaration(this: IParserInternal): IInterfaceDecl
   if (!startToken) return null;
 
   // Expect 'interface' keyword
-  if (startToken.value !== 'interface') {
+  if (startToken!.value !== 'interface') {
     this._addError({
       code: 'PSR-E001',
       message: 'Expected "interface" keyword',
-      location: { line: startToken.line, column: startToken.column },
+      location: { line: startToken!.line, column: startToken!.column },
       token: startToken,
     });
     return null;
@@ -42,17 +42,17 @@ export function parseInterfaceDeclaration(this: IParserInternal): IInterfaceDecl
   const nameToken = this._expect('IDENTIFIER', 'Expected interface name');
   const name: IIdentifierNode = {
     type: ASTNodeType.IDENTIFIER,
-    name: nameToken.value,
+    name: nameToken!.value,
     location: {
       start: {
-        line: nameToken.line,
-        column: nameToken.column,
-        offset: nameToken.start,
+        line: nameToken!.line,
+        column: nameToken!.column,
+        offset: nameToken!.start,
       },
       end: {
-        line: nameToken.line,
-        column: nameToken.column + nameToken.value.length,
-        offset: nameToken.end,
+        line: nameToken!.line,
+        column: nameToken!.column + nameToken!.value.length,
+        offset: nameToken!.end,
       },
     },
   };
@@ -83,17 +83,17 @@ export function parseInterfaceDeclaration(this: IParserInternal): IInterfaceDecl
       const extendToken = this._expect('IDENTIFIER', 'Expected interface name after extends');
       extendsTypes.push({
         type: ASTNodeType.IDENTIFIER,
-        name: extendToken.value,
+        name: extendToken!.value,
         location: {
           start: {
-            line: extendToken.line,
-            column: extendToken.column,
-            offset: extendToken.start,
+            line: extendToken!.line,
+            column: extendToken!.column,
+            offset: extendToken!.start,
           },
           end: {
-            line: extendToken.line,
-            column: extendToken.column + extendToken.value.length,
-            offset: extendToken.end,
+            line: extendToken!.line,
+            column: extendToken!.column + extendToken!.value.length,
+            offset: extendToken!.end,
           },
         },
       });
@@ -135,14 +135,14 @@ export function parseInterfaceDeclaration(this: IParserInternal): IInterfaceDecl
     body,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: this._getCurrentToken()?.line || startToken.line,
-        column: this._getCurrentToken()?.column || startToken.column,
-        offset: this._getCurrentToken()?.end || startToken.end,
+        line: this._getCurrentToken()?.line || startToken!.line,
+        column: this._getCurrentToken()?.column || startToken!.column,
+        offset: this._getCurrentToken()?.end || startToken!.end,
       },
     },
   };

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse Type Alias Declaration
  *
  * Parses TypeScript type alias declarations.
@@ -21,11 +21,11 @@ export function parseTypeAlias(this: IParserInternal): ITypeAliasNode | null {
   if (!startToken) return null;
 
   // Expect 'type' keyword
-  if (startToken.value !== 'type') {
+  if (startToken!.value !== 'type') {
     this._addError({
       code: 'PSR-E001',
       message: 'Expected "type" keyword',
-      location: { line: startToken.line, column: startToken.column },
+      location: { line: startToken!.line, column: startToken!.column },
       token: startToken,
     });
     return null;
@@ -37,17 +37,17 @@ export function parseTypeAlias(this: IParserInternal): ITypeAliasNode | null {
   const nameToken = this._expect('IDENTIFIER', 'Expected type name');
   const name: IIdentifierNode = {
     type: ASTNodeType.IDENTIFIER,
-    name: nameToken.value,
+    name: nameToken!.value,
     location: {
       start: {
-        line: nameToken.line,
-        column: nameToken.column,
-        offset: nameToken.start,
+        line: nameToken!.line,
+        column: nameToken!.column,
+        offset: nameToken!.start,
       },
       end: {
-        line: nameToken.line,
-        column: nameToken.column + nameToken.value.length,
-        offset: nameToken.end,
+        line: nameToken!.line,
+        column: nameToken!.column + nameToken!.value.length,
+        offset: nameToken!.end,
       },
     },
   };
@@ -99,14 +99,14 @@ export function parseTypeAlias(this: IParserInternal): ITypeAliasNode | null {
 
     // Track depth AFTER collecting
     const collectedToken = token;
-    if (collectedToken.type === 'LBRACE') braceDepth++;
-    else if (collectedToken.type === 'RBRACE') braceDepth--;
-    else if (collectedToken.type === 'LBRACKET') bracketDepth++;
-    else if (collectedToken.type === 'RBRACKET') bracketDepth--;
-    else if (collectedToken.type === 'LPAREN') parenDepth++;
-    else if (collectedToken.type === 'RPAREN') parenDepth--;
-    else if (collectedToken.value === '<') angleDepth++;
-    else if (collectedToken.value === '>') angleDepth--;
+    if (collectedToken!.type === 'LBRACE') braceDepth++;
+    else if (collectedToken!.type === 'RBRACE') braceDepth--;
+    else if (collectedToken!.type === 'LBRACKET') bracketDepth++;
+    else if (collectedToken!.type === 'RBRACKET') bracketDepth--;
+    else if (collectedToken!.type === 'LPAREN') parenDepth++;
+    else if (collectedToken!.type === 'RPAREN') parenDepth--;
+    else if (collectedToken!.value === '<') angleDepth++;
+    else if (collectedToken!.value === '>') angleDepth--;
   }
 
   // Consume optional semicolon
@@ -120,14 +120,14 @@ export function parseTypeAlias(this: IParserInternal): ITypeAliasNode | null {
     typeAnnotation,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: this._getCurrentToken()?.line || startToken.line,
-        column: this._getCurrentToken()?.column || startToken.column,
-        offset: this._getCurrentToken()?.end || startToken.end,
+        line: this._getCurrentToken()?.line || startToken!.line,
+        column: this._getCurrentToken()?.column || startToken!.column,
+        offset: this._getCurrentToken()?.end || startToken!.end,
       },
     },
   };

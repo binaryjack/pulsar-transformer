@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse class declaration
  *
  * Handles:
@@ -49,17 +49,17 @@ export function _parseClassDeclaration(this: IParserInternal): IClassDeclaration
   const nameToken = this._expect('IDENTIFIER', 'Expected class name');
   const className: IIdentifierNode = {
     type: ASTNodeType.IDENTIFIER,
-    name: nameToken.value,
+    name: nameToken!.value,
     location: {
       start: {
-        line: nameToken.line,
-        column: nameToken.column,
-        offset: nameToken.start,
+        line: nameToken!.line,
+        column: nameToken!.column,
+        offset: nameToken!.start,
       },
       end: {
-        line: nameToken.line,
-        column: nameToken.column + nameToken.value.length,
-        offset: nameToken.end,
+        line: nameToken!.line,
+        column: nameToken!.column + nameToken!.value.length,
+        offset: nameToken!.end,
       },
     },
   };
@@ -99,17 +99,17 @@ export function _parseClassDeclaration(this: IParserInternal): IClassDeclaration
     const superToken = this._expect('IDENTIFIER', 'Expected superclass name');
     superClass = {
       type: ASTNodeType.IDENTIFIER,
-      name: superToken.value,
+      name: superToken!.value,
       location: {
         start: {
-          line: superToken.line,
-          column: superToken.column,
-          offset: superToken.start,
+          line: superToken!.line,
+          column: superToken!.column,
+          offset: superToken!.start,
         },
         end: {
-          line: superToken.line,
-          column: superToken.column + superToken.value.length,
-          offset: superToken.end,
+          line: superToken!.line,
+          column: superToken!.column + superToken!.value.length,
+          offset: superToken!.end,
         },
       },
     };
@@ -151,14 +151,14 @@ export function _parseClassDeclaration(this: IParserInternal): IClassDeclaration
     abstract: isAbstract,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: endToken.line,
-        column: endToken.column + endToken.value.length,
-        offset: endToken.end,
+        line: endToken!.line,
+        column: endToken!.column + endToken!.value.length,
+        offset: endToken!.end,
       },
     },
   };
@@ -192,14 +192,14 @@ function _parseClassBody(this: IParserInternal): IClassBodyNode {
     members,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: endToken.line,
-        column: endToken.column + 1,
-        offset: endToken.end,
+        line: endToken!.line,
+        column: endToken!.column + 1,
+        offset: endToken!.end,
       },
     },
   };
@@ -219,9 +219,9 @@ function _parseClassMember(
 
   const startToken = this._getCurrentToken();
   const startLocation = {
-    line: startToken.line,
-    column: startToken.column,
-    offset: startToken.offset,
+    line: startToken!.line,
+    column: startToken!.column,
+    offset: startToken!.start,
   };
 
   // Parse access modifier
@@ -282,17 +282,17 @@ function _parseClassMember(
   const nameToken = this._expect('IDENTIFIER', 'Expected member name');
   const memberName: IIdentifierNode = {
     type: ASTNodeType.IDENTIFIER,
-    name: nameToken.value,
+    name: nameToken!.value,
     location: {
       start: {
-        line: nameToken.line,
-        column: nameToken.column,
-        offset: nameToken.offset,
+        line: nameToken!.line,
+        column: nameToken!.column,
+        offset: nameToken!.start,
       },
       end: {
-        line: nameToken.line,
-        column: nameToken.column + nameToken.value.length,
-        offset: nameToken.offset + nameToken.value.length,
+        line: nameToken!.line,
+        column: nameToken!.column + nameToken!.value.length,
+        offset: nameToken!.start + nameToken!.value.length,
       },
     },
   };
@@ -364,14 +364,14 @@ function _parseProperty(
         typeString: typeTokens.join(' '),
         location: {
           start: {
-            line: startToken.line,
-            column: startToken.column,
-            offset: startToken.offset,
+            line: startToken!.line,
+            column: startToken!.column,
+            offset: startToken!.start,
           },
           end: {
-            line: typeEndToken.line,
-            column: typeEndToken.column,
-            offset: typeEndToken.offset,
+            line: typeEndToken!.line,
+            column: typeEndToken!.column,
+            offset: typeEndToken!.start,
           },
         },
       };
@@ -419,9 +419,9 @@ function _parseProperty(
     location: {
       start: startLocation,
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.offset,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.start,
       },
     },
   };
@@ -451,8 +451,8 @@ function _parseMethod(
     if (!paramToken) break;
 
     // Simple parameter parsing - just collect identifier
-    if (paramToken.type === 'IDENTIFIER') {
-      parameters.push({ type: 'Parameter', name: { type: 'Identifier', name: paramToken.value } });
+    if (paramToken!.type === 'IDENTIFIER') {
+      parameters.push({ type: 'Parameter', name: { type: 'Identifier', name: paramToken!.value } });
       this._advance();
 
       // Skip type annotation if present
@@ -497,14 +497,14 @@ function _parseMethod(
         typeString: typeTokens.join(' '),
         location: {
           start: {
-            line: typeStartToken.line,
-            column: typeStartToken.column,
-            offset: typeStartToken.offset,
+            line: typeStartToken!.line,
+            column: typeStartToken!.column,
+            offset: typeStartToken!.start,
           },
           end: {
-            line: typeEndToken.line,
-            column: typeEndToken.column,
-            offset: typeEndToken.offset,
+            line: typeEndToken!.line,
+            column: typeEndToken!.column,
+            offset: typeEndToken!.start,
           },
         },
       };
@@ -521,14 +521,14 @@ function _parseMethod(
       body: [],
       location: {
         start: {
-          line: semiToken.line,
-          column: semiToken.column,
-          offset: semiToken.offset,
+          line: semiToken!.line,
+          column: semiToken!.column,
+          offset: semiToken!.start,
         },
         end: {
-          line: semiToken.line,
-          column: semiToken.column,
-          offset: semiToken.offset,
+          line: semiToken!.line,
+          column: semiToken!.column,
+          offset: semiToken!.start,
         },
       },
     };
@@ -551,14 +551,14 @@ function _parseMethod(
       body: bodyStatements,
       location: {
         start: {
-          line: bodyStartToken.line,
-          column: bodyStartToken.column,
-          offset: bodyStartToken.offset,
+          line: bodyStartToken!.line,
+          column: bodyStartToken!.column,
+          offset: bodyStartToken!.start,
         },
         end: {
-          line: bodyEndToken.line,
-          column: bodyEndToken.column,
-          offset: bodyEndToken.offset,
+          line: bodyEndToken!.line,
+          column: bodyEndToken!.column,
+          offset: bodyEndToken!.start,
         },
       },
     };
@@ -581,9 +581,9 @@ function _parseMethod(
     location: {
       start: startLocation,
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.offset,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.start,
       },
     },
   };
@@ -605,17 +605,17 @@ function _parseGetter(
   const nameToken = this._expect('IDENTIFIER', 'Expected getter name');
   const name: IIdentifierNode = {
     type: ASTNodeType.IDENTIFIER,
-    name: nameToken.value,
+    name: nameToken!.value,
     location: {
       start: {
-        line: nameToken.line,
-        column: nameToken.column,
-        offset: nameToken.offset,
+        line: nameToken!.line,
+        column: nameToken!.column,
+        offset: nameToken!.start,
       },
       end: {
-        line: nameToken.line,
-        column: nameToken.column + nameToken.value.length,
-        offset: nameToken.offset + nameToken.value.length,
+        line: nameToken!.line,
+        column: nameToken!.column + nameToken!.value.length,
+        offset: nameToken!.start + nameToken!.value.length,
       },
     },
   };
@@ -642,9 +642,9 @@ function _parseGetter(
         location: {
           start: startLocation,
           end: {
-            line: typeEndToken.line,
-            column: typeEndToken.column,
-            offset: typeEndToken.offset,
+            line: typeEndToken!.line,
+            column: typeEndToken!.column,
+            offset: typeEndToken!.start,
           },
         },
       };
@@ -668,14 +668,14 @@ function _parseGetter(
     body: bodyStatements,
     location: {
       start: {
-        line: bodyStartToken.line,
-        column: bodyStartToken.column,
-        offset: bodyStartToken.offset,
+        line: bodyStartToken!.line,
+        column: bodyStartToken!.column,
+        offset: bodyStartToken!.start,
       },
       end: {
-        line: bodyEndToken.line,
-        column: bodyEndToken.column,
-        offset: bodyEndToken.offset,
+        line: bodyEndToken!.line,
+        column: bodyEndToken!.column,
+        offset: bodyEndToken!.start,
       },
     },
   };
@@ -697,9 +697,9 @@ function _parseGetter(
     location: {
       start: startLocation,
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.offset,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.start,
       },
     },
   };
@@ -721,17 +721,17 @@ function _parseSetter(
   const nameToken = this._expect('IDENTIFIER', 'Expected setter name');
   const name: IIdentifierNode = {
     type: ASTNodeType.IDENTIFIER,
-    name: nameToken.value,
+    name: nameToken!.value,
     location: {
       start: {
-        line: nameToken.line,
-        column: nameToken.column,
-        offset: nameToken.offset,
+        line: nameToken!.line,
+        column: nameToken!.column,
+        offset: nameToken!.start,
       },
       end: {
-        line: nameToken.line,
-        column: nameToken.column + nameToken.value.length,
-        offset: nameToken.offset + nameToken.value.length,
+        line: nameToken!.line,
+        column: nameToken!.column + nameToken!.value.length,
+        offset: nameToken!.start + nameToken!.value.length,
       },
     },
   };
@@ -741,8 +741,8 @@ function _parseSetter(
   const parameters: any[] = [];
   if (!this._check('RPAREN')) {
     const paramToken = this._getCurrentToken();
-    if (paramToken && paramToken.type === 'IDENTIFIER') {
-      parameters.push({ type: 'Parameter', name: { type: 'Identifier', name: paramToken.value } });
+    if (paramToken && paramToken!.type === 'IDENTIFIER') {
+      parameters.push({ type: 'Parameter', name: { type: 'Identifier', name: paramToken!.value } });
       this._advance();
 
       // Skip type annotation if present
@@ -774,14 +774,14 @@ function _parseSetter(
     body: bodyStatements,
     location: {
       start: {
-        line: bodyStartToken.line,
-        column: bodyStartToken.column,
-        offset: bodyStartToken.offset,
+        line: bodyStartToken!.line,
+        column: bodyStartToken!.column,
+        offset: bodyStartToken!.start,
       },
       end: {
-        line: bodyEndToken.line,
-        column: bodyEndToken.column,
-        offset: bodyEndToken.offset,
+        line: bodyEndToken!.line,
+        column: bodyEndToken!.column,
+        offset: bodyEndToken!.start,
       },
     },
   };
@@ -803,9 +803,9 @@ function _parseSetter(
     location: {
       start: startLocation,
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.offset,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.start,
       },
     },
   };
@@ -826,8 +826,8 @@ function _parseConstructor(this: IParserInternal, startLocation: any): IConstruc
     const paramToken = this._getCurrentToken();
     if (!paramToken) break;
 
-    if (paramToken.type === 'IDENTIFIER') {
-      parameters.push({ type: 'Parameter', name: { type: 'Identifier', name: paramToken.value } });
+    if (paramToken!.type === 'IDENTIFIER') {
+      parameters.push({ type: 'Parameter', name: { type: 'Identifier', name: paramToken!.value } });
       this._advance();
 
       // Skip type annotation if present
@@ -890,14 +890,14 @@ function _parseConstructor(this: IParserInternal, startLocation: any): IConstruc
     body: bodyStatements,
     location: {
       start: {
-        line: bodyStartToken.line,
-        column: bodyStartToken.column,
-        offset: bodyStartToken.offset,
+        line: bodyStartToken!.line,
+        column: bodyStartToken!.column,
+        offset: bodyStartToken!.start,
       },
       end: {
-        line: bodyEndToken.line,
-        column: bodyEndToken.column,
-        offset: bodyEndToken.offset,
+        line: bodyEndToken!.line,
+        column: bodyEndToken!.column,
+        offset: bodyEndToken!.start,
       },
     },
   };
@@ -911,9 +911,9 @@ function _parseConstructor(this: IParserInternal, startLocation: any): IConstruc
     location: {
       start: startLocation,
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.offset,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.start,
       },
     },
   };

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse Import Declaration
  *
  * Parses import statements in PSR files.
@@ -34,7 +34,7 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
   // Check for type-only import: import type { Foo } from './types'
   if (this._check('TYPE')) {
     const nextToken = this._tokens[this._current + 1];
-    if (nextToken && nextToken.type === 'LBRACE') {
+    if (nextToken && nextToken!.type === 'LBRACE') {
       isTypeOnly = true;
       this._advance(); // consume 'type'
     }
@@ -45,18 +45,18 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     const sourceToken = this._advance();
     source = {
       type: ASTNodeType.LITERAL,
-      value: sourceToken.value,
-      raw: `"${sourceToken.value}"`,
+      value: sourceToken!.value,
+      raw: `"${sourceToken!.value}"`,
       location: {
         start: {
-          line: sourceToken.line,
-          column: sourceToken.column,
-          offset: sourceToken.start,
+          line: sourceToken!.line,
+          column: sourceToken!.column,
+          offset: sourceToken!.start,
         },
         end: {
-          line: sourceToken.line,
-          column: sourceToken.column + sourceToken.value.length + 2, // +2 for quotes
-          offset: sourceToken.end,
+          line: sourceToken!.line,
+          column: sourceToken!.column + sourceToken!.value.length + 2, // +2 for quotes
+          offset: sourceToken!.end,
         },
       },
     };
@@ -73,14 +73,14 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
       importKind: 'side-effect',
       location: {
         start: {
-          line: startToken.line,
-          column: startToken.column,
-          offset: startToken.start,
+          line: startToken!.line,
+          column: startToken!.column,
+          offset: startToken!.start,
         },
         end: {
-          line: endToken.line,
-          column: endToken.column,
-          offset: endToken.end,
+          line: endToken!.line,
+          column: endToken!.column,
+          offset: endToken!.end,
         },
       },
     };
@@ -96,17 +96,17 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     const specToken = this._advance();
     specifiers.push({
       type: ASTNodeType.IDENTIFIER,
-      name: specToken.value,
+      name: specToken!.value,
       location: {
         start: {
-          line: specToken.line,
-          column: specToken.column,
-          offset: specToken.start,
+          line: specToken!.line,
+          column: specToken!.column,
+          offset: specToken!.start,
         },
         end: {
-          line: specToken.line,
-          column: specToken.column + specToken.value.length,
-          offset: specToken.end,
+          line: specToken!.line,
+          column: specToken!.column + specToken!.value.length,
+          offset: specToken!.end,
         },
       },
     });
@@ -125,23 +125,23 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
         let alias: string | undefined;
         if (this._match('AS')) {
           const aliasToken = this._expect('IDENTIFIER', 'Expected identifier after as');
-          alias = aliasToken.value;
+          alias = aliasToken!.value;
         }
 
         specifiers.push({
           type: ASTNodeType.IDENTIFIER,
-          name: namedToken.value,
+          name: namedToken!.value,
           alias,
           location: {
             start: {
-              line: namedToken.line,
-              column: namedToken.column,
-              offset: namedToken.start,
+              line: namedToken!.line,
+              column: namedToken!.column,
+              offset: namedToken!.start,
             },
             end: {
-              line: namedToken.line,
-              column: namedToken.column + namedToken.value.length,
-              offset: namedToken.end,
+              line: namedToken!.line,
+              column: namedToken!.column + namedToken!.value.length,
+              offset: namedToken!.end,
             },
           },
         });
@@ -168,7 +168,7 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
       let isSpecifierTypeOnly = false;
       if (this._check('TYPE')) {
         const nextToken = this._tokens[this._current + 1];
-        if (nextToken && nextToken.type === 'IDENTIFIER') {
+        if (nextToken && nextToken!.type === 'IDENTIFIER') {
           isSpecifierTypeOnly = true;
           this._advance(); // consume 'type'
         }
@@ -180,24 +180,24 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
       let alias: string | undefined;
       if (this._match('AS')) {
         const aliasToken = this._expect('IDENTIFIER', 'Expected identifier after as');
-        alias = aliasToken.value;
+        alias = aliasToken!.value;
       }
 
       specifiers.push({
         type: ASTNodeType.IDENTIFIER,
-        name: specToken.value,
+        name: specToken!.value,
         alias,
         isTypeOnly: isSpecifierTypeOnly,
         location: {
           start: {
-            line: specToken.line,
-            column: specToken.column,
-            offset: specToken.start,
+            line: specToken!.line,
+            column: specToken!.column,
+            offset: specToken!.start,
           },
           end: {
-            line: specToken.line,
-            column: specToken.column + specToken.value.length,
-            offset: specToken.end,
+            line: specToken!.line,
+            column: specToken!.column + specToken!.value.length,
+            offset: specToken!.end,
           },
         },
       });
@@ -217,17 +217,17 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     const specToken = this._expect('IDENTIFIER', 'Expected identifier after as');
     specifiers.push({
       type: ASTNodeType.IDENTIFIER,
-      name: specToken.value,
+      name: specToken!.value,
       location: {
         start: {
-          line: specToken.line,
-          column: specToken.column,
-          offset: specToken.start,
+          line: specToken!.line,
+          column: specToken!.column,
+          offset: specToken!.start,
         },
         end: {
-          line: specToken.line,
-          column: specToken.column + specToken.value.length,
-          offset: specToken.end,
+          line: specToken!.line,
+          column: specToken!.column + specToken!.value.length,
+          offset: specToken!.end,
         },
       },
     });
@@ -238,17 +238,17 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     const specToken = this._advance();
     specifiers.push({
       type: ASTNodeType.IDENTIFIER,
-      name: specToken.value,
+      name: specToken!.value,
       location: {
         start: {
-          line: specToken.line,
-          column: specToken.column,
-          offset: specToken.start,
+          line: specToken!.line,
+          column: specToken!.column,
+          offset: specToken!.start,
         },
         end: {
-          line: specToken.line,
-          column: specToken.column + specToken.value.length,
-          offset: specToken.end,
+          line: specToken!.line,
+          column: specToken!.column + specToken!.value.length,
+          offset: specToken!.end,
         },
       },
     });
@@ -256,26 +256,26 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
 
   // Expect 'from' keyword
   const fromToken = this._getCurrentToken();
-  if (!fromToken || fromToken.value !== 'from') {
+  if (!fromToken || fromToken!.value !== 'from') {
     this._addError({
       code: 'MISSING_FROM',
       message: "Expected 'from' after import specifiers",
       location: fromToken
         ? {
             start: {
-              line: fromToken.line,
-              column: fromToken.column,
-              offset: fromToken.start,
+              line: fromToken!.line,
+              column: fromToken!.column,
+              offset: fromToken!.start,
             },
             end: {
-              line: fromToken.line,
-              column: fromToken.column + fromToken.value.length,
-              offset: fromToken.end,
+              line: fromToken!.line,
+              column: fromToken!.column + fromToken!.value.length,
+              offset: fromToken!.end,
             },
           }
         : {
-            start: { line: startToken.line, column: startToken.column, offset: startToken.start },
-            end: { line: startToken.line, column: startToken.column, offset: startToken.end },
+            start: { line: startToken!.line, column: startToken!.column, offset: startToken!.start },
+            end: { line: startToken!.line, column: startToken!.column, offset: startToken!.end },
           },
     });
 
@@ -293,20 +293,20 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
         value: '',
         raw: '""',
         location: {
-          start: { line: startToken.line, column: startToken.column, offset: startToken.start },
-          end: { line: startToken.line, column: startToken.column, offset: startToken.end },
+          start: { line: startToken!.line, column: startToken!.column, offset: startToken!.start },
+          end: { line: startToken!.line, column: startToken!.column, offset: startToken!.end },
         },
       },
       location: {
         start: {
-          line: startToken.line,
-          column: startToken.column,
-          offset: startToken.start,
+          line: startToken!.line,
+          column: startToken!.column,
+          offset: startToken!.start,
         },
         end: {
-          line: startToken.line,
-          column: startToken.column,
-          offset: startToken.end,
+          line: startToken!.line,
+          column: startToken!.column,
+          offset: startToken!.end,
         },
       },
     };
@@ -318,18 +318,18 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
   const sourceToken = this._expect('STRING', 'Expected module path after from');
   source = {
     type: ASTNodeType.LITERAL,
-    value: sourceToken.value,
-    raw: `"${sourceToken.value}"`,
+    value: sourceToken!.value,
+    raw: `"${sourceToken!.value}"`,
     location: {
       start: {
-        line: sourceToken.line,
-        column: sourceToken.column,
-        offset: sourceToken.start,
+        line: sourceToken!.line,
+        column: sourceToken!.column,
+        offset: sourceToken!.start,
       },
       end: {
-        line: sourceToken.line,
-        column: sourceToken.column + sourceToken.value.length + 2, // +2 for quotes
-        offset: sourceToken.end,
+        line: sourceToken!.line,
+        column: sourceToken!.column + sourceToken!.value.length + 2, // +2 for quotes
+        offset: sourceToken!.end,
       },
     },
   };
@@ -347,14 +347,14 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     isTypeOnly,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.end,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.end,
       },
     },
   };

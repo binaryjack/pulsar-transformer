@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse Expression
  *
  * Parses various expression types (call, arrow function, literals, etc.).
@@ -159,17 +159,17 @@ function _parsePostfixExpression(this: IParserInternal): any {
 
   const identifier = {
     type: ASTNodeType.IDENTIFIER,
-    name: idToken.value,
+    name: idToken!.value,
     location: {
       start: {
-        line: idToken.line,
-        column: idToken.column,
-        offset: idToken.start,
+        line: idToken!.line,
+        column: idToken!.column,
+        offset: idToken!.start,
       },
       end: {
-        line: idToken.line,
-        column: idToken.column + idToken.value.length,
-        offset: idToken.end,
+        line: idToken!.line,
+        column: idToken!.column + idToken!.value.length,
+        offset: idToken!.end,
       },
     },
   };
@@ -197,9 +197,9 @@ function _parsePostfixExpression(this: IParserInternal): any {
       location: {
         start: identifier.location.start,
         end: {
-          line: endToken.line,
-          column: endToken.column + 1,
-          offset: endToken.end,
+          line: endToken!.line,
+          column: endToken!.column + 1,
+          offset: endToken!.end,
         },
       },
     };
@@ -224,17 +224,17 @@ function _parseMemberAccess(this: IParserInternal, object: any): any {
 
     const property = {
       type: ASTNodeType.IDENTIFIER,
-      name: propertyToken.value,
+      name: propertyToken!.value,
       location: {
         start: {
-          line: propertyToken.line,
-          column: propertyToken.column,
-          offset: propertyToken.start,
+          line: propertyToken!.line,
+          column: propertyToken!.column,
+          offset: propertyToken!.start,
         },
         end: {
-          line: propertyToken.line,
-          column: propertyToken.column + propertyToken.value.length,
-          offset: propertyToken.end,
+          line: propertyToken!.line,
+          column: propertyToken!.column + propertyToken!.value.length,
+          offset: propertyToken!.end,
         },
       },
     };
@@ -274,9 +274,9 @@ function _parseMemberAccess(this: IParserInternal, object: any): any {
         location: {
           start: object.location.start,
           end: {
-            line: endToken.line,
-            column: endToken.column + 1,
-            offset: endToken.end,
+            line: endToken!.line,
+            column: endToken!.column + 1,
+            offset: endToken!.end,
           },
         },
       };
@@ -314,7 +314,7 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
   const firstToken = this._getCurrentToken();
 
   // Grouping expression: (expr)
-  if (firstToken && firstToken.type !== 'IDENTIFIER') {
+  if (firstToken && firstToken!.type !== 'IDENTIFIER') {
     const expr = this._parseExpression();
     this._expect('RPAREN', 'Expected ")"');
     return expr;
@@ -329,7 +329,7 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
     // Try parsing as arrow function parameters
     do {
       const currentToken = this._getCurrentToken();
-      if (!currentToken || currentToken.type !== 'IDENTIFIER') {
+      if (!currentToken || currentToken!.type !== 'IDENTIFIER') {
         // Not a parameter list, must be grouping
         this._currentPosition = savedPosition;
         const expr = this._parseExpression();
@@ -342,17 +342,17 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
 
       params.push({
         type: ASTNodeType.IDENTIFIER,
-        name: paramToken.value,
+        name: paramToken!.value,
         location: {
           start: {
-            line: paramToken.line,
-            column: paramToken.column,
-            offset: paramToken.start,
+            line: paramToken!.line,
+            column: paramToken!.column,
+            offset: paramToken!.start,
           },
           end: {
-            line: paramToken.line,
-            column: paramToken.column + paramToken.value.length,
-            offset: paramToken.end,
+            line: paramToken!.line,
+            column: paramToken!.column + paramToken!.value.length,
+            offset: paramToken!.end,
           },
         },
       });
@@ -426,14 +426,14 @@ function _parseArrowFunctionBody(this: IParserInternal, params: any[], startToke
     body,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.end,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.end,
       },
     },
   };

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse Signal Binding
  *
  * Parses $(signal) syntax into AST node.
@@ -20,14 +20,14 @@ export function parsePSRSignalBinding(this: IParserInternal): IPSRSignalBindingN
 
   // Token from lexer is already SIGNAL_BINDING type: "$(identifier)"
   // Extract identifier from "$(identifier)" string
-  const fullValue = startToken.value; // "$(count)"
+  const fullValue = startToken!.value; // "$(count)"
   const match = fullValue.match(/\$\(([^)]+)\)/);
 
   if (!match) {
     this._addError({
       code: 'PSR-E004',
       message: `Invalid signal binding: ${fullValue}`,
-      location: { line: startToken.line, column: startToken.column },
+      location: { line: startToken!.line, column: startToken!.column },
       token: startToken,
     });
     throw new Error(`Invalid signal binding: ${fullValue}`);
@@ -42,14 +42,14 @@ export function parsePSRSignalBinding(this: IParserInternal): IPSRSignalBindingN
     name: signalName,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column + 2, // Skip "$("
-        offset: startToken.start + 2,
+        line: startToken!.line,
+        column: startToken!.column + 2, // Skip "$("
+        offset: startToken!.start + 2,
       },
       end: {
-        line: startToken.line,
-        column: startToken.column + 2 + signalName.length,
-        offset: startToken.start + 2 + signalName.length,
+        line: startToken!.line,
+        column: startToken!.column + 2 + signalName.length,
+        offset: startToken!.start + 2 + signalName.length,
       },
     },
   };
@@ -59,14 +59,14 @@ export function parsePSRSignalBinding(this: IParserInternal): IPSRSignalBindingN
     signal: identifier,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: startToken.line,
-        column: startToken.column + fullValue.length,
-        offset: startToken.end,
+        line: startToken!.line,
+        column: startToken!.column + fullValue.length,
+        offset: startToken!.end,
       },
     },
   };

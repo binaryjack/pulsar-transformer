@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse Function Declaration
  *
  * Parses function declarations.
@@ -27,7 +27,7 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
 
   // Check for async
   let isAsync = false;
-  if (startToken.value === 'async') {
+  if (startToken!.value === 'async') {
     isAsync = true;
     this._advance();
   }
@@ -46,17 +46,17 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
   const nameToken = this._expect('IDENTIFIER', 'Expected function name');
   const name: IIdentifierNode = {
     type: ASTNodeType.IDENTIFIER,
-    name: nameToken.value,
+    name: nameToken!.value,
     location: {
       start: {
-        line: nameToken.line,
-        column: nameToken.column,
-        offset: nameToken.start,
+        line: nameToken!.line,
+        column: nameToken!.column,
+        offset: nameToken!.start,
       },
       end: {
-        line: nameToken.line,
-        column: nameToken.column + nameToken.value.length,
-        offset: nameToken.end,
+        line: nameToken!.line,
+        column: nameToken!.column + nameToken!.value.length,
+        offset: nameToken!.end,
       },
     },
   };
@@ -71,17 +71,17 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
       const paramToken = this._expect('IDENTIFIER', 'Expected parameter name');
       const paramName: IIdentifierNode = {
         type: ASTNodeType.IDENTIFIER,
-        name: paramToken.value,
+        name: paramToken!.value,
         location: {
           start: {
-            line: paramToken.line,
-            column: paramToken.column,
-            offset: paramToken.start,
+            line: paramToken!.line,
+            column: paramToken!.column,
+            offset: paramToken!.start,
           },
           end: {
-            line: paramToken.line,
-            column: paramToken.column + paramToken.value.length,
-            offset: paramToken.end,
+            line: paramToken!.line,
+            column: paramToken!.column + paramToken!.value.length,
+            offset: paramToken!.end,
           },
         },
       };
@@ -115,14 +115,14 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
 
           // Track depth for balanced parsing AFTER collecting
           const collectedToken = token;
-          if (collectedToken.type === 'LBRACE') braceDepth++;
-          else if (collectedToken.type === 'RBRACE') braceDepth--;
-          else if (collectedToken.type === 'LBRACKET') bracketDepth++;
-          else if (collectedToken.type === 'RBRACKET') bracketDepth--;
-          else if (collectedToken.type === 'LPAREN') parenDepth++;
-          else if (collectedToken.type === 'RPAREN') parenDepth--;
-          else if (collectedToken.value === '<') angleDepth++;
-          else if (collectedToken.value === '>') angleDepth--;
+          if (collectedToken!.type === 'LBRACE') braceDepth++;
+          else if (collectedToken!.type === 'RBRACE') braceDepth--;
+          else if (collectedToken!.type === 'LBRACKET') bracketDepth++;
+          else if (collectedToken!.type === 'RBRACKET') bracketDepth--;
+          else if (collectedToken!.type === 'LPAREN') parenDepth++;
+          else if (collectedToken!.type === 'RPAREN') parenDepth--;
+          else if (collectedToken!.value === '<') angleDepth++;
+          else if (collectedToken!.value === '>') angleDepth--;
         }
 
         if (typeTokens.length > 0) {
@@ -130,8 +130,8 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
             type: ASTNodeType.TYPE_ANNOTATION,
             typeString: typeTokens.join(' ').trim(),
             location: {
-              start: { line: paramToken.line, column: paramToken.column, offset: paramToken.start },
-              end: { line: paramToken.line, column: paramToken.column, offset: paramToken.end },
+              start: { line: paramToken!.line, column: paramToken!.column, offset: paramToken!.start },
+              end: { line: paramToken!.line, column: paramToken!.column, offset: paramToken!.end },
             },
           };
         }
@@ -177,14 +177,14 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
 
       // Track depth AFTER collecting
       const collectedToken = token;
-      if (collectedToken.type === 'LBRACE') braceDepth++;
-      else if (collectedToken.type === 'RBRACE') braceDepth--;
-      else if (collectedToken.type === 'LBRACKET') bracketDepth++;
-      else if (collectedToken.type === 'RBRACKET') bracketDepth--;
-      else if (collectedToken.type === 'LPAREN') parenDepth++;
-      else if (collectedToken.type === 'RPAREN') parenDepth--;
-      else if (collectedToken.value === '<') angleDepth++;
-      else if (collectedToken.value === '>') angleDepth--;
+      if (collectedToken!.type === 'LBRACE') braceDepth++;
+      else if (collectedToken!.type === 'RBRACE') braceDepth--;
+      else if (collectedToken!.type === 'LBRACKET') bracketDepth++;
+      else if (collectedToken!.type === 'RBRACKET') bracketDepth--;
+      else if (collectedToken!.type === 'LPAREN') parenDepth++;
+      else if (collectedToken!.type === 'RPAREN') parenDepth--;
+      else if (collectedToken!.value === '<') angleDepth++;
+      else if (collectedToken!.value === '>') angleDepth--;
     }
 
     if (typeTokens.length > 0) {
@@ -192,8 +192,8 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
         type: ASTNodeType.TYPE_ANNOTATION,
         typeString: typeTokens.join(' ').trim(),
         location: {
-          start: { line: nameToken.line, column: nameToken.column, offset: nameToken.start },
-          end: { line: nameToken.line, column: nameToken.column, offset: nameToken.end },
+          start: { line: nameToken!.line, column: nameToken!.column, offset: nameToken!.start },
+          end: { line: nameToken!.line, column: nameToken!.column, offset: nameToken!.end },
         },
       };
     }
@@ -223,22 +223,22 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
       type: ASTNodeType.BLOCK_STATEMENT,
       body: bodyStatements,
       location: {
-        start: { line: startToken.line, column: startToken.column, offset: startToken.start },
-        end: { line: endToken.line, column: endToken.column, offset: endToken.end },
+        start: { line: startToken!.line, column: startToken!.column, offset: startToken!.start },
+        end: { line: endToken!.line, column: endToken!.column, offset: endToken!.end },
       },
     },
     async: isAsync ? true : undefined,
     generator: isGenerator ? true : undefined,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.end,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.end,
       },
     },
   };

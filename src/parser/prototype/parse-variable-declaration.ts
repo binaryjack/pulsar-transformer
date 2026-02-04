@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse Variable Declaration
  *
  * Parses const/let variable declarations.
@@ -28,7 +28,7 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
   const startToken = this._getCurrentToken()!;
 
   // const or let
-  const kind = startToken.value as 'const' | 'let';
+  const kind = startToken!.value as 'const' | 'let';
   this._advance();
 
   // Parse identifier or destructuring pattern
@@ -46,17 +46,17 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
         const keyToken = this._expect('IDENTIFIER', 'Expected property name in destructuring');
         const key: IIdentifierNode = {
           type: ASTNodeType.IDENTIFIER,
-          name: keyToken.value,
+          name: keyToken!.value,
           location: {
             start: {
-              line: keyToken.line,
-              column: keyToken.column,
-              offset: keyToken.start,
+              line: keyToken!.line,
+              column: keyToken!.column,
+              offset: keyToken!.start,
             },
             end: {
-              line: keyToken.line,
-              column: keyToken.column + keyToken.value.length,
-              offset: keyToken.end,
+              line: keyToken!.line,
+              column: keyToken!.column + keyToken!.value.length,
+              offset: keyToken!.end,
             },
           },
         };
@@ -70,17 +70,17 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
           const valueToken = this._expect('IDENTIFIER', 'Expected identifier after colon');
           value = {
             type: ASTNodeType.IDENTIFIER,
-            name: valueToken.value,
+            name: valueToken!.value,
             location: {
               start: {
-                line: valueToken.line,
-                column: valueToken.column,
-                offset: valueToken.start,
+                line: valueToken!.line,
+                column: valueToken!.column,
+                offset: valueToken!.start,
               },
               end: {
-                line: valueToken.line,
-                column: valueToken.column + valueToken.value.length,
-                offset: valueToken.end,
+                line: valueToken!.line,
+                column: valueToken!.column + valueToken!.value.length,
+                offset: valueToken!.end,
               },
             },
           };
@@ -98,9 +98,9 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
       properties,
       location: {
         start: {
-          line: startToken.line,
-          column: startToken.column,
-          offset: startToken.start,
+          line: startToken!.line,
+          column: startToken!.column,
+          offset: startToken!.start,
         },
         end: {
           line: this._getCurrentToken()!.line,
@@ -119,17 +119,17 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
       const elemToken = this._expect('IDENTIFIER', 'Expected identifier in destructuring');
       elements.push({
         type: ASTNodeType.IDENTIFIER,
-        name: elemToken.value,
+        name: elemToken!.value,
         location: {
           start: {
-            line: elemToken.line,
-            column: elemToken.column,
-            offset: elemToken.start,
+            line: elemToken!.line,
+            column: elemToken!.column,
+            offset: elemToken!.start,
           },
           end: {
-            line: elemToken.line,
-            column: elemToken.column + elemToken.value.length,
-            offset: elemToken.end,
+            line: elemToken!.line,
+            column: elemToken!.column + elemToken!.value.length,
+            offset: elemToken!.end,
           },
         },
       });
@@ -147,17 +147,17 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
     const idToken = this._expect('IDENTIFIER', 'Expected variable name');
     id = {
       type: ASTNodeType.IDENTIFIER,
-      name: idToken.value,
+      name: idToken!.value,
       location: {
         start: {
-          line: idToken.line,
-          column: idToken.column,
-          offset: idToken.start,
+          line: idToken!.line,
+          column: idToken!.column,
+          offset: idToken!.start,
         },
         end: {
-          line: idToken.line,
-          column: idToken.column + idToken.value.length,
-          offset: idToken.end,
+          line: idToken!.line,
+          column: idToken!.column + idToken!.value.length,
+          offset: idToken!.end,
         },
       },
     };
@@ -229,14 +229,14 @@ export function parseVariableDeclaration(this: IParserInternal): IVariableDeclar
     ],
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.end,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.end,
       },
     },
   };

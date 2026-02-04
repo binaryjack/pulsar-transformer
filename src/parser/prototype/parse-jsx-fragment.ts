@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse JSX Fragment
  *
  * Parses JSX fragment syntax: <>children</>
@@ -51,14 +51,14 @@ export function parseJSXFragment(this: IParserInternal): IPSRFragmentNode {
     children,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.end,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.end,
       },
     },
   };

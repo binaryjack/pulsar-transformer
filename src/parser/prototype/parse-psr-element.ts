@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse PSR Element
  *
  * Parses JSX-like element syntax into AST node.
@@ -39,7 +39,7 @@ export function parsePSRElement(this: IParserInternal): IPSRElementNode | IPSRFr
 
   // Parse tag name
   const tagToken = this._expect('IDENTIFIER', 'Expected tag name');
-  const tagName = tagToken.value;
+  const tagName = tagToken!.value;
 
   // Parse attributes
   const attributes: (IPSRAttributeNode | IPSRSpreadAttributeNode)[] = [];
@@ -98,14 +98,14 @@ export function parsePSRElement(this: IParserInternal): IPSRElementNode | IPSRFr
     selfClosing,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.end,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.end,
       },
     },
   };
@@ -124,7 +124,7 @@ function _parsePSRAttribute(
   }
 
   // Handle spread attribute: {...props}
-  if (startToken.type === 'LBRACE') {
+  if (startToken!.type === 'LBRACE') {
     this._advance(); // Consume '{'
 
     if (this._check('SPREAD')) {
@@ -137,14 +137,14 @@ function _parsePSRAttribute(
         argument,
         location: {
           start: {
-            line: startToken.line,
-            column: startToken.column,
-            offset: startToken.start,
+            line: startToken!.line,
+            column: startToken!.column,
+            offset: startToken!.start,
           },
           end: {
-            line: this._getCurrentToken()?.line || startToken.line,
-            column: this._getCurrentToken()?.column || startToken.column,
-            offset: this._getCurrentToken()?.end || startToken.end,
+            line: this._getCurrentToken()?.line || startToken!.line,
+            column: this._getCurrentToken()?.column || startToken!.column,
+            offset: this._getCurrentToken()?.end || startToken!.end,
           },
         },
       };
@@ -156,7 +156,7 @@ function _parsePSRAttribute(
   }
 
   // Regular attribute
-  if (startToken.type !== 'IDENTIFIER') {
+  if (startToken!.type !== 'IDENTIFIER') {
     return null;
   }
 
@@ -173,18 +173,18 @@ function _parsePSRAttribute(
       const valueToken = this._advance();
       value = {
         type: ASTNodeType.LITERAL,
-        value: valueToken.value,
-        raw: `"${valueToken.value}"`,
+        value: valueToken!.value,
+        raw: `"${valueToken!.value}"`,
         location: {
           start: {
-            line: valueToken.line,
-            column: valueToken.column,
-            offset: valueToken.start,
+            line: valueToken!.line,
+            column: valueToken!.column,
+            offset: valueToken!.start,
           },
           end: {
-            line: valueToken.line,
-            column: valueToken.column + valueToken.value.length,
-            offset: valueToken.end,
+            line: valueToken!.line,
+            column: valueToken!.column + valueToken!.value.length,
+            offset: valueToken!.end,
           },
         },
       };
@@ -199,19 +199,19 @@ function _parsePSRAttribute(
 
   return {
     type: ASTNodeType.PSR_ATTRIBUTE,
-    name: nameToken.value,
+    name: nameToken!.value,
     value,
     isStatic,
     location: {
       start: {
-        line: nameToken.line,
-        column: nameToken.column,
-        offset: nameToken.start,
+        line: nameToken!.line,
+        column: nameToken!.column,
+        offset: nameToken!.start,
       },
       end: {
-        line: nameToken.line,
-        column: nameToken.column + nameToken.value.length,
-        offset: nameToken.end,
+        line: nameToken!.line,
+        column: nameToken!.column + nameToken!.value.length,
+        offset: nameToken!.end,
       },
     },
   };
@@ -281,12 +281,12 @@ function _isClosingTag(this: IParserInternal, tagName: string): boolean {
 
   // Peek ahead
   const nextToken = this._tokens[this._current + 1];
-  if (!nextToken || nextToken.type !== 'SLASH') {
+  if (!nextToken || nextToken!.type !== 'SLASH') {
     return false;
   }
 
   const closeTagToken = this._tokens[this._current + 2];
-  return closeTagToken && closeTagToken.value === tagName;
+  return closeTagToken && closeTagToken!.value === tagName;
 }
 
 // Export helper methods for prototype attachment

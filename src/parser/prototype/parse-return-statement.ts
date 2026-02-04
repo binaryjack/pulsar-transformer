@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Parse Return Statement
  *
  * Parses return statements (commonly used in component bodies).
@@ -40,14 +40,14 @@ export function parseReturnStatement(this: IParserInternal): IReturnStatementNod
     argument,
     location: {
       start: {
-        line: startToken.line,
-        column: startToken.column,
-        offset: startToken.start,
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
       },
       end: {
-        line: endToken.line,
-        column: endToken.column,
-        offset: endToken.end,
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.end,
       },
     },
   };

@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   IBlockStatementNode,
   ICatchClauseNode,
   IIdentifierNode,
@@ -48,17 +48,17 @@ export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
         const paramToken = this._getCurrentToken();
         param = {
           type: ASTNodeType.IDENTIFIER,
-          name: paramToken.value,
+          name: paramToken!.value,
           location: {
             start: {
-              line: paramToken.line,
-              column: paramToken.column,
-              offset: paramToken.start,
+              line: paramToken!.line,
+              column: paramToken!.column,
+              offset: paramToken!.start,
             },
             end: {
-              line: paramToken.line,
-              column: paramToken.column + paramToken.value.length,
-              offset: paramToken.end,
+              line: paramToken!.line,
+              column: paramToken!.column + paramToken!.value.length,
+              offset: paramToken!.end,
             },
           },
         };
