@@ -88,6 +88,16 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
     return this._parseInterfaceDeclaration();
   }
 
+  // Enum declaration (including const enums)
+  if (token.value === 'enum' || (token.value === 'const' && this._peek(1)?.value === 'enum')) {
+    return this._parseEnumDeclaration();
+  }
+
+  // Namespace/Module declaration
+  if (token.value === 'namespace' || token.value === 'module') {
+    return this._parseNamespaceDeclaration();
+  }
+
   // Type alias declaration
   if (token.value === 'type') {
     return this._parseTypeAlias();
@@ -106,6 +116,46 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
   // Return statement
   if (token.value === 'return') {
     return this._parseReturnStatement();
+  }
+
+  // Try/catch/finally statement
+  if (token.value === 'try') {
+    return this._parseTryStatement();
+  }
+
+  // Throw statement
+  if (token.value === 'throw') {
+    return this._parseThrowStatement();
+  }
+
+  // Switch statement
+  if (token.value === 'switch') {
+    return this._parseSwitchStatement();
+  }
+
+  // For loop
+  if (token.value === 'for') {
+    return this._parseForStatement();
+  }
+
+  // While loop
+  if (token.value === 'while') {
+    return this._parseWhileStatement();
+  }
+
+  // Do-while loop
+  if (token.value === 'do') {
+    return this._parseDoWhileStatement();
+  }
+
+  // Break statement
+  if (token.value === 'break') {
+    return this._parseBreakStatement();
+  }
+
+  // Continue statement
+  if (token.value === 'continue') {
+    return this._parseContinueStatement();
   }
 
   // Expression statement

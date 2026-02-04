@@ -12,6 +12,7 @@ import { getPosition } from './get-position.js';
 import { hasErrors } from './has-errors.js';
 import { _parseClassDeclaration } from './parse-class-declaration.js';
 import { parseComponentDeclaration } from './parse-component-declaration.js';
+import { _parseEnumDeclaration } from './parse-enum-declaration.js';
 import {
   _parseArrowFunctionOrGrouping,
   _parseCallOrIdentifier,
@@ -20,10 +21,21 @@ import {
   _parseLiteral,
   parseExpression,
 } from './parse-expression.js';
+import {
+  _parseBreakStatement,
+  _parseContinueStatement,
+  _parseThrowStatement,
+} from './parse-flow-control.js';
 import { parseFunctionDeclaration } from './parse-function-declaration.js';
 import { parseImportDeclaration } from './parse-import-declaration.js';
 import { parseInterfaceDeclaration } from './parse-interface-declaration.js';
 import { _isClosingFragment, parseJSXFragment } from './parse-jsx-fragment.js';
+import {
+  _parseDoWhileStatement,
+  _parseForStatement,
+  _parseWhileStatement,
+} from './parse-loop-statements.js';
+import { _parseNamespaceDeclaration } from './parse-namespace-declaration.js';
 import {
   _isClosingTag,
   _parsePSRAttribute,
@@ -32,6 +44,8 @@ import {
 } from './parse-psr-element.js';
 import { parsePSRSignalBinding } from './parse-psr-signal-binding.js';
 import { parseReturnStatement } from './parse-return-statement.js';
+import { _parseSwitchStatement } from './parse-switch-statement.js';
+import { _parseTryStatement } from './parse-try-statement.js';
 import { parseTypeAlias } from './parse-type-alias.js';
 import { parseVariableDeclaration } from './parse-variable-declaration.js';
 import {
@@ -175,6 +189,20 @@ Object.defineProperty(Parser.prototype, '_parseClassDeclaration', {
   configurable: false,
 });
 
+Object.defineProperty(Parser.prototype, '_parseEnumDeclaration', {
+  value: _parseEnumDeclaration,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseNamespaceDeclaration', {
+  value: _parseNamespaceDeclaration,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
 Object.defineProperty(Parser.prototype, '_parseInterfaceDeclaration', {
   value: parseInterfaceDeclaration,
   writable: true,
@@ -184,6 +212,62 @@ Object.defineProperty(Parser.prototype, '_parseInterfaceDeclaration', {
 
 Object.defineProperty(Parser.prototype, '_parseTypeAlias', {
   value: parseTypeAlias,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseTryStatement', {
+  value: _parseTryStatement,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseSwitchStatement', {
+  value: _parseSwitchStatement,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseForStatement', {
+  value: _parseForStatement,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseWhileStatement', {
+  value: _parseWhileStatement,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseDoWhileStatement', {
+  value: _parseDoWhileStatement,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseThrowStatement', {
+  value: _parseThrowStatement,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseBreakStatement', {
+  value: _parseBreakStatement,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseContinueStatement', {
+  value: _parseContinueStatement,
   writable: true,
   enumerable: false,
   configurable: false,

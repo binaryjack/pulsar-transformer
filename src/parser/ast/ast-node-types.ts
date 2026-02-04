@@ -46,6 +46,8 @@ export enum ASTNodeType {
   INTERFACE_DECLARATION = 'InterfaceDeclaration',
   TYPE_ALIAS = 'TypeAlias',
   TYPE_ANNOTATION = 'TypeAnnotation',
+  ENUM_DECLARATION = 'EnumDeclaration',
+  NAMESPACE_DECLARATION = 'NamespaceDeclaration',
   IMPORT_DECLARATION = 'ImportDeclaration',
   EXPORT_DECLARATION = 'ExportDeclaration',
 
@@ -55,10 +57,23 @@ export enum ASTNodeType {
   METHOD_DEFINITION = 'MethodDefinition',
   CONSTRUCTOR_DEFINITION = 'ConstructorDefinition',
 
+  // Enum Members
+  ENUM_MEMBER = 'EnumMember',
+
   // Statements
   BLOCK_STATEMENT = 'BlockStatement',
   RETURN_STATEMENT = 'ReturnStatement',
   EXPRESSION_STATEMENT = 'ExpressionStatement',
+  TRY_STATEMENT = 'TryStatement',
+  CATCH_CLAUSE = 'CatchClause',
+  THROW_STATEMENT = 'ThrowStatement',
+  SWITCH_STATEMENT = 'SwitchStatement',
+  SWITCH_CASE = 'SwitchCase',
+  FOR_STATEMENT = 'ForStatement',
+  WHILE_STATEMENT = 'WhileStatement',
+  DO_WHILE_STATEMENT = 'DoWhileStatement',
+  BREAK_STATEMENT = 'BreakStatement',
+  CONTINUE_STATEMENT = 'ContinueStatement',
 
   // Expressions
   IDENTIFIER = 'Identifier',
@@ -516,4 +531,180 @@ export interface IConstructorDefinitionNode extends IASTNode {
   readonly type: ASTNodeType.CONSTRUCTOR_DEFINITION;
   readonly parameters: IParameterNode[];
   readonly body: IBlockStatementNode;
+}
+/**
+ * Enum Declaration
+ *
+ * @example
+ * enum Status {
+ *   Active,
+ *   Inactive,
+ *   Pending = 3
+ * }
+ */
+export interface IEnumDeclarationNode extends IASTNode {
+  readonly type: ASTNodeType.ENUM_DECLARATION;
+  readonly name: IIdentifierNode;
+  readonly members: IEnumMemberNode[];
+  readonly isConst: boolean;
+}
+
+/**
+ * Enum Member
+ *
+ * @example
+ * Active
+ * Inactive = 1
+ * Pending = "pending"
+ */
+export interface IEnumMemberNode extends IASTNode {
+  readonly type: ASTNodeType.ENUM_MEMBER;
+  readonly name: IIdentifierNode;
+  readonly initializer: IASTNode | null;
+}
+
+/**
+ * Namespace Declaration
+ *
+ * @example
+ * namespace Utils {
+ *   export function helper() {}
+ * }
+ */
+export interface INamespaceDeclarationNode extends IASTNode {
+  readonly type: ASTNodeType.NAMESPACE_DECLARATION;
+  readonly name: IIdentifierNode;
+  readonly body: IASTNode[];
+}
+
+/**
+ * Try Statement
+ *
+ * @example
+ * try {
+ *   riskyOperation();
+ * } catch (error) {
+ *   console.error(error);
+ * } finally {
+ *   cleanup();
+ * }
+ */
+export interface ITryStatementNode extends IASTNode {
+  readonly type: ASTNodeType.TRY_STATEMENT;
+  readonly block: IBlockStatementNode;
+  readonly handler: ICatchClauseNode | null;
+  readonly finalizer: IBlockStatementNode | null;
+}
+
+/**
+ * Catch Clause
+ *
+ * @example
+ * catch (error) {
+ *   console.error(error);
+ * }
+ */
+export interface ICatchClauseNode extends IASTNode {
+  readonly type: ASTNodeType.CATCH_CLAUSE;
+  readonly param: IIdentifierNode | null;
+  readonly body: IBlockStatementNode;
+}
+
+/**
+ * Throw Statement
+ *
+ * @example
+ * throw new Error("Something went wrong");
+ */
+export interface IThrowStatementNode extends IASTNode {
+  readonly type: ASTNodeType.THROW_STATEMENT;
+  readonly argument: IASTNode;
+}
+
+/**
+ * Switch Statement
+ *
+ * @example
+ * switch (value) {
+ *   case 1: break;
+ *   default: break;
+ * }
+ */
+export interface ISwitchStatementNode extends IASTNode {
+  readonly type: ASTNodeType.SWITCH_STATEMENT;
+  readonly discriminant: IASTNode;
+  readonly cases: ISwitchCaseNode[];
+}
+
+/**
+ * Switch Case
+ *
+ * @example
+ * case 1: return "one";
+ * default: return "other";
+ */
+export interface ISwitchCaseNode extends IASTNode {
+  readonly type: ASTNodeType.SWITCH_CASE;
+  readonly test: IASTNode | null; // null for default case
+  readonly consequent: IASTNode[];
+}
+
+/**
+ * For Statement
+ *
+ * @example
+ * for (let i = 0; i < 10; i++) { }
+ */
+export interface IForStatementNode extends IASTNode {
+  readonly type: ASTNodeType.FOR_STATEMENT;
+  readonly init: IASTNode | null;
+  readonly test: IASTNode | null;
+  readonly update: IASTNode | null;
+  readonly body: IBlockStatementNode;
+}
+
+/**
+ * While Statement
+ *
+ * @example
+ * while (condition) { }
+ */
+export interface IWhileStatementNode extends IASTNode {
+  readonly type: ASTNodeType.WHILE_STATEMENT;
+  readonly test: IASTNode;
+  readonly body: IBlockStatementNode;
+}
+
+/**
+ * Do-While Statement
+ *
+ * @example
+ * do { } while (condition);
+ */
+export interface IDoWhileStatementNode extends IASTNode {
+  readonly type: ASTNodeType.DO_WHILE_STATEMENT;
+  readonly body: IBlockStatementNode;
+  readonly test: IASTNode;
+}
+
+/**
+ * Break Statement
+ *
+ * @example
+ * break;
+ */
+export interface IBreakStatementNode extends IASTNode {
+  readonly type: ASTNodeType.BREAK_STATEMENT;
+  readonly label: IIdentifierNode | null;
+}
+
+/**
+ * Continue Statement
+ *
+ * @example
+ * continue;
+ */
+export interface IContinueStatementNode extends IASTNode {
+  readonly type: ASTNodeType.CONTINUE_STATEMENT;
+  readonly label: IIdentifierNode | null;
 }

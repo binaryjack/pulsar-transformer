@@ -21,6 +21,25 @@ export enum TokenType {
   TYPE = 'TYPE', // type (for type imports/exports)
   INTERFACE = 'INTERFACE', // interface (for interface declarations)
   EXTENDS = 'EXTENDS', // extends (for interface/class inheritance)
+  ENUM = 'ENUM', // enum (for enum declarations)
+  NAMESPACE = 'NAMESPACE', // namespace (for namespace declarations)
+  MODULE = 'MODULE', // module (for module declarations)
+
+  // Control flow keywords
+  IF = 'IF', // if
+  ELSE = 'ELSE', // else
+  SWITCH = 'SWITCH', // switch
+  CASE = 'CASE', // case
+  DEFAULT = 'DEFAULT', // default (for switch)
+  FOR = 'FOR', // for
+  WHILE = 'WHILE', // while
+  DO = 'DO', // do
+  BREAK = 'BREAK', // break
+  CONTINUE = 'CONTINUE', // continue
+  TRY = 'TRY', // try
+  CATCH = 'CATCH', // catch
+  FINALLY = 'FINALLY', // finally
+  THROW = 'THROW', // throw
 
   // Class-related keywords
   SUPER = 'SUPER', // super (for parent class calls)
