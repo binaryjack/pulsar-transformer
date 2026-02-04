@@ -643,7 +643,10 @@ function _parseGetter(
     const typeTokens: string[] = [];
 
     while (!this._check('LBRACE') && !this._isAtEnd()) {
-      typeTokens.push(this._getCurrentToken().value);
+      const token = this._getCurrentToken();
+      if (token) {
+        typeTokens.push(token.value);
+      }
       this._advance();
     }
 

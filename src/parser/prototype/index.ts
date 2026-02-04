@@ -36,7 +36,7 @@ import {
   _parseForStatement,
   _parseWhileStatement,
 } from './parse-loop-statements.js';
-import { _parseNamespaceDeclaration } from './parse-namespace-declaration.js';
+import { _parseNamespaceDeclaration, _skipTypeAlias } from './parse-namespace-declaration.js';
 import {
   _isClosingTag,
   _parsePSRAttribute,
@@ -200,6 +200,13 @@ Object.defineProperty(Parser.prototype, '_parseEnumDeclaration', {
 
 Object.defineProperty(Parser.prototype, '_parseNamespaceDeclaration', {
   value: _parseNamespaceDeclaration,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_skipTypeAlias', {
+  value: _skipTypeAlias,
   writable: true,
   enumerable: false,
   configurable: false,

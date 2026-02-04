@@ -50,6 +50,7 @@ export interface IParserInternal extends IParser {
   _parseClassDeclaration(): any;
   _parseEnumDeclaration(): any;
   _parseNamespaceDeclaration(): any;
+  _skipTypeAlias(): void;
   _parseInterfaceDeclaration(): any;
   _parseTypeAlias(): any;
   _parseReturnStatement(): any;

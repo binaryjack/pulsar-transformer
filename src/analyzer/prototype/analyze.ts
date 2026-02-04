@@ -8,6 +8,7 @@ import type { IASTNode, IProgramNode } from '../../parser/ast/index.js';
 import { ASTNodeType } from '../../parser/ast/index.js';
 import type { IAnalyzerInternal } from '../analyzer.types.js';
 import type { IIRNode } from '../ir/index.js';
+import { IRNodeType } from '../ir/index.js';
 
 /**
  * Analyze AST and build IR
@@ -45,18 +46,18 @@ export function analyze(this: IAnalyzerInternal, ast: IASTNode): IIRNode {
   // Return single node, multiple nodes as ProgramIR, or empty ProgramIR
   if (irNodes.length === 0) {
     return {
-      type: 'ProgramIR' as any,
-      body: [],
+      type: IRNodeType.PROGRAM_IR,
+      children: [],
       metadata: {},
-    };
+    } as any;
   } else if (irNodes.length === 1) {
     return irNodes[0];
   } else {
     return {
-      type: 'ProgramIR' as any,
-      body: irNodes,
+      type: IRNodeType.PROGRAM_IR,
+      children: irNodes,
       metadata: {},
-    };
+    } as any;
   }
 }
 

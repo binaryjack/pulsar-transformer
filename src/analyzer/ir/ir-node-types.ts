@@ -8,6 +8,9 @@
  * IR Node Types Enum
  */
 export enum IRNodeType {
+  // Program IR
+  PROGRAM_IR = 'ProgramIR',
+
   // Component IR
   COMPONENT_IR = 'ComponentIR',
   ELEMENT_IR = 'ElementIR',

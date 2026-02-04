@@ -260,23 +260,21 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     this._addError({
       code: 'MISSING_FROM',
       message: "Expected 'from' after import specifiers",
-      location: fromToken
+      location: (fromToken
         ? {
             start: {
               line: fromToken!.line,
               column: fromToken!.column,
-              offset: fromToken!.start,
             },
             end: {
               line: fromToken!.line,
               column: fromToken!.column + fromToken!.value.length,
-              offset: fromToken!.end,
             },
           }
         : {
-            start: { line: startToken!.line, column: startToken!.column, offset: startToken!.start },
-            end: { line: startToken!.line, column: startToken!.column, offset: startToken!.end },
-          },
+            start: { line: startToken!.line, column: startToken!.column },
+            end: { line: startToken!.line, column: startToken!.column },
+          }) as any,
     });
 
     // Try to recover - skip to semicolon

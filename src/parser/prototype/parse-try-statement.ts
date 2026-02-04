@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   IBlockStatementNode,
   ICatchClauseNode,
   IIdentifierNode,
@@ -84,14 +84,14 @@ export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
       body,
       location: {
         start: {
-          line: catchStart.line,
-          column: catchStart.column,
-          offset: catchStart.start,
+          line: catchStart!.line,
+          column: catchStart!.column,
+          offset: catchStart!.start,
         },
         end: {
-          line: catchEnd.line,
-          column: catchEnd.column,
-          offset: catchEnd.end,
+          line: catchEnd!.line,
+          column: catchEnd!.column,
+          offset: catchEnd!.end,
         },
       },
     };
@@ -188,3 +188,4 @@ function _parseBlockStatement(this: IParserInternal): IBlockStatementNode {
     },
   };
 }
+

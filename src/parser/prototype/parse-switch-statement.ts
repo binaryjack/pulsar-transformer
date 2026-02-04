@@ -1,4 +1,4 @@
-﻿import type { IASTNode, ISwitchCaseNode, ISwitchStatementNode } from '../ast/ast-node-types.js';
+import type { IASTNode, ISwitchCaseNode, ISwitchStatementNode } from '../ast/ast-node-types.js';
 import { ASTNodeType } from '../ast/ast-node-types.js';
 import { TokenType } from '../lexer/token-types.js';
 import type { IParserInternal } from '../parser.types.js';
@@ -32,7 +32,9 @@ export function _parseSwitchStatement(this: IParserInternal): ISwitchStatementNo
 
   // Expect closing paren
   if (this._getCurrentToken()!.type !== TokenType.RPAREN) {
-    throw new Error(`Expected ')' after switch discriminant, got ${this._getCurrentToken()!.value}`);
+    throw new Error(
+      `Expected ')' after switch discriminant, got ${this._getCurrentToken()!.value}`
+    );
   }
 
   this._advance(); // Consume ')'
@@ -91,7 +93,7 @@ export function _parseSwitchStatement(this: IParserInternal): ISwitchStatementNo
       start,
       end,
     },
-  };
+  } as any;
 }
 
 /**
@@ -132,7 +134,7 @@ function _parseSwitchCase(this: IParserInternal): ISwitchCaseNode {
   const consequent: IASTNode[] = [];
 
   while (
-    this._getCurrentToken()!.type !== TokenType.BRACE_CLOSE &&
+    this._getCurrentToken()!.type !== TokenType.RBRACE &&
     this._getCurrentToken()!.type !== TokenType.EOF &&
     !(
       this._getCurrentToken()!.type === TokenType.IDENTIFIER &&
@@ -165,7 +167,7 @@ function _parseSwitchCase(this: IParserInternal): ISwitchCaseNode {
       start,
       end,
     },
-  };
+  } as any;
 }
 
 /**
@@ -182,37 +184,37 @@ function parseExpression(this: IParserInternal): IASTNode {
       name: token!.value,
       location: {
         start: {
-          line: token.line,
-          column: token.column,
-          offset: token.start,
+          line: token!.line,
+          column: token!.column,
+          offset: token!.start,
         },
         end: {
-          line: token.line,
-          column: token.column + token!.value.length,
-          offset: token.end,
+          line: token!.line,
+          column: token!.column + token!.value.length,
+          offset: token!.end,
         },
       },
-    };
+    } as any;
   }
 
-  if (token!.type === TokenType.NUMBER || token.type === TokenType.STRING) {
+  if (token!.type === TokenType.NUMBER || token!.type === TokenType.STRING) {
     this._advance();
     return {
       type: ASTNodeType.LITERAL,
       value: token!.value,
       location: {
         start: {
-          line: token.line,
-          column: token.column,
-          offset: token.start,
+          line: token!.line,
+          column: token!.column,
+          offset: token!.start,
         },
         end: {
-          line: token.line,
-          column: token.column + token!.value.length,
-          offset: token.end,
+          line: token!.line,
+          column: token!.column + token!.value.length,
+          offset: token!.end,
         },
       },
-    };
+    } as any;
   }
 
   throw new Error(`Unexpected token in expression: ${token!.value}`);

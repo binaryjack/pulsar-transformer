@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   IASTNode,
   IBreakStatementNode,
   IContinueStatementNode,
@@ -51,7 +51,7 @@ export function _parseThrowStatement(this: IParserInternal): IThrowStatementNode
         offset: endToken!.end,
       },
     },
-  };
+  } as any;
 }
 
 /**
@@ -94,7 +94,7 @@ export function _parseBreakStatement(this: IParserInternal): IBreakStatementNode
           offset: labelToken!.end,
         },
       },
-    };
+    } as any;
     this._advance(); // Consume label
   }
 
@@ -120,7 +120,7 @@ export function _parseBreakStatement(this: IParserInternal): IBreakStatementNode
         offset: endToken!.end,
       },
     },
-  };
+  } as any;
 }
 
 /**
@@ -163,7 +163,7 @@ export function _parseContinueStatement(this: IParserInternal): IContinueStateme
           offset: labelToken!.end,
         },
       },
-    };
+    } as any;
     this._advance(); // Consume label
   }
 
@@ -189,7 +189,7 @@ export function _parseContinueStatement(this: IParserInternal): IContinueStateme
         offset: endToken!.end,
       },
     },
-  };
+  } as any;
 }
 
 /**
@@ -198,36 +198,33 @@ export function _parseContinueStatement(this: IParserInternal): IContinueStateme
 function _parseSimpleExpression(this: IParserInternal): IASTNode {
   const token = this._getCurrentToken();
 
-  if (token!.type === TokenType.IDENTIFIER) {
+  if (!token) {
+    throw new Error('Unexpected end of input');
+  }
+
+  if (token.type === TokenType.IDENTIFIER) {
     this._advance();
     return {
       type: ASTNodeType.IDENTIFIER,
-      name: token!.value,
+      name: token.value,
       location: {
         start: {
           line: token.line,
           column: token.column,
-          offset: token.start,
         },
         end: {
           line: token.line,
-          column: token.column + token!.value.length,
-          offset: token.end,
+          column: token.column + token.value.length,
         },
       },
-    };
+    } as any;
   }
 
-  if (
-    token.type === TokenType.NUMBER ||
-    token.type === TokenType.STRING ||
-    token.type === TokenType.NUMBER ||
-    token.type === TokenType.NUMBER
-  ) {
+  if (token.type === TokenType.NUMBER || token.type === TokenType.STRING) {
     this._advance();
     return {
       type: ASTNodeType.LITERAL,
-      value: token!.value,
+      value: token.value,
       location: {
         start: {
           line: token.line,
@@ -240,11 +237,11 @@ function _parseSimpleExpression(this: IParserInternal): IASTNode {
           offset: token.end,
         },
       },
-    };
+    } as any;
   }
 
   // Handle 'new Error(...)' for throw statements
-  if (token!.type === TokenType.IDENTIFIER && token!.value === 'new') {
+  if (token!.value === 'new') {
     this._advance(); // Consume 'new'
 
     const constructorToken = this._getCurrentToken();
@@ -284,7 +281,7 @@ function _parseSimpleExpression(this: IParserInternal): IASTNode {
           offset: this._getCurrentToken()!.end,
         },
       },
-    };
+    } as any;
   }
 
   throw new Error(`Unexpected token in expression: ${token!.value}`);

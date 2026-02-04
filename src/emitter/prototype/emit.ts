@@ -66,11 +66,11 @@ export function emit(this: IEmitterInternal, ir: IIRNode): string {
     case IRNodeType.REGISTRY_LOOKUP_IR:
       // Skip - these are handled by component emitter
       break;
-    case 'ProgramIR':
+    case IRNodeType.PROGRAM_IR:
       // Handle program with multiple statements
       const programIR = ir as any;
-      if (programIR.body && Array.isArray(programIR.body)) {
-        for (const node of programIR.body) {
+      if (programIR.children && Array.isArray(programIR.children)) {
+        for (const node of programIR.children) {
           this.emit(node);
         }
       }

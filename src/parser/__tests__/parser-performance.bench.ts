@@ -1,12 +1,12 @@
 import { bench, describe } from 'vitest';
-import { createParser } from '../create-parser';
+import { createParser } from '../create-parser.js';
 
 describe('Parser Performance Benchmarks', () => {
   describe('Enum Parsing Performance', () => {
     bench('parse simple enum (5 members)', () => {
       const source = 'enum Color { Red, Blue, Green, Yellow, Purple }';
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
 
     bench('parse enum with initializers (10 members)', () => {
@@ -22,14 +22,14 @@ describe('Parser Performance Benchmarks', () => {
         InternalServerError = 500,
         ServiceUnavailable = 503
       }`;
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
 
     bench('parse const enum', () => {
       const source = 'const enum Direction { Up, Down, Left, Right }';
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
   });
 
@@ -44,8 +44,8 @@ describe('Parser Performance Benchmarks', () => {
       } finally {
         cleanup();
       }`;
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
 
     bench('parse switch statement (5 cases)', () => {
@@ -56,26 +56,26 @@ describe('Parser Performance Benchmarks', () => {
         case 'DELETE': remove(); break;
         default: unknown();
       }`;
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
 
     bench('parse for loop', () => {
       const source = 'for (let i = 0; i < 100; i++) { process(i); }';
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
 
     bench('parse while loop', () => {
       const source = 'while (hasMore()) { processNext(); }';
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
 
     bench('parse do-while loop', () => {
       const source = 'do { work(); } while (shouldContinue());';
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
   });
 
@@ -85,8 +85,8 @@ describe('Parser Performance Benchmarks', () => {
         function helper() {}
         function another() {}
       }`;
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
 
     bench('parse nested namespace', () => {
@@ -95,8 +95,8 @@ describe('Parser Performance Benchmarks', () => {
           function deep() {}
         }
       }`;
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
   });
 
@@ -135,8 +135,8 @@ describe('Parser Performance Benchmarks', () => {
           }
         }
       `;
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
 
     bench('parse file with enums, namespaces, and classes', () => {
@@ -159,28 +159,28 @@ describe('Parser Performance Benchmarks', () => {
           }
         }
       `;
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
   });
 
   describe('Baseline Comparison', () => {
     bench('parse simple function (baseline)', () => {
       const source = 'function simple() { return 42; }';
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
 
     bench('parse interface (baseline)', () => {
       const source = 'interface User { id: string; name: string; }';
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
 
     bench('parse class (baseline)', () => {
       const source = 'class User { constructor(public name: string) {} }';
-      const parser = createParser(source);
-      parser.parse();
+      const parser = createParser();
+      parser.parse(source);
     });
   });
 });

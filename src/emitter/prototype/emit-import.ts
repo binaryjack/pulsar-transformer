@@ -18,7 +18,7 @@ export function _emitImport(this: IEmitterInternal, ir: IImportIR): void {
 
   // Handle side-effect imports (no specifiers)
   if (specifiers.length === 0) {
-    this.context.imports.addImport(source, null);
+    this.context.imports.addImport(source, '');
     return;
   }
 

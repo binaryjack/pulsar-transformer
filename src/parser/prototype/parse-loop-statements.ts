@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   IASTNode,
   IBlockStatementNode,
   IDoWhileStatementNode,
@@ -92,7 +92,7 @@ export function _parseForStatement(this: IParserInternal): IForStatementNode {
         offset: endToken!.end,
       },
     },
-  };
+  } as any;
 }
 
 /**
@@ -113,7 +113,7 @@ export function _parseWhileStatement(this: IParserInternal): IWhileStatementNode
   this._advance(); // Consume 'while'
 
   // Expect opening paren
-  if (this._getCurrentToken()!.type !== TokenType.PAREN_OPEN) {
+  if (this._getCurrentToken()!.type !== TokenType.LPAREN) {
     throw new Error(`Expected '(' after 'while', got ${this._getCurrentToken()!.value}`);
   }
 
@@ -150,7 +150,7 @@ export function _parseWhileStatement(this: IParserInternal): IWhileStatementNode
         offset: endToken!.end,
       },
     },
-  };
+  } as any;
 }
 
 /**
@@ -184,7 +184,7 @@ export function _parseDoWhileStatement(this: IParserInternal): IDoWhileStatement
   this._advance(); // Consume 'while'
 
   // Expect opening paren
-  if (this._getCurrentToken()!.type !== TokenType.PAREN_OPEN) {
+  if (this._getCurrentToken()!.type !== TokenType.LPAREN) {
     throw new Error(`Expected '(' after 'while', got ${this._getCurrentToken()!.value}`);
   }
 
@@ -223,7 +223,7 @@ export function _parseDoWhileStatement(this: IParserInternal): IDoWhileStatement
         offset: endToken!.end,
       },
     },
-  };
+  } as any;
 }
 
 /**
@@ -282,7 +282,7 @@ function _parseBlockStatement(this: IParserInternal): IBlockStatementNode {
         offset: endToken!.end,
       },
     },
-  };
+  } as any;
 }
 
 /**
@@ -291,45 +291,45 @@ function _parseBlockStatement(this: IParserInternal): IBlockStatementNode {
 function _parseSimpleExpression(this: IParserInternal): IASTNode {
   const token = this._getCurrentToken();
 
-  if (token.type === TokenType.IDENTIFIER) {
+  if (token!.type === TokenType.IDENTIFIER) {
     this._advance();
     return {
       type: ASTNodeType.IDENTIFIER,
-      name: token.value,
+      name: token!.value,
       location: {
         start: {
-          line: token.line,
-          column: token.column,
-          offset: token.start,
+          line: token!.line,
+          column: token!.column,
+          offset: token!.start,
         },
         end: {
-          line: token.line,
-          column: token.column + token.value.length,
-          offset: token.end,
+          line: token!.line,
+          column: token!.column + token!.value.length,
+          offset: token!.end,
         },
       },
-    };
+    } as any;
   }
 
-  if (token.type === TokenType.NUMBER || token.type === TokenType.STRING) {
+  if (token!.type === TokenType.NUMBER || token!.type === TokenType.STRING) {
     this._advance();
     return {
       type: ASTNodeType.LITERAL,
-      value: token.value,
+      value: token!.value,
       location: {
         start: {
-          line: token.line,
-          column: token.column,
-          offset: token.start,
+          line: token!.line,
+          column: token!.column,
+          offset: token!.start,
         },
         end: {
-          line: token.line,
-          column: token.column + token.value.length,
-          offset: token.end,
+          line: token!.line,
+          column: token!.column + token!.value.length,
+          offset: token!.end,
         },
       },
-    };
+    } as any;
   }
 
-  throw new Error(`Unexpected token in expression: ${token.value}`);
+  throw new Error(`Unexpected token in expression: ${token!.value}`);
 }

@@ -1,4 +1,4 @@
-﻿import type { IASTNode, INamespaceDeclarationNode } from '../ast/ast-node-types.js';
+import type { IASTNode, INamespaceDeclarationNode } from '../ast/ast-node-types.js';
 import { ASTNodeType } from '../ast/ast-node-types.js';
 import { TokenType } from '../lexer/token-types.js';
 import type { IParserInternal } from '../parser.types.js';
@@ -45,26 +45,26 @@ export function _parseNamespaceDeclaration(this: IParserInternal): INamespaceDec
     // Parse each declaration
     const token = this._getCurrentToken();
 
-    if (token.type === TokenType.IDENTIFIER) {
+    if (token!.type === TokenType.IDENTIFIER) {
       // Variable, function, class, interface, enum, namespace, etc.
-      if (token.value === 'var' || token.value === 'let' || token.value === 'const') {
+      if (token!.value === 'var' || token!.value === 'let' || token!.value === 'const') {
         body.push(this._parseVariableDeclaration());
-      } else if (token.value === 'function') {
+      } else if (token!.value === 'function') {
         body.push(this._parseFunctionDeclaration());
-      } else if (token.value === 'class') {
+      } else if (token!.value === 'class') {
         body.push(this._parseClassDeclaration());
-      } else if (token.value === 'interface') {
+      } else if (token!.value === 'interface') {
         body.push(this._parseInterfaceDeclaration());
-      } else if (token.value === 'enum') {
+      } else if (token!.value === 'enum') {
         body.push(this._parseEnumDeclaration());
-      } else if (token.value === 'namespace' || token.value === 'module') {
+      } else if (token!.value === 'namespace' || token!.value === 'module') {
         // Nested namespace
         body.push(this._parseNamespaceDeclaration());
-      } else if (token.value === 'export') {
+      } else if (token!.value === 'export') {
         // Skip export keyword and parse next
         this._advance();
         continue;
-      } else if (token.value === 'type') {
+      } else if (token!.value === 'type') {
         // Type alias - skip for now
         this._skipTypeAlias();
       } else {
@@ -100,19 +100,23 @@ export function _parseNamespaceDeclaration(this: IParserInternal): INamespaceDec
 
   return {
     type: ASTNodeType.NAMESPACE_DECLARATION,
-    name,
+    name: {
+      type: ASTNodeType.IDENTIFIER,
+      name: name as string,
+      location: { start, end },
+    } as any,
     body,
     location: {
       start,
       end,
     },
-  };
+  } as any;
 }
 
 /**
  * Helper: Skip type alias declarations
  */
-function _skipTypeAlias(this: IParserInternal): void {
+export function _skipTypeAlias(this: IParserInternal): void {
   // Skip 'type'
   this._advance();
 
