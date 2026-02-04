@@ -312,6 +312,7 @@ function _readSingleChar(
     ',': TokenType.COMMA,
     '.': TokenType.DOT,
     ':': TokenType.COLON,
+    '?': TokenType.QUESTION,
     '<': TokenType.LT,
     '>': TokenType.GT,
     '/': TokenType.SLASH,
