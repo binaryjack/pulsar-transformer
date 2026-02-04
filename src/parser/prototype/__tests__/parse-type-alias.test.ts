@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { createParser } from '../../create-parser.js';
-import { ASTNodeType } from '../../ast/index.js';
+import { describe, expect, it } from 'vitest';
 import type { ITypeAliasNode } from '../../ast/index.js';
+import { ASTNodeType } from '../../ast/index.js';
+import { createParser } from '../../create-parser.js';
 
 describe('parseTypeAlias', () => {
   describe('Literal Types', () => {
@@ -67,7 +67,8 @@ describe('parseTypeAlias', () => {
     });
 
     it('should parse object union type', () => {
-      const source = 'type Response = { success: true; data: string } | { success: false; error: string };';
+      const source =
+        'type Response = { success: true; data: string } | { success: false; error: string };';
       const parser = createParser();
       const ast = parser.parse(source);
 

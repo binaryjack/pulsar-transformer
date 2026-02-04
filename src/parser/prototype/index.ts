@@ -22,7 +22,6 @@ import {
 import { parseFunctionDeclaration } from './parse-function-declaration.js';
 import { parseImportDeclaration } from './parse-import-declaration.js';
 import { parseInterfaceDeclaration } from './parse-interface-declaration.js';
-import { parseTypeAlias } from './parse-type-alias.js';
 import {
   _isClosingTag,
   _parsePSRAttribute,
@@ -31,6 +30,7 @@ import {
 } from './parse-psr-element.js';
 import { parsePSRSignalBinding } from './parse-psr-signal-binding.js';
 import { parseReturnStatement } from './parse-return-statement.js';
+import { parseTypeAlias } from './parse-type-alias.js';
 import { parseVariableDeclaration } from './parse-variable-declaration.js';
 import {
   _addError,

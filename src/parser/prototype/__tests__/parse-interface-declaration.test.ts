@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { createParser } from '../../create-parser.js';
-import { ASTNodeType } from '../../ast/index.js';
+import { describe, expect, it } from 'vitest';
 import type { IInterfaceDeclarationNode } from '../../ast/index.js';
+import { ASTNodeType } from '../../ast/index.js';
+import { createParser } from '../../create-parser.js';
 
 describe('parseInterfaceDeclaration', () => {
   describe('Basic Interfaces', () => {
