@@ -63,6 +63,24 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
     return null;
   }
 
+  // Decorator (@) - parse decorators and continue to decorated item
+  if (token.type === 'AT') {
+    const decorators: any[] = [];
+    while (this._getCurrentToken()?.type === 'AT') {
+      decorators.push(this._parseDecorator());
+    }
+
+    // After decorators, parse the decorated item (class or method)
+    const nextToken = this._getCurrentToken();
+    if (nextToken?.value === 'class' || nextToken?.value === 'abstract') {
+      const classNode = this._parseClassDeclaration() as any;
+      classNode.decorators = decorators;
+      return classNode;
+    }
+    // Note: Method decorators are handled in class body parsing
+    throw new Error(`Decorators can only be applied to classes or methods at line ${token.line}`);
+  }
+
   // Component declaration
   if (token.value === 'component') {
     return this._parseComponentDeclaration();

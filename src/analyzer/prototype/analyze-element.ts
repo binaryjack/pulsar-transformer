@@ -4,10 +4,27 @@
  * Converts element AST to ElementIR with static/dynamic classification.
  */
 
-import type { IPSRElementNode } from '../../parser/ast/index.js';
+import type {
+  IPSRAttributeNode,
+  IPSRElementNode,
+  IPSRSpreadAttributeNode,
+} from '../../parser/ast/index.js';
 import type { IAnalyzerInternal } from '../analyzer.types.js';
-import type { IAttributeIR, IElementIR, IEventHandlerIR, IIRNode, ISignalBindingIR } from '../ir/index.js';
+import type {
+  IAttributeIR,
+  IElementIR,
+  IEventHandlerIR,
+  IIRNode,
+  ISignalBindingIR,
+} from '../ir/index.js';
 import { IRNodeType } from '../ir/index.js';
+
+// Type guard for PSR attributes
+function isPSRAttributeNode(
+  attr: IPSRAttributeNode | IPSRSpreadAttributeNode
+): attr is IPSRAttributeNode {
+  return 'name' in attr;
+}
 
 /**
  * Analyze PSR element
@@ -20,6 +37,11 @@ export function analyzeElement(this: IAnalyzerInternal, node: IPSRElementNode): 
   const eventHandlers: IEventHandlerIR[] = [];
 
   for (const attr of node.attributes) {
+    // Skip spread attributes for now
+    if (!isPSRAttributeNode(attr)) {
+      continue;
+    }
+
     // Check if attribute is event handler (starts with 'on')
     if (attr.name.startsWith('on')) {
       const eventName = attr.name.slice(2).toLowerCase(); // onClick -> click

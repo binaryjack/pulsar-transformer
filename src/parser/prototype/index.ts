@@ -17,7 +17,6 @@ import { _parseDecorator } from './parse-decorator.js';
 import { _parseEnumDeclaration } from './parse-enum-declaration.js';
 import {
   _parseArrowFunctionOrGrouping,
-  _parseCallOrIdentifier,
   _parseExportDeclaration,
   _parseExpressionStatement,
   _parseLiteral,
@@ -286,13 +285,6 @@ Object.defineProperty(Parser.prototype, '_parseExpression', {
 // Attach all other helper methods
 Object.defineProperty(Parser.prototype, '_parseLiteral', {
   value: _parseLiteral,
-  writable: true,
-  enumerable: false,
-  configurable: false,
-});
-
-Object.defineProperty(Parser.prototype, '_parseCallOrIdentifier', {
-  value: _parseCallOrIdentifier,
   writable: true,
   enumerable: false,
   configurable: false,

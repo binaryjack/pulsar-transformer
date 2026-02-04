@@ -2,6 +2,7 @@
   IASTNode,
   IBreakStatementNode,
   IContinueStatementNode,
+  IIdentifierNode,
   IThrowStatementNode,
 } from '../ast/ast-node-types.js';
 import { ASTNodeType } from '../ast/ast-node-types.js';

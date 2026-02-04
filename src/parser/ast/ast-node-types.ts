@@ -56,6 +56,7 @@ export enum ASTNodeType {
   PROPERTY_DEFINITION = 'PropertyDefinition',
   METHOD_DEFINITION = 'MethodDefinition',
   CONSTRUCTOR_DEFINITION = 'ConstructorDefinition',
+  PARAMETER = 'Parameter',
 
   // Enum Members
   ENUM_MEMBER = 'EnumMember',
@@ -468,6 +469,7 @@ export interface IClassDeclarationNode extends IASTNode {
   readonly typeParameters: string | null; // Generic parameters: <T, U>
   readonly body: IClassBodyNode;
   readonly abstract: boolean;
+  readonly decorators?: IDecoratorNode[];
 }
 
 /**
@@ -501,6 +503,23 @@ export interface IPropertyDefinitionNode extends IASTNode {
 }
 
 /**
+ * Parameter Node
+ *
+ * Function/method parameter definition
+ *
+ * @example
+ * name: string
+ * age?: number
+ */
+export interface IParameterNode extends IASTNode {
+  readonly type: ASTNodeType.PARAMETER;
+  readonly name: IIdentifierNode;
+  readonly typeAnnotation?: ITypeAnnotationNode;
+  readonly optional?: boolean;
+  readonly defaultValue?: IASTNode;
+}
+
+/**
  * Method Definition
  *
  * @example
@@ -522,6 +541,7 @@ export interface IMethodDefinitionNode extends IASTNode {
   readonly generator: boolean;
   readonly abstract: boolean;
   readonly accessModifier: 'public' | 'private' | 'protected' | null;
+  readonly decorators?: IDecoratorNode[];
 }
 
 /**

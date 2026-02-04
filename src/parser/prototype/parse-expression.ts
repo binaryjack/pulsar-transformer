@@ -74,20 +74,12 @@ function _parsePrimaryExpression(this: IParserInternal): any {
 
   // Await expression
   if (token.value === 'await') {
-    this._advance();
-    const argument = _parsePrimaryExpression.call(this);
-    return {
-      type: ASTNodeType.AWAIT_EXPRESSION,
-      argument,
-      location: {
-        start: { line: token.line, column: token.column, offset: token.start },
-        end: argument?.location.end || {
-          line: token.line,
-          column: token.column + 5,
-          offset: token.end,
-        },
-      },
-    };
+    return this._parseAwaitExpression();
+  }
+
+  // Yield expression
+  if (token.value === 'yield') {
+    return this._parseYieldExpression();
   }
 
   // PSR element: <tag>
@@ -456,7 +448,6 @@ const _parseExportDeclaration = parseExportDeclaration;
 // Export helper methods for prototype attachment
 export {
   _parseArrowFunctionOrGrouping,
-  
   _parseExportDeclaration,
   _parseExpressionStatement,
   _parseLiteral,

@@ -19,13 +19,13 @@ export function analyzeImport(this: IAnalyzerInternal, node: IImportDeclarationN
   for (const specifier of specifiers) {
     // Map local name → source module (use alias if present)
     const localName = specifier.alias || specifier.name;
-    this._context.imports.set(localName, source.value);
+    this._context.imports.set(localName, String(source.value));
   }
 
   // Build IR node for import
   const importIR: IImportIR = {
     type: IRNodeType.IMPORT,
-    source: source.value,
+    source: String(source.value),
     specifiers: specifiers.map((spec, index) => {
       // Determine specifier type based on import kind
       let specifierType: 'ImportSpecifier' | 'ImportDefaultSpecifier' | 'ImportNamespaceSpecifier';

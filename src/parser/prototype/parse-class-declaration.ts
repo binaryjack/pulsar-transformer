@@ -19,6 +19,7 @@ import type {
   IClassBodyNode,
   IClassDeclarationNode,
   IConstructorDefinitionNode,
+  IDecoratorNode,
   IIdentifierNode,
   IMethodDefinitionNode,
   IPropertyDefinitionNode,
@@ -224,6 +225,15 @@ function _parseClassMember(
     offset: startToken!.start,
   };
 
+  // Parse decorators (if present)
+  const decorators: IDecoratorNode[] = [];
+  while (this._check('AT')) {
+    const decorator = this._parseDecorator();
+    if (decorator) {
+      decorators.push(decorator);
+    }
+  }
+
   // Parse access modifier
   let accessModifier: 'public' | 'private' | 'protected' | null = null;
   if (this._check('PUBLIC')) {
@@ -308,7 +318,8 @@ function _parseClassMember(
       isStatic,
       isAsync,
       isGenerator,
-      isAbstract
+      isAbstract,
+      decorators.length > 0 ? decorators : undefined
     );
   } else {
     // It's a property
@@ -440,7 +451,8 @@ function _parseMethod(
   isStatic: boolean,
   isAsync: boolean,
   isGenerator: boolean,
-  isAbstract: boolean
+  isAbstract: boolean,
+  decorators?: IDecoratorNode[]
 ): IMethodDefinitionNode {
   // Parse parameters
   this._expect('LPAREN', "Expected '(' for method parameters");
@@ -578,6 +590,7 @@ function _parseMethod(
     generator: isGenerator,
     abstract: isAbstract,
     accessModifier,
+    decorators,
     location: {
       start: startLocation,
       end: {

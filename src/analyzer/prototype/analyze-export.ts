@@ -50,7 +50,10 @@ export function analyzeExport(this: IAnalyzerInternal, node: IExportDeclarationN
     type: IRNodeType.EXPORT,
     exportKind: node.exportKind || 'named',
     specifiers,
-    source: node.source?.value || null,
+    source: node.source ? String(node.source.value) : null,
     isTypeOnly: node.isTypeOnly,
+    metadata: {
+      sourceLocation: node.location?.start,
+    },
   };
 }
