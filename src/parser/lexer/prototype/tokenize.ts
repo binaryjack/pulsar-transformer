@@ -191,6 +191,8 @@ function _readIdentifierOrKeyword(
     readonly: TokenType.READONLY,
     override: TokenType.OVERRIDE,
     constructor: TokenType.CONSTRUCTOR,
+    yield: TokenType.YIELD,
+    await: TokenType.AWAIT,
   };
 
   const type = keywords[value] || TokenType.IDENTIFIER;
@@ -351,6 +353,7 @@ function _readSingleChar(
     '=': TokenType.ASSIGN,
     '|': TokenType.PIPE,
     '&': TokenType.AMPERSAND,
+    '@': TokenType.AT,
   };
 
   const type = singleCharTokens[char];

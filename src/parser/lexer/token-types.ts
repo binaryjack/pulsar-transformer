@@ -54,6 +54,13 @@ export enum TokenType {
   OVERRIDE = 'OVERRIDE', // override (for method overriding)
   CONSTRUCTOR = 'CONSTRUCTOR', // constructor (for class constructor)
 
+  // Generator & Async keywords
+  YIELD = 'YIELD', // yield (for generators)
+  AWAIT = 'AWAIT', // await (for async/await)
+
+  // Decorator
+  AT = 'AT', // @ (for decorators)
+
   // Identifiers and Literals
   IDENTIFIER = 'IDENTIFIER',
   STRING = 'STRING',

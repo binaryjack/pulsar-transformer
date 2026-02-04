@@ -10,8 +10,10 @@ import { Parser } from '../parser.js';
 import { getErrors } from './get-errors.js';
 import { getPosition } from './get-position.js';
 import { hasErrors } from './has-errors.js';
+import { _parseAwaitExpression } from './parse-await-expression.js';
 import { _parseClassDeclaration } from './parse-class-declaration.js';
 import { parseComponentDeclaration } from './parse-component-declaration.js';
+import { _parseDecorator } from './parse-decorator.js';
 import { _parseEnumDeclaration } from './parse-enum-declaration.js';
 import {
   _parseArrowFunctionOrGrouping,
@@ -48,6 +50,7 @@ import { _parseSwitchStatement } from './parse-switch-statement.js';
 import { _parseTryStatement } from './parse-try-statement.js';
 import { parseTypeAlias } from './parse-type-alias.js';
 import { parseVariableDeclaration } from './parse-variable-declaration.js';
+import { _parseYieldExpression } from './parse-yield-expression.js';
 import {
   _addError,
   _advance,
@@ -346,6 +349,27 @@ Object.defineProperty(Parser.prototype, '_isClosingFragment', {
 
 Object.defineProperty(Parser.prototype, '_isClosingTag', {
   value: _isClosingTag,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseDecorator', {
+  value: _parseDecorator,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseYieldExpression', {
+  value: _parseYieldExpression,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseAwaitExpression', {
+  value: _parseAwaitExpression,
   writable: true,
   enumerable: false,
   configurable: false,

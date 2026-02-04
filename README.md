@@ -2,9 +2,24 @@
 
 **Production-ready PSR → TypeScript transformation pipeline**
 
-[![Tests](https://img.shields.io/badge/tests-115%2F115%20passing-brightgreen)](./src/__tests__)
+[![Tests](https://img.shields.io/badge/tests-550%2B%20passing-brightgreen)](./src/__tests__)
 [![Coverage](https://img.shields.io/badge/coverage-95%25%2B-brightgreen)](./src)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue)](https://www.typescriptlang.org/)
+[![Version](https://img.shields.io/badge/version-1.0.0--alpha.6-blue)](./package.json)
+
+---
+
+## 🎉 What's New in alpha.6
+
+**Advanced Features Expansion** - 3 new parser modules covering:
+
+- ✨ **Decorators** - @Component, @Injectable, method/property/class decorators
+- ✨ **Generators** - function*, yield, yield* delegation
+- ✨ **Async/Await** - async functions, await expressions
+
+**30+ new tests** | **3 new AST types** | **3 new tokens** | **Zero regressions**
+
+[See full changelog](./CHANGELOG-alpha.6.md)
 
 ---
 
@@ -18,12 +33,14 @@ PSR Source → Lexer → Parser → Analyzer → Transform → Emitter → TypeS
 
 ### Key Features
 
+- ✅ **Complete TypeScript Parsing** - Classes, enums, namespaces, decorators, generators, async/await
+- ✅ **Modern ES6+ Support** - All control flow, error handling, iteration protocols
 - ✅ **Complete PSR Support** - Components, signals, JSX, destructuring
 - ✅ **TypeScript Output** - Clean, readable, debuggable code
 - ✅ **Registry Pattern** - Component isolation with HMR support
 - ✅ **Signal Detection** - Automatic `signal()` → `createSignal()` transformation
 - ✅ **Performance** - 200K+ tokens/sec, within 10% of Solid.js
-- ✅ **100% Test Coverage** - 115 tests passing, all phases verified
+- ✅ **550+ Tests** - Comprehensive coverage, all phases verified
 
 ---
 

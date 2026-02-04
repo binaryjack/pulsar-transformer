@@ -75,6 +75,13 @@ export enum ASTNodeType {
   BREAK_STATEMENT = 'BreakStatement',
   CONTINUE_STATEMENT = 'ContinueStatement',
 
+  // Decorators
+  DECORATOR = 'Decorator',
+
+  // Generators & Async
+  YIELD_EXPRESSION = 'YieldExpression',
+  AWAIT_EXPRESSION = 'AwaitExpression',
+
   // Expressions
   IDENTIFIER = 'Identifier',
   LITERAL = 'Literal',
@@ -707,4 +714,41 @@ export interface IBreakStatementNode extends IASTNode {
 export interface IContinueStatementNode extends IASTNode {
   readonly type: ASTNodeType.CONTINUE_STATEMENT;
   readonly label: IIdentifierNode | null;
+}
+
+/**
+ * Decorator
+ *
+ * @example
+ * @Component({ selector: 'app-root' })
+ * @Injectable()
+ */
+export interface IDecoratorNode extends IASTNode {
+  readonly type: ASTNodeType.DECORATOR;
+  readonly expression: IASTNode;
+}
+
+/**
+ * Yield Expression
+ *
+ * @example
+ * yield value;
+ * yield* iterable;
+ */
+export interface IYieldExpressionNode extends IASTNode {
+  readonly type: ASTNodeType.YIELD_EXPRESSION;
+  readonly argument: IASTNode | null;
+  readonly delegate: boolean; // true for yield*
+}
+
+/**
+ * Await Expression
+ *
+ * @example
+ * await promise;
+ * await fetch('/api/data');
+ */
+export interface IAwaitExpressionNode extends IASTNode {
+  readonly type: ASTNodeType.AWAIT_EXPRESSION;
+  readonly argument: IASTNode;
 }

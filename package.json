@@ -1,6 +1,6 @@
 {
   "name": "@pulsar-framework/transformer",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "description": "PSR (Pulsar Syntax Runtime) to TypeScript transformer with Registry Pattern code generation",
   "type": "module",
   "main": "./dist/index.js",

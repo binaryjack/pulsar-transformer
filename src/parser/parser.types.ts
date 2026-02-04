@@ -62,6 +62,9 @@ export interface IParserInternal extends IParser {
   _parseBreakStatement(): any;
   _parseContinueStatement(): any;
   _parseBlockStatement(): any;
+  _parseDecorator(): any;
+  _parseYieldExpression(): any;
+  _parseAwaitExpression(): any;
   _parsePSRElement(): any;
   _parseJSXFragment(): any;
   _parsePSRSignalBinding(): any;
