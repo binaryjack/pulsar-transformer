@@ -51,6 +51,7 @@ export interface IParserInternal extends IParser {
   _parseTypeAlias(): any;
   _parseReturnStatement(): any;
   _parsePSRElement(): any;
+  _parseJSXFragment(): any;
   _parsePSRSignalBinding(): any;
   _parsePSRAttribute(): any;
   _parsePSRChild(): any;
@@ -71,6 +72,8 @@ export interface IParserInternal extends IParser {
   _expect(type: string, message: string): IToken;
   _addError(error: IParserError): void;
   _isClosingTag(tagName: string): boolean;
+  _isClosingFragment(): boolean;
+  _peek(offset: number): IToken | undefined;
 }
 
 /**

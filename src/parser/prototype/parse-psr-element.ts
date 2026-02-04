@@ -7,7 +7,12 @@
  * <button class="btn" onClick={() => handle()}>Click</button>
  */
 
-import type { IPSRAttributeNode, IPSRElementNode } from '../ast/index.js';
+import type {
+  IPSRAttributeNode,
+  IPSRElementNode,
+  IPSRFragmentNode,
+  IPSRSpreadAttributeNode,
+} from '../ast/index.js';
 import { ASTNodeType } from '../ast/index.js';
 import type { IParserInternal } from '../parser.types.js';
 
@@ -15,21 +20,29 @@ import type { IParserInternal } from '../parser.types.js';
  * Parse PSR element
  *
  * Grammar:
+ *   < > Children* < / >  (Fragment)
  *   < TagName Attributes? > Children* </ TagName >
  *   < TagName Attributes? />
  */
-export function parsePSRElement(this: IParserInternal): IPSRElementNode {
+export function parsePSRElement(this: IParserInternal): IPSRElementNode | IPSRFragmentNode {
   const startToken = this._getCurrentToken()!;
 
   // Consume '<'
   this._expect('LT', 'Expected "<"');
+
+  // Check if this is a fragment: <>
+  if (this._check('GT')) {
+    // Rewind and parse as fragment
+    this._current--;
+    return this._parseJSXFragment();
+  }
 
   // Parse tag name
   const tagToken = this._expect('IDENTIFIER', 'Expected tag name');
   const tagName = tagToken.value;
 
   // Parse attributes
-  const attributes: IPSRAttributeNode[] = [];
+  const attributes: (IPSRAttributeNode | IPSRSpreadAttributeNode)[] = [];
 
   while (!this._check('GT') && !this._check('SLASH') && !this._isAtEnd()) {
     const attr = this._parsePSRAttribute();
@@ -99,15 +112,55 @@ export function parsePSRElement(this: IParserInternal): IPSRElementNode {
 }
 
 /**
- * Parse PSR attribute
+ * Parse PSR attribute or spread attribute
  */
-function _parsePSRAttribute(this: IParserInternal): IPSRAttributeNode | null {
-  const nameToken = this._getCurrentToken();
+function _parsePSRAttribute(
+  this: IParserInternal
+): IPSRAttributeNode | IPSRSpreadAttributeNode | null {
+  const startToken = this._getCurrentToken();
 
-  if (!nameToken || nameToken.type !== 'IDENTIFIER') {
+  if (!startToken) {
     return null;
   }
 
+  // Handle spread attribute: {...props}
+  if (startToken.type === 'LBRACE') {
+    this._advance(); // Consume '{'
+
+    if (this._check('SPREAD')) {
+      this._advance(); // Consume '...'
+      const argument = this._parseExpression();
+      this._expect('RBRACE', 'Expected "}" after spread attribute');
+
+      return {
+        type: ASTNodeType.PSR_SPREAD_ATTRIBUTE,
+        argument,
+        location: {
+          start: {
+            line: startToken.line,
+            column: startToken.column,
+            offset: startToken.start,
+          },
+          end: {
+            line: this._getCurrentToken()?.line || startToken.line,
+            column: this._getCurrentToken()?.column || startToken.column,
+            offset: this._getCurrentToken()?.end || startToken.end,
+          },
+        },
+      };
+    } else {
+      // Not a spread, backtrack
+      this._current--;
+      return null;
+    }
+  }
+
+  // Regular attribute
+  if (startToken.type !== 'IDENTIFIER') {
+    return null;
+  }
+
+  const nameToken = startToken;
   this._advance(); // Consume attribute name
 
   let value: any = null;

@@ -10,6 +10,7 @@ import { Parser } from '../parser.js';
 import { getErrors } from './get-errors.js';
 import { getPosition } from './get-position.js';
 import { hasErrors } from './has-errors.js';
+import { _parseClassDeclaration } from './parse-class-declaration.js';
 import { parseComponentDeclaration } from './parse-component-declaration.js';
 import {
   _parseArrowFunctionOrGrouping,
@@ -22,6 +23,7 @@ import {
 import { parseFunctionDeclaration } from './parse-function-declaration.js';
 import { parseImportDeclaration } from './parse-import-declaration.js';
 import { parseInterfaceDeclaration } from './parse-interface-declaration.js';
+import { _isClosingFragment, parseJSXFragment } from './parse-jsx-fragment.js';
 import {
   _isClosingTag,
   _parsePSRAttribute,
@@ -41,6 +43,7 @@ import {
   _isAtEnd,
   _match,
   _parseStatement,
+  _peek,
   parse,
 } from './parse.js';
 
@@ -67,6 +70,13 @@ Object.defineProperty(Parser.prototype, '_isAtEnd', {
 
 Object.defineProperty(Parser.prototype, '_getCurrentToken', {
   value: _getCurrentToken,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_peek', {
+  value: _peek,
   writable: true,
   enumerable: false,
   configurable: false,
@@ -123,6 +133,13 @@ Object.defineProperty(Parser.prototype, '_parsePSRElement', {
   configurable: false,
 });
 
+Object.defineProperty(Parser.prototype, '_parseJSXFragment', {
+  value: parseJSXFragment,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
 Object.defineProperty(Parser.prototype, '_parsePSRSignalBinding', {
   value: parsePSRSignalBinding,
   writable: true,
@@ -146,6 +163,13 @@ Object.defineProperty(Parser.prototype, '_parseVariableDeclaration', {
 
 Object.defineProperty(Parser.prototype, '_parseFunctionDeclaration', {
   value: parseFunctionDeclaration,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseClassDeclaration', {
+  value: _parseClassDeclaration,
   writable: true,
   enumerable: false,
   configurable: false,
@@ -224,6 +248,13 @@ Object.defineProperty(Parser.prototype, '_parsePSRAttribute', {
 
 Object.defineProperty(Parser.prototype, '_parsePSRChild', {
   value: _parsePSRChild,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_isClosingFragment', {
+  value: _isClosingFragment,
   writable: true,
   enumerable: false,
   configurable: false,

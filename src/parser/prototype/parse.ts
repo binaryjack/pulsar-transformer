@@ -78,6 +78,11 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
     return this._parseFunctionDeclaration();
   }
 
+  // Class declaration (including abstract classes)
+  if (token.value === 'class' || token.value === 'abstract') {
+    return this._parseClassDeclaration();
+  }
+
   // Interface declaration
   if (token.value === 'interface') {
     return this._parseInterfaceDeclaration();
@@ -120,6 +125,13 @@ function _isAtEnd(this: IParserInternal): boolean {
  */
 function _getCurrentToken(this: IParserInternal) {
   return this._tokens[this._current] || null;
+}
+
+/**
+ * Peek at token ahead by offset without consuming
+ */
+function _peek(this: IParserInternal, offset: number = 0) {
+  return this._tokens[this._current + offset] || null;
 }
 
 /**
@@ -197,4 +209,5 @@ export {
   _isAtEnd,
   _match,
   _parseStatement,
+  _peek,
 };

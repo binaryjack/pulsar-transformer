@@ -209,7 +209,7 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     }
 
     this._expect('RBRACE', 'Expected } after import specifiers');
-  } else if (this._check('MULTIPLY')) {
+  } else if (this._check('ASTERISK')) {
     // Namespace import: import * as name from 'module'
     importKind = 'namespace';
     this._advance(); // consume *

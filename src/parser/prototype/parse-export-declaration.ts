@@ -85,7 +85,7 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
   }
 
   // Check for export * from 'module'
-  if (this._check('MULTIPLY')) {
+  if (this._check('ASTERISK')) {
     this._advance(); // consume *
     exportKind = 'all';
 

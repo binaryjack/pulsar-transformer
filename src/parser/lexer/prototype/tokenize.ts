@@ -153,6 +153,7 @@ function _readIdentifierOrKeyword(
     const: TokenType.CONST,
     let: TokenType.LET,
     function: TokenType.FUNCTION,
+    class: TokenType.CLASS,
     async: TokenType.ASYNC,
     return: TokenType.RETURN,
     import: TokenType.IMPORT,
@@ -162,6 +163,17 @@ function _readIdentifierOrKeyword(
     type: TokenType.TYPE,
     interface: TokenType.INTERFACE,
     extends: TokenType.EXTENDS,
+    super: TokenType.SUPER,
+    static: TokenType.STATIC,
+    get: TokenType.GET,
+    set: TokenType.SET,
+    abstract: TokenType.ABSTRACT,
+    public: TokenType.PUBLIC,
+    private: TokenType.PRIVATE,
+    protected: TokenType.PROTECTED,
+    readonly: TokenType.READONLY,
+    override: TokenType.OVERRIDE,
+    constructor: TokenType.CONSTRUCTOR,
   };
 
   const type = keywords[value] || TokenType.IDENTIFIER;
@@ -337,6 +349,24 @@ function _readSingleChar(
       return {
         type: TokenType.ARROW,
         value: '=>',
+        line,
+        column,
+        start,
+        end: this._position,
+      };
+    }
+
+    // Check for spread operator: ...
+    if (
+      char === '.' &&
+      this._source[this._position] === '.' &&
+      this._source[this._position + 1] === '.'
+    ) {
+      this._position += 2;
+      this._column += 2;
+      return {
+        type: TokenType.SPREAD,
+        value: '...',
         line,
         column,
         start,

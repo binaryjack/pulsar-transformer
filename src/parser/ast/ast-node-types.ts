@@ -42,11 +42,18 @@ export enum ASTNodeType {
   COMPONENT_DECLARATION = 'ComponentDeclaration',
   VARIABLE_DECLARATION = 'VariableDeclaration',
   FUNCTION_DECLARATION = 'FunctionDeclaration',
+  CLASS_DECLARATION = 'ClassDeclaration',
   INTERFACE_DECLARATION = 'InterfaceDeclaration',
   TYPE_ALIAS = 'TypeAlias',
   TYPE_ANNOTATION = 'TypeAnnotation',
   IMPORT_DECLARATION = 'ImportDeclaration',
   EXPORT_DECLARATION = 'ExportDeclaration',
+
+  // Class Members
+  CLASS_BODY = 'ClassBody',
+  PROPERTY_DEFINITION = 'PropertyDefinition',
+  METHOD_DEFINITION = 'MethodDefinition',
+  CONSTRUCTOR_DEFINITION = 'ConstructorDefinition',
 
   // Statements
   BLOCK_STATEMENT = 'BlockStatement',
@@ -66,7 +73,9 @@ export enum ASTNodeType {
 
   // PSR-specific
   PSR_ELEMENT = 'PSRElement',
+  PSR_FRAGMENT = 'PSRFragment',
   PSR_ATTRIBUTE = 'PSRAttribute',
+  PSR_SPREAD_ATTRIBUTE = 'PSRSpreadAttribute',
   PSR_SIGNAL_BINDING = 'PSRSignalBinding',
   PSR_EVENT_HANDLER = 'PSREventHandler',
   PSR_TEXT_NODE = 'PSRTextNode',
@@ -300,9 +309,23 @@ export interface IObjectPatternNode extends IASTNode {
 export interface IPSRElementNode extends IASTNode {
   readonly type: ASTNodeType.PSR_ELEMENT;
   readonly tagName: string;
-  readonly attributes: IPSRAttributeNode[];
+  readonly attributes: (IPSRAttributeNode | IPSRSpreadAttributeNode)[];
   readonly children: IASTNode[];
   readonly selfClosing: boolean;
+}
+
+/**
+ * PSR Fragment
+ *
+ * @example
+ * <>
+ *   <div>Child 1</div>
+ *   <div>Child 2</div>
+ * </>
+ */
+export interface IPSRFragmentNode extends IASTNode {
+  readonly type: ASTNodeType.PSR_FRAGMENT;
+  readonly children: IASTNode[];
 }
 
 /**
@@ -316,6 +339,17 @@ export interface IPSRAttributeNode extends IASTNode {
   readonly name: string;
   readonly value: ILiteralNode | IASTNode | null;
   readonly isStatic: boolean;
+}
+
+/**
+ * PSR Spread Attribute
+ *
+ * @example
+ * {...props}, {...otherProps}
+ */
+export interface IPSRSpreadAttributeNode extends IASTNode {
+  readonly type: ASTNodeType.PSR_SPREAD_ATTRIBUTE;
+  readonly argument: IIdentifierNode | IASTNode;
 }
 
 /**
@@ -391,4 +425,95 @@ export interface ITypeAliasNode extends IASTNode {
   readonly type: ASTNodeType.TYPE_ALIAS;
   readonly name: IIdentifierNode;
   readonly typeAnnotation: string; // Raw type definition as string
+}
+
+/**
+ * Class Declaration
+ *
+ * @example
+ * class User {
+ *   name: string;
+ *   constructor(name: string) {}
+ * }
+ *
+ * abstract class Shape extends BaseShape<T> {
+ *   abstract area(): number;
+ * }
+ */
+export interface IClassDeclarationNode extends IASTNode {
+  readonly type: ASTNodeType.CLASS_DECLARATION;
+  readonly name: IIdentifierNode;
+  readonly superClass: IIdentifierNode | null;
+  readonly typeParameters: string | null; // Generic parameters: <T, U>
+  readonly body: IClassBodyNode;
+  readonly abstract: boolean;
+}
+
+/**
+ * Class Body
+ *
+ * Container for class members (properties, methods, constructor)
+ */
+export interface IClassBodyNode extends IASTNode {
+  readonly type: ASTNodeType.CLASS_BODY;
+  readonly members: Array<
+    IPropertyDefinitionNode | IMethodDefinitionNode | IConstructorDefinitionNode
+  >;
+}
+
+/**
+ * Property Definition
+ *
+ * @example
+ * public name: string;
+ * private static count = 0;
+ * protected readonly id: string;
+ */
+export interface IPropertyDefinitionNode extends IASTNode {
+  readonly type: ASTNodeType.PROPERTY_DEFINITION;
+  readonly name: IIdentifierNode;
+  readonly typeAnnotation: ITypeAnnotationNode | null;
+  readonly initializer: IASTNode | null; // Expression node
+  readonly static: boolean;
+  readonly readonly: boolean;
+  readonly accessModifier: 'public' | 'private' | 'protected' | null;
+}
+
+/**
+ * Method Definition
+ *
+ * @example
+ * public greet(): string { return "Hello"; }
+ * private static getInstance(): App { }
+ * protected async fetchData(): Promise<Data> { }
+ * public get name(): string { }
+ * public set name(value: string) { }
+ */
+export interface IMethodDefinitionNode extends IASTNode {
+  readonly type: ASTNodeType.METHOD_DEFINITION;
+  readonly name: IIdentifierNode;
+  readonly kind: 'method' | 'get' | 'set';
+  readonly parameters: IParameterNode[];
+  readonly returnType: ITypeAnnotationNode | null;
+  readonly body: IBlockStatementNode;
+  readonly static: boolean;
+  readonly async: boolean;
+  readonly generator: boolean;
+  readonly abstract: boolean;
+  readonly accessModifier: 'public' | 'private' | 'protected' | null;
+}
+
+/**
+ * Constructor Definition
+ *
+ * @example
+ * constructor(name: string, age: number) {
+ *   this.name = name;
+ *   this.age = age;
+ * }
+ */
+export interface IConstructorDefinitionNode extends IASTNode {
+  readonly type: ASTNodeType.CONSTRUCTOR_DEFINITION;
+  readonly parameters: IParameterNode[];
+  readonly body: IBlockStatementNode;
 }
