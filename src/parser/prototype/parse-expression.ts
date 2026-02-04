@@ -182,7 +182,7 @@ function _parsePostfixExpression(this: IParserInternal): any {
 
     const endToken = this._expect('RPAREN', 'Expected ")" after arguments');
 
-    return {
+    const callExpression = {
       type: ASTNodeType.CALL_EXPRESSION,
       callee: identifier,
       arguments: args,
@@ -195,6 +195,13 @@ function _parsePostfixExpression(this: IParserInternal): any {
         },
       },
     };
+
+    // Check for chained member access after call: identifier().property
+    if (this._check('DOT')) {
+      return _parseMemberAccess.call(this, callExpression);
+    }
+
+    return callExpression;
   }
 
   // Check for member access: identifier.property

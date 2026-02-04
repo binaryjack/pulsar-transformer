@@ -16,9 +16,9 @@ const DEFAULT_CONFIG: Required<IEmitterConfig> = {
   sourceMaps: false,
   minify: false,
   runtimePaths: {
-    core: '@pulsar/runtime',
-    jsxRuntime: '@pulsar/runtime/jsx-runtime',
-    registry: '@pulsar/runtime/registry',
+    core: '@pulsar-framework/pulsar.dev',
+    jsxRuntime: '@pulsar-framework/pulsar.dev/jsx-runtime',
+    registry: '@pulsar-framework/pulsar.dev',
   },
 };
 

@@ -19,9 +19,9 @@ export function _emitComponent(this: IEmitterInternal, ir: IComponentIR): void {
     this.context.imports.addImport(this.context.config.runtimePaths.core!, 'createSignal');
   }
 
-  // Generate function signature
+  // Generate function signature (no type annotations for browser compatibility)
   const paramList = params.map((p) => p.name).join(', ');
-  this._addLine(`export function ${name}(${paramList}): HTMLElement {`);
+  this._addLine(`function ${name}(${paramList}) {`);
   this.context.indentLevel++;
 
   // Generate registry wrapper

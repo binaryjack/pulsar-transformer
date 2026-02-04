@@ -15,6 +15,20 @@ import type { IEmitterInternal } from '../emitter.types.js';
  */
 export function _emitStatement(this: IEmitterInternal, ir: IIRNode): void {
   switch (ir.type) {
+    // Top-level statement types
+    case IRNodeType.COMPONENT_IR:
+      this._emitComponent(ir);
+      break;
+
+    case IRNodeType.IMPORT:
+      this._emitImport(ir);
+      break;
+
+    case IRNodeType.EXPORT:
+      this._emitExport(ir);
+      break;
+
+    // Function body statement types
     case IRNodeType.RETURN_STATEMENT_IR:
       // Return statement - emit the argument
       const returnIR = ir as any;

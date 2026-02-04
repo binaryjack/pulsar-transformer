@@ -53,14 +53,27 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
     case IRNodeType.ELEMENT_IR: {
       const elementIR = ir as any;
 
+      // DEBUG: Log element structure
+      if (elementIR.tagName === 'h1' || elementIR.tagName === 'p') {
+        console.log(`[EMIT DEBUG] Element ${elementIR.tagName} children:`, elementIR.children);
+      }
+
       // Add runtime import
-      this.context.imports.addImport(this.context.config.runtimePaths.core!, 't_element');
+      this.context.imports.addImport(this.context.config.runtimePaths.jsxRuntime!, 't_element');
 
       // Props object from attributes
       const attributes = elementIR.attributes || [];
       const propsStr =
         attributes.length > 0
-          ? `{ ${attributes.map((attr: any) => `${attr.name}: ${this._emitExpression(attr.value)}`).join(', ')} }`
+          ? `{ ${attributes
+              .map((attr: any) => {
+                const value =
+                  attr.value?.value !== undefined
+                    ? JSON.stringify(attr.value.value)
+                    : this._emitExpression(attr.value);
+                return `${attr.name}: ${value}`;
+              })
+              .join(', ')} }`
           : 'null';
 
       // Children array

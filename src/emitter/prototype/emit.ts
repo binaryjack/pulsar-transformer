@@ -70,8 +70,24 @@ export function emit(this: IEmitterInternal, ir: IIRNode): string {
       // Handle program with multiple statements
       const programIR = ir as any;
       if (programIR.children && Array.isArray(programIR.children)) {
+        // DEBUG: Log children types
+        console.log(
+          '[EMIT DEBUG] PROGRAM_IR children:',
+          programIR.children.map((c: any) => c.type)
+        );
+
         for (const node of programIR.children) {
-          this.emit(node);
+          // Skip non-statement IR nodes (like IdentifierIR)
+          if (
+            node.type === IRNodeType.IDENTIFIER_IR ||
+            node.type === IRNodeType.LITERAL_IR ||
+            node.type === IRNodeType.CALL_EXPRESSION_IR
+          ) {
+            console.log(`[EMIT DEBUG] Skipping expression-level IR in PROGRAM_IR: ${node.type}`);
+            continue;
+          }
+
+          this._emitStatement(node);
         }
       }
       break;
