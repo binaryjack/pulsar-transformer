@@ -42,6 +42,8 @@ export enum ASTNodeType {
   COMPONENT_DECLARATION = 'ComponentDeclaration',
   VARIABLE_DECLARATION = 'VariableDeclaration',
   FUNCTION_DECLARATION = 'FunctionDeclaration',
+  INTERFACE_DECLARATION = 'InterfaceDeclaration',
+  TYPE_ALIAS = 'TypeAlias',
   TYPE_ANNOTATION = 'TypeAnnotation',
   IMPORT_DECLARATION = 'ImportDeclaration',
   EXPORT_DECLARATION = 'ExportDeclaration',
