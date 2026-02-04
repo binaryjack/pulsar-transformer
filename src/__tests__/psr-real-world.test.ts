@@ -3,7 +3,7 @@
  * Testing the full PSR transformation pipeline with real-world components
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createPipeline } from '../pipeline/create-pipeline.js';
 
 describe('PSR Real-World Component Transformation', () => {
