@@ -57,6 +57,22 @@ export function parseInterfaceDeclaration(this: IParserInternal): IInterfaceDecl
     },
   };
 
+  // Skip generic type parameters if present: <T>, <T, U>
+  if (this._check('LT')) {
+    this._advance(); // consume <
+    let angleDepth = 1;
+
+    while (!this._isAtEnd() && angleDepth > 0) {
+      const token = this._getCurrentToken();
+      if (!token) break;
+
+      if (token.type === 'LT') angleDepth++;
+      else if (token.type === 'GT') angleDepth--;
+
+      this._advance();
+    }
+  }
+
   // Optional extends clause
   let extendsTypes: IIdentifierNode[] | undefined;
   if (this._check('EXTENDS')) {
