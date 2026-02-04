@@ -197,11 +197,11 @@ export function _parseContinueStatement(this: IParserInternal): IContinueStateme
 function _parseSimpleExpression(this: IParserInternal): IASTNode {
   const token = this._getCurrentToken();
 
-  if (token.type === TokenType.IDENTIFIER) {
+  if (token!.type === TokenType.IDENTIFIER) {
     this._advance();
     return {
       type: ASTNodeType.IDENTIFIER,
-      name: token.value,
+      name: token!.value,
       location: {
         start: {
           line: token.line,
@@ -210,7 +210,7 @@ function _parseSimpleExpression(this: IParserInternal): IASTNode {
         },
         end: {
           line: token.line,
-          column: token.column + token.value.length,
+          column: token.column + token!.value.length,
           offset: token.end,
         },
       },
@@ -226,7 +226,7 @@ function _parseSimpleExpression(this: IParserInternal): IASTNode {
     this._advance();
     return {
       type: ASTNodeType.LITERAL,
-      value: token.value,
+      value: token!.value,
       location: {
         start: {
           line: token.line,
@@ -235,7 +235,7 @@ function _parseSimpleExpression(this: IParserInternal): IASTNode {
         },
         end: {
           line: token.line,
-          column: token.column + token.value.length,
+          column: token.column + token!.value.length,
           offset: token.end,
         },
       },
@@ -243,7 +243,7 @@ function _parseSimpleExpression(this: IParserInternal): IASTNode {
   }
 
   // Handle 'new Error(...)' for throw statements
-  if (token.type === TokenType.IDENTIFIER && token.value === 'new') {
+  if (token!.type === TokenType.IDENTIFIER && token!.value === 'new') {
     this._advance(); // Consume 'new'
 
     const constructorToken = this._getCurrentToken();
@@ -286,5 +286,5 @@ function _parseSimpleExpression(this: IParserInternal): IASTNode {
     };
   }
 
-  throw new Error(`Unexpected token in expression: ${token.value}`);
+  throw new Error(`Unexpected token in expression: ${token!.value}`);
 }

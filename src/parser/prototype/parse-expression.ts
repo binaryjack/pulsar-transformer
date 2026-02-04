@@ -323,7 +323,7 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
   // Could be arrow function or grouping
   // Parse as parameters first, save state
   const params: any[] = [];
-  const savedPosition = this._currentPosition;
+  // Position tracking removed
 
   try {
     // Try parsing as arrow function parameters
@@ -331,7 +331,7 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
       const currentToken = this._getCurrentToken();
       if (!currentToken || currentToken!.type !== 'IDENTIFIER') {
         // Not a parameter list, must be grouping
-        this._currentPosition = savedPosition;
+        // Position restore removed
         const expr = this._parseExpression();
         this._expect('RPAREN', 'Expected ")"');
         return expr;
@@ -382,7 +382,7 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
     return params[0];
   } catch (e) {
     // Failed to parse as arrow function, try as grouping
-    this._currentPosition = savedPosition;
+    // Position restore removed
     const expr = this._parseExpression();
     this._expect('RPAREN', 'Expected ")"');
     return expr;
@@ -456,7 +456,7 @@ const _parseExportDeclaration = parseExportDeclaration;
 // Export helper methods for prototype attachment
 export {
   _parseArrowFunctionOrGrouping,
-  _parseCallOrIdentifier,
+  
   _parseExportDeclaration,
   _parseExpressionStatement,
   _parseLiteral,

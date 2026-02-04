@@ -175,11 +175,11 @@ function parseExpression(this: IParserInternal): IASTNode {
   // For now, just grab the identifier or literal
   const token = this._getCurrentToken();
 
-  if (token.type === TokenType.IDENTIFIER) {
+  if (token!.type === TokenType.IDENTIFIER) {
     this._advance();
     return {
       type: ASTNodeType.IDENTIFIER,
-      name: token.value,
+      name: token!.value,
       location: {
         start: {
           line: token.line,
@@ -188,18 +188,18 @@ function parseExpression(this: IParserInternal): IASTNode {
         },
         end: {
           line: token.line,
-          column: token.column + token.value.length,
+          column: token.column + token!.value.length,
           offset: token.end,
         },
       },
     };
   }
 
-  if (token.type === TokenType.NUMBER || token.type === TokenType.STRING) {
+  if (token!.type === TokenType.NUMBER || token.type === TokenType.STRING) {
     this._advance();
     return {
       type: ASTNodeType.LITERAL,
-      value: token.value,
+      value: token!.value,
       location: {
         start: {
           line: token.line,
@@ -208,12 +208,12 @@ function parseExpression(this: IParserInternal): IASTNode {
         },
         end: {
           line: token.line,
-          column: token.column + token.value.length,
+          column: token.column + token!.value.length,
           offset: token.end,
         },
       },
     };
   }
 
-  throw new Error(`Unexpected token in expression: ${token.value}`);
+  throw new Error(`Unexpected token in expression: ${token!.value}`);
 }
