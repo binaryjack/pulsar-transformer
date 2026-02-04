@@ -6,7 +6,7 @@
 
 import { Lexer } from './lexer.js';
 import type { ILexer, ILexerConfig } from './lexer.types.js';
-import './prototype'; // Ensure prototype methods are attached
+import './prototype/index.js'; // Ensure prototype methods are attached
 
 /**
  * Create a new PSR lexer

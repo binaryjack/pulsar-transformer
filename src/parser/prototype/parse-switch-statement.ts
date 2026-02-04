@@ -10,11 +10,8 @@ import type { IParserInternal } from '../parser.types.js';
 export function _parseSwitchStatement(this: IParserInternal): ISwitchStatementNode {
   const startToken = this._getCurrentToken();
 
-  // Expect 'switch'
-  if (
-    this._getCurrentToken()!.type !== TokenType.IDENTIFIER ||
-    this._getCurrentToken()!.value !== 'switch'
-  ) {
+  // Expect 'switch' keyword
+  if (!this._check('SWITCH')) {
     throw new Error(`Expected 'switch', got ${this._getCurrentToken()!.value}`);
   }
 

@@ -7,6 +7,7 @@
 import type { IASTNode, IProgramNode } from '../ast/index.js';
 import { ASTNodeType } from '../ast/index.js';
 import { createLexer } from '../lexer/index.js';
+import { TokenType } from '../lexer/token-types.js';
 import type { IParserInternal } from '../parser.types.js';
 
 /**
@@ -118,7 +119,7 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
   }
 
   // Namespace/Module declaration
-  if (token.value === 'namespace' || token.value === 'module') {
+  if (token.type === TokenType.NAMESPACE || token.type === TokenType.MODULE) {
     return this._parseNamespaceDeclaration();
   }
 
@@ -143,8 +144,28 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
   }
 
   // Try/catch/finally statement
-  if (token.value === 'try') {
+  if (token.type === TokenType.TRY) {
     return this._parseTryStatement();
+  }
+
+  // Switch statement
+  if (token.type === TokenType.SWITCH) {
+    return this._parseSwitchStatement();
+  }
+
+  // For loop
+  if (token.type === TokenType.FOR) {
+    return this._parseForStatement();
+  }
+
+  // While loop
+  if (token.type === TokenType.WHILE) {
+    return this._parseWhileStatement();
+  }
+
+  // Do-while loop
+  if (token.type === TokenType.DO) {
+    return this._parseDoWhileStatement();
   }
 
   // Throw statement

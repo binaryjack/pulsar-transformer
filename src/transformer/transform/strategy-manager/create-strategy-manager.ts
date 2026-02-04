@@ -7,7 +7,7 @@ import type {
   ITransformStrategyManager,
 } from '../transform-strategy.types.js';
 import { TransformStrategyManager } from './strategy-manager.js';
-import './strategy-manager.prototype';
+import './strategy-manager.prototype.js';
 
 export function createTransformStrategyManager(
   config?: ITransformStrategyConfig

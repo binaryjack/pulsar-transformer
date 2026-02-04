@@ -6,7 +6,7 @@
 
 import { Parser } from './parser.js';
 import type { IParser, IParserConfig } from './parser.types.js';
-import './prototype'; // Ensure prototype methods are attached
+import './prototype/index.js'; // Ensure prototype methods are attached
 
 /**
  * Create a Parser instance

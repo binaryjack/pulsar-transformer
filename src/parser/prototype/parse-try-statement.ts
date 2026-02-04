@@ -15,11 +15,8 @@ import type { IParserInternal } from '../parser.types.js';
 export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
   const startToken = this._getCurrentToken();
 
-  // Expect 'try'
-  if (
-    this._getCurrentToken()!.type !== TokenType.IDENTIFIER ||
-    this._getCurrentToken()!.value !== 'try'
-  ) {
+  // Expect 'try' keyword
+  if (!this._check('TRY')) {
     throw new Error(`Expected 'try', got ${this._getCurrentToken()!.value}`);
   }
 
@@ -67,7 +64,9 @@ export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
 
       // Expect closing paren
       if (this._getCurrentToken()!.type !== TokenType.RPAREN) {
-        throw new Error(`Expected ')' after catch parameter, got ${this._getCurrentToken()!.value}`);
+        throw new Error(
+          `Expected ')' after catch parameter, got ${this._getCurrentToken()!.value}`
+        );
       }
 
       this._advance(); // Consume ')'
@@ -188,4 +187,3 @@ function _parseBlockStatement(this: IParserInternal): IBlockStatementNode {
     },
   };
 }
-

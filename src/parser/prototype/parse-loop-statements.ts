@@ -16,11 +16,8 @@ import type { IParserInternal } from '../parser.types.js';
 export function _parseForStatement(this: IParserInternal): IForStatementNode {
   const startToken = this._getCurrentToken();
 
-  // Expect 'for'
-  if (
-    this._getCurrentToken()!.type !== TokenType.IDENTIFIER ||
-    this._getCurrentToken()!.value !== 'for'
-  ) {
+  // Expect 'for' keyword
+  if (!this._check('FOR')) {
     throw new Error(`Expected 'for', got ${this._getCurrentToken()!.value}`);
   }
 
@@ -102,11 +99,8 @@ export function _parseForStatement(this: IParserInternal): IForStatementNode {
 export function _parseWhileStatement(this: IParserInternal): IWhileStatementNode {
   const startToken = this._getCurrentToken();
 
-  // Expect 'while'
-  if (
-    this._getCurrentToken()!.type !== TokenType.IDENTIFIER ||
-    this._getCurrentToken()!.value !== 'while'
-  ) {
+  // Expect 'while' keyword
+  if (!this._check('WHILE')) {
     throw new Error(`Expected 'while', got ${this._getCurrentToken()!.value}`);
   }
 
@@ -160,11 +154,8 @@ export function _parseWhileStatement(this: IParserInternal): IWhileStatementNode
 export function _parseDoWhileStatement(this: IParserInternal): IDoWhileStatementNode {
   const startToken = this._getCurrentToken();
 
-  // Expect 'do'
-  if (
-    this._getCurrentToken()!.type !== TokenType.IDENTIFIER ||
-    this._getCurrentToken()!.value !== 'do'
-  ) {
+  // Expect 'do' keyword
+  if (!this._check('DO')) {
     throw new Error(`Expected 'do', got ${this._getCurrentToken()!.value}`);
   }
 
@@ -173,11 +164,8 @@ export function _parseDoWhileStatement(this: IParserInternal): IDoWhileStatement
   // Parse body (must be block statement for AST)
   const body = _parseLoopBody.call(this) as IBlockStatementNode;
 
-  // Expect 'while'
-  if (
-    this._getCurrentToken()!.type !== TokenType.IDENTIFIER ||
-    this._getCurrentToken()!.value !== 'while'
-  ) {
+  // Expect 'while' keyword
+  if (!this._check('WHILE')) {
     throw new Error(`Expected 'while' after do body, got ${this._getCurrentToken()!.value}`);
   }
 

@@ -4,7 +4,7 @@
 
 import { Analyzer } from './analyzer.js';
 import type { IAnalyzer, IAnalyzerConfig } from './analyzer.types.js';
-import './prototype'; // Ensure prototype methods attached
+import './prototype/index.js'; // Ensure prototype methods attached
 
 /**
  * Create an Analyzer instance

@@ -10,11 +10,11 @@ import type { IParserInternal } from '../parser.types.js';
 export function _parseNamespaceDeclaration(this: IParserInternal): INamespaceDeclarationNode {
   const startToken = this._getCurrentToken();
 
-  // Expect 'namespace' or 'module'
-  if (
-    this._getCurrentToken()!.type !== TokenType.IDENTIFIER ||
-    (this._getCurrentToken()!.value !== 'namespace' && this._getCurrentToken()!.value !== 'module')
-  ) {
+  // Expect 'namespace' or 'module' keyword
+  const isNamespace = this._check('NAMESPACE');
+  const isModule = this._check('MODULE');
+
+  if (!isNamespace && !isModule) {
     throw new Error(`Expected 'namespace' or 'module', got ${this._getCurrentToken()!.value}`);
   }
 
@@ -42,38 +42,10 @@ export function _parseNamespaceDeclaration(this: IParserInternal): INamespaceDec
     this._getCurrentToken()!.type !== TokenType.RBRACE &&
     this._getCurrentToken()!.type !== TokenType.EOF
   ) {
-    // Parse each declaration
-    const token = this._getCurrentToken();
-
-    if (token!.type === TokenType.IDENTIFIER) {
-      // Variable, function, class, interface, enum, namespace, etc.
-      if (token!.value === 'var' || token!.value === 'let' || token!.value === 'const') {
-        body.push(this._parseVariableDeclaration());
-      } else if (token!.value === 'function') {
-        body.push(this._parseFunctionDeclaration());
-      } else if (token!.value === 'class') {
-        body.push(this._parseClassDeclaration());
-      } else if (token!.value === 'interface') {
-        body.push(this._parseInterfaceDeclaration());
-      } else if (token!.value === 'enum') {
-        body.push(this._parseEnumDeclaration());
-      } else if (token!.value === 'namespace' || token!.value === 'module') {
-        // Nested namespace
-        body.push(this._parseNamespaceDeclaration());
-      } else if (token!.value === 'export') {
-        // Skip export keyword and parse next
-        this._advance();
-        continue;
-      } else if (token!.value === 'type') {
-        // Type alias - skip for now
-        this._skipTypeAlias();
-      } else {
-        // Unknown - skip
-        this._advance();
-      }
-    } else {
-      // Skip unknown tokens
-      this._advance();
+    // Use _parseStatement to handle all statement types
+    const statement = this._parseStatement();
+    if (statement) {
+      body.push(statement);
     }
   }
 
