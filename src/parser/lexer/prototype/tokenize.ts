@@ -321,6 +321,7 @@ function _readSingleChar(
     '*': TokenType.ASTERISK,
     '=': TokenType.ASSIGN,
     '|': TokenType.PIPE,
+    '&': TokenType.AMPERSAND,
   };
 
   const type = singleCharTokens[char];

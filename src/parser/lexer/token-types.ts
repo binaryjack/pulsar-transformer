@@ -35,6 +35,7 @@ export enum TokenType {
   DIVIDE = 'DIVIDE', // /
   ARROW = 'ARROW', // =>
   PIPE = 'PIPE', // | (for union types)
+  AMPERSAND = 'AMPERSAND', // & (for intersection types)
 
   // Delimiters
   LPAREN = 'LPAREN', // (
