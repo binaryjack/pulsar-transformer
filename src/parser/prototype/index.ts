@@ -21,6 +21,8 @@ import {
 } from './parse-expression.js';
 import { parseFunctionDeclaration } from './parse-function-declaration.js';
 import { parseImportDeclaration } from './parse-import-declaration.js';
+import { parseInterfaceDeclaration } from './parse-interface-declaration.js';
+import { parseTypeAlias } from './parse-type-alias.js';
 import {
   _isClosingTag,
   _parsePSRAttribute,
@@ -144,6 +146,20 @@ Object.defineProperty(Parser.prototype, '_parseVariableDeclaration', {
 
 Object.defineProperty(Parser.prototype, '_parseFunctionDeclaration', {
   value: parseFunctionDeclaration,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseInterfaceDeclaration', {
+  value: parseInterfaceDeclaration,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseTypeAlias', {
+  value: parseTypeAlias,
   writable: true,
   enumerable: false,
   configurable: false,

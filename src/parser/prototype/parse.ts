@@ -78,6 +78,16 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
     return this._parseFunctionDeclaration();
   }
 
+  // Interface declaration
+  if (token.value === 'interface') {
+    return this._parseInterfaceDeclaration();
+  }
+
+  // Type alias declaration
+  if (token.value === 'type') {
+    return this._parseTypeAlias();
+  }
+
   // Import declaration
   if (token.value === 'import') {
     return this._parseImportDeclaration();
