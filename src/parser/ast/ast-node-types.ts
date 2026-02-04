@@ -89,7 +89,6 @@ export enum ASTNodeType {
   ARROW_FUNCTION = 'ArrowFunction',
   BINARY_EXPRESSION = 'BinaryExpression',
   MEMBER_EXPRESSION = 'MemberExpression',
-  AWAIT_EXPRESSION = 'AwaitExpression',
   ARRAY_PATTERN = 'ArrayPattern',
   OBJECT_PATTERN = 'ObjectPattern',
 

@@ -159,8 +159,9 @@ describe('Lexer', () => {
     it('should throw on unexpected character', () => {
       const lexer = createLexer();
 
-      expect(() => lexer.tokenize('@')).toThrow(/PSR-E001/);
+      // @ is now valid (decorator token), test # instead
       expect(() => lexer.tokenize('#')).toThrow(/PSR-E001/);
+      expect(() => lexer.tokenize('$')).toThrow(/PSR-E001/);
     });
   });
 
