@@ -67,7 +67,29 @@ export function _parseClassDeclaration(this: IParserInternal): IClassDeclaration
   // Parse optional type parameters: <T, U>
   let typeParameters: string | null = null;
   if (this._check('LT')) {
-    typeParameters = this._parseTypeParameters();
+    const typeParamTokens: string[] = [];
+    this._advance(); // consume <
+    let angleDepth = 1;
+
+    while (!this._isAtEnd() && angleDepth > 0) {
+      const token = this._getCurrentToken();
+      if (!token) break;
+
+      typeParamTokens.push(token.value);
+
+      if (token.type === 'LT') angleDepth++;
+      else if (token.type === 'GT') {
+        angleDepth--;
+        if (angleDepth === 0) {
+          this._advance(); // consume final >
+          break;
+        }
+      }
+
+      this._advance();
+    }
+
+    typeParameters = typeParamTokens.join('');
   }
 
   // Parse optional extends clause
