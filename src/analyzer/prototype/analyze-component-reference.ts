@@ -4,10 +4,10 @@
  * Converts PSR component references (<Card />) to ComponentCallIR
  */
 
-import type { IPSRComponentReferenceNode } from '../../parser/ast/index.js';
-import type { IAnalyzerInternal } from '../analyzer.types.js';
-import type { IAttributeIR, IComponentCallIR } from '../ir/ir-node-types.js';
-import { IRNodeType } from '../ir/ir-node-types.js';
+import type { IPSRComponentReferenceNode } from '../../parser/ast/index.js'
+import type { IAnalyzerInternal } from '../analyzer.types.js'
+import type { IAttributeIR, IComponentCallIR, IIRNode } from '../ir/ir-node-types.js'
+import { IRNodeType } from '../ir/ir-node-types.js'
 
 /**
  * Analyze a component reference
@@ -43,7 +43,7 @@ export function analyzeComponentReference(
     .filter((a): a is IAttributeIR => a !== null);
 
   // Analyze children
-  const children = node.children.map((child: any) => this._analyzeNode(child));
+  const children = node.children.map((child: any) => this._analyzeNode(child)).filter((child: IIRNode | null) => child !== null);
 
   return {
     type: IRNodeType.COMPONENT_CALL_IR,

@@ -80,6 +80,14 @@ function _analyzeNode(this: IAnalyzerInternal, node: IASTNode): IIRNode | null {
     case ASTNodeType.RETURN_STATEMENT:
       return this._analyzeReturn(node);
 
+    case ASTNodeType.IF_STATEMENT:
+      return this._analyzeIfStatement(node);
+
+    case ASTNodeType.BLOCK_STATEMENT:
+      // Block statements are handled by analyzing their body statements
+      // Return null for the block itself, as its statements are processed inline
+      return null;
+
     case ASTNodeType.IMPORT_DECLARATION:
       return this._analyzeImport(node);
 
@@ -109,6 +117,7 @@ function _analyzeNode(this: IAnalyzerInternal, node: IASTNode): IIRNode | null {
     case ASTNodeType.ARROW_FUNCTION:
     case ASTNodeType.MEMBER_EXPRESSION:
     case ASTNodeType.BINARY_EXPRESSION:
+    case ASTNodeType.UNARY_EXPRESSION:
     case ASTNodeType.CONDITIONAL_EXPRESSION:
       return this._analyzeExpression(node);
 

@@ -4,9 +4,9 @@
  * Converts expression AST nodes to IR.
  */
 
-import type { IASTNode } from '../../parser/ast/index.js';
-import { ASTNodeType } from '../../parser/ast/index.js';
-import type { IAnalyzerInternal } from '../analyzer.types.js';
+import type { IASTNode } from '../../parser/ast/index.js'
+import { ASTNodeType } from '../../parser/ast/index.js'
+import type { IAnalyzerInternal } from '../analyzer.types.js'
 import type {
   IArrowFunctionIR,
   IBinaryExpressionIR,
@@ -16,8 +16,9 @@ import type {
   IIRNode,
   ILiteralIR,
   IMemberExpressionIR,
-} from '../ir/index.js';
-import { IRNodeType } from '../ir/index.js';
+  IUnaryExpressionIR,
+} from '../ir/index.js'
+import { IRNodeType } from '../ir/index.js'
 
 /**
  * Analyze expression node
@@ -38,6 +39,9 @@ export function analyzeExpression(this: IAnalyzerInternal, node: IASTNode): IIRN
 
     case ASTNodeType.BINARY_EXPRESSION:
       return this._analyzeBinaryExpression(node as any);
+
+    case ASTNodeType.UNARY_EXPRESSION:
+      return this._analyzeUnaryExpression(node as any);
 
     case ASTNodeType.MEMBER_EXPRESSION:
       return this._analyzeMemberExpression(node as any);
@@ -111,7 +115,7 @@ function _analyzeIdentifier(this: IAnalyzerInternal, node: any): IIdentifierIR {
  */
 function _analyzeCallExpression(this: IAnalyzerInternal, node: any): ICallExpressionIR {
   const callee = this._analyzeNode(node.callee) as IIRNode;
-  const args = node.arguments.map((arg: any) => this._analyzeNode(arg));
+  const args = node.arguments.map((arg: any) => this._analyzeNode(arg)).filter((arg: IIRNode | null) => arg !== null);
 
   // Detect signal creation - support both signal() and createSignal()
   const calleeName = callee.type === IRNodeType.IDENTIFIER_IR ? (callee as any).name : null;
@@ -173,6 +177,31 @@ function _analyzeBinaryExpression(this: IAnalyzerInternal, node: any): IBinaryEx
 }
 
 /**
+ * Analyze unary expression
+ */
+function _analyzeUnaryExpression(this: IAnalyzerInternal, node: any): IUnaryExpressionIR {
+  const argument = this._analyzeNode(node.argument);
+
+  // Check for null argument (unsupported node type)
+  if (!argument) {
+    const argType = node.argument ? node.argument.type : 'null';
+    throw new Error(
+      `Unsupported node type '${argType}' in unary expression at ${node.location?.start?.line}:${node.location?.start?.column}`
+    );
+  }
+
+  return {
+    type: IRNodeType.UNARY_EXPRESSION_IR,
+    operator: node.operator,
+    argument,
+    prefix: node.prefix !== false, // Default to true
+    metadata: {
+      sourceLocation: node.location?.start,
+    },
+  };
+}
+
+/**
  * Analyze member expression
  */
 function _analyzeMemberExpression(this: IAnalyzerInternal, node: any): IMemberExpressionIR {
@@ -220,10 +249,10 @@ function _analyzeArrowFunction(this: IAnalyzerInternal, node: any): IArrowFuncti
   let body: IIRNode | IIRNode[];
   if (node.body && node.body.type === ASTNodeType.BLOCK_STATEMENT) {
     // Block body: () => { statements }
-    body = node.body.body.map((stmt: any) => this._analyzeNode(stmt));
+    body = node.body.body.map((stmt: any) => this._analyzeNode(stmt)).filter((stmt: IIRNode | null) => stmt !== null);
   } else if (Array.isArray(node.body)) {
     // Array of statements (shouldn't happen from parser, but handle it)
-    body = node.body.map((stmt: any) => this._analyzeNode(stmt));
+    body = node.body.map((stmt: any) => this._analyzeNode(stmt)).filter((stmt: IIRNode | null) => stmt !== null);
   } else {
     // Expression body: () => expression
     body = this._analyzeNode(node.body);
@@ -287,6 +316,8 @@ export {
   _analyzeIdentifier,
   _analyzeLiteral,
   _analyzeMemberExpression,
+  _analyzeUnaryExpression,
   _isFunctionPure,
-  _isParameter,
-};
+  _isParameter
+}
+

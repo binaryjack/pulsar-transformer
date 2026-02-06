@@ -16,6 +16,7 @@ export function emit(this: IEmitterInternal, ir: IIRNode): string {
   this.context.code = [];
   this.context.usedNames.clear();
   this.context.indentLevel = 0;
+  this.context._debugIterationCount = 0;
 
   // Emit based on IR type
   switch (ir.type) {

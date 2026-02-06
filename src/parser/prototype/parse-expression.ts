@@ -10,9 +10,9 @@
  * "hello"
  */
 
-import { ASTNodeType } from '../ast/index.js'
-import type { IParserInternal } from '../parser.types.js'
-import { parseExportDeclaration } from './parse-export-declaration.js'
+import { ASTNodeType } from '../ast/index.js';
+import type { IParserInternal } from '../parser.types.js';
+import { parseExportDeclaration } from './parse-export-declaration.js';
 
 /**
  * Parse expression
@@ -273,7 +273,7 @@ function _parsePrimaryExpression(this: IParserInternal): any {
   ) {
     const operator = this._advance();
     const argument = _parsePrimaryExpression.call(this); // Recursive for chained unary operators
-    
+
     return {
       type: ASTNodeType.UNARY_EXPRESSION,
       operator: operator.value,
@@ -284,15 +284,17 @@ function _parsePrimaryExpression(this: IParserInternal): any {
           column: operator.column,
           offset: operator.start,
         },
-        end: argument ? {
-          line: argument.location?.end?.line || operator.line,
-          column: argument.location?.end?.column || operator.column,
-          offset: argument.location?.end?.offset || operator.end,
-        } : {
-          line: operator.line,
-          column: operator.column,
-          offset: operator.end,
-        },
+        end: argument
+          ? {
+              line: argument.location?.end?.line || operator.line,
+              column: argument.location?.end?.column || operator.column,
+              offset: argument.location?.end?.offset || operator.end,
+            }
+          : {
+              line: operator.line,
+              column: operator.column,
+              offset: operator.end,
+            },
       },
     };
   }
@@ -456,7 +458,7 @@ function _parseTemplateLiteral(this: IParserInternal): any {
  */
 function _parseObjectLiteral(this: IParserInternal): any {
   let startToken;
-  
+
   try {
     startToken = this._expect('LBRACE', 'Expected "{"');
   } catch (e) {
@@ -717,7 +719,7 @@ function _parsePostfixExpression(this: IParserInternal): any {
       let argIndex = 0;
       do {
         let arg = this._parseExpression();
-        
+
         // Check for single-parameter arrow function: identifier => ...
         if (arg && arg.type === ASTNodeType.IDENTIFIER && this._check('ARROW')) {
           this._advance(); // consume =>
@@ -732,7 +734,7 @@ function _parsePostfixExpression(this: IParserInternal): any {
             },
           };
         }
-        
+
         if (arg) {
           args.push(arg);
         } else {
@@ -854,7 +856,7 @@ function _parseMemberAccess(this: IParserInternal, object: any): any {
         let argIndex = 0;
         do {
           let arg = this._parseExpression();
-          
+
           // Check for single-parameter arrow function: identifier => ...
           if (arg && arg.type === ASTNodeType.IDENTIFIER && this._check('ARROW')) {
             this._advance(); // consume =>
@@ -869,7 +871,7 @@ function _parseMemberAccess(this: IParserInternal, object: any): any {
               },
             };
           }
-          
+
           if (arg) {
             args.push(arg);
           } else {
@@ -1067,6 +1069,24 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
       }
 
       const paramToken = currentToken;
+
+      // Before committing to arrow function parameter parsing,
+      // check if the next token is valid for parameters
+      // Valid: ), ,, or : (for type annotation)
+      // Invalid: operators like ||, &&, +, -, etc.
+      const peekToken = this._peek(1); // Look ahead to next token after identifier
+      if (
+        peekToken &&
+        peekToken.type !== 'RPAREN' &&
+        peekToken.type !== 'COMMA' &&
+        peekToken.type !== 'COLON'
+      ) {
+        // Not arrow function parameters, parse as grouping expression
+        const expr = this._parseExpression();
+        this._expect('RPAREN', 'Expected ")"');
+        return expr;
+      }
+
       this._advance();
 
       params.push({
@@ -1295,6 +1315,5 @@ export {
   _parseExpressionStatement,
   _parseLiteral,
   _parseObjectLiteral,
-  _parseTemplateLiteral
-}
-
+  _parseTemplateLiteral,
+};

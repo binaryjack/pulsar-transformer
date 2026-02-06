@@ -14,7 +14,7 @@ export function _emitCallExpression(this: IEmitterInternal, ir: ICallExpressionI
   const { callee, arguments: args } = ir;
 
   const calleeName = this._emitExpression(callee);
-  const argsList = args.map((arg) => this._emitExpression(arg)).join(', ');
+  const argsList = args.map((arg) => this._emitExpression(arg)).filter((arg: string | null) => arg !== null).join(', ');
 
   this._addLine(`${calleeName}(${argsList})`);
 }

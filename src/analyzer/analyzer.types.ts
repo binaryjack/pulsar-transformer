@@ -2,14 +2,15 @@
  * Analyzer Type Definitions
  */
 
-import type { IASTNode } from '../parser/ast/index.js'
+import type { IASTNode } from '../parser/ast/index.js';
 import type {
   IBinaryExpressionIR,
   IConditionalExpressionIR,
   IIdentifierIR,
   IIRNode,
   IMemberExpressionIR,
-} from './ir/index.js'
+  IUnaryExpressionIR,
+} from './ir/index.js';
 
 /**
  * Analyzer Interface
@@ -53,6 +54,7 @@ export interface IAnalyzerInternal extends IAnalyzer {
   _analyzeExpression(node: any): IIRNode;
   _analyzeVariable(node: any): IIRNode;
   _analyzeReturn(node: any): IIRNode;
+  _analyzeIfStatement(node: any): IIRNode;
   _analyzeImport(node: any): IIRNode;
   _analyzeExport(node: any): IIRNode;
 
@@ -69,6 +71,7 @@ export interface IAnalyzerInternal extends IAnalyzer {
   _analyzeCallExpression(node: any): IIRNode;
   _analyzeArrowFunction(node: any): IIRNode;
   _analyzeBinaryExpression(node: any): IBinaryExpressionIR;
+  _analyzeUnaryExpression(node: any): IUnaryExpressionIR;
   _analyzeMemberExpression(node: any): IMemberExpressionIR;
   _analyzeConditionalExpression(node: any): IConditionalExpressionIR;
 

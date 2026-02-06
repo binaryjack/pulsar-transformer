@@ -40,6 +40,44 @@ export function _emitStatement(this: IEmitterInternal, ir: IIRNode): void {
       }
       break;
 
+    case IRNodeType.IF_STATEMENT_IR:
+      // If statement - emit test, consequent, and optional alternate
+      const ifStmt = ir as any;
+      const test = this._emitExpression(ifStmt.test);
+      this._addLine(`if (${test}) {`);
+      this.context.indentLevel++;
+
+      // Emit consequent
+      if (Array.isArray(ifStmt.consequent)) {
+        for (const stmt of ifStmt.consequent) {
+          this._emitStatement(stmt);
+        }
+      } else {
+        this._emitStatement(ifStmt.consequent);
+      }
+
+      this.context.indentLevel--;
+
+      // Emit alternate (else clause) if present
+      if (ifStmt.alternate) {
+        this._addLine('} else {');
+        this.context.indentLevel++;
+
+        if (Array.isArray(ifStmt.alternate)) {
+          for (const stmt of ifStmt.alternate) {
+            this._emitStatement(stmt);
+          }
+        } else {
+          this._emitStatement(ifStmt.alternate);
+        }
+
+        this.context.indentLevel--;
+        this._addLine('}');
+      } else {
+        this._addLine('}');
+      }
+      break;
+
     case IRNodeType.VARIABLE_DECLARATION_IR:
       this._emitVariableDeclaration(ir);
       break;

@@ -14,6 +14,29 @@ import type { IEmitterInternal } from '../emitter.types.js';
  * Does NOT modify context (no _addLine, no indent changes)
  */
 export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
+  // Increment iteration counter with safety check
+  if (
+    this.context._debugIterationCount !== undefined &&
+    this.context._maxIterations !== undefined
+  ) {
+    this.context._debugIterationCount++;
+
+    // Log every 1000 iterations
+    if (this.context._debugIterationCount % 1000 === 0) {
+      console.log(
+        `[EMITTER DEBUG] Iteration ${this.context._debugIterationCount} - Node type: ${ir.type}`
+      );
+    }
+
+    // Safety check - prevent infinite loops
+    if (this.context._debugIterationCount > this.context._maxIterations) {
+      throw new Error(
+        `[EMITTER] Exceeded maximum iterations (${this.context._maxIterations}). ` +
+          `Last node type: ${ir.type}. Possible infinite loop detected.`
+      );
+    }
+  }
+
   switch (ir.type) {
     case IRNodeType.LITERAL_IR: {
       const literalIR = ir as any;
@@ -47,7 +70,9 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
         calleeName = 'createSignal';
       }
 
-      const args = callIR.arguments.map((arg: IIRNode) => this._emitExpression(arg));
+      const args = callIR.arguments
+        .map((arg: IIRNode) => this._emitExpression(arg))
+        .filter((arg: string | null) => arg !== null);
       return `${calleeName}(${args.join(', ')})`;
     }
 
@@ -56,6 +81,18 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
       const left = this._emitExpression(binaryIR.left);
       const right = this._emitExpression(binaryIR.right);
       return `(${left} ${binaryIR.operator} ${right})`;
+    }
+
+    case IRNodeType.UNARY_EXPRESSION_IR: {
+      const unaryIR = ir as any;
+      const argument = this._emitExpression(unaryIR.argument);
+      // Prefix operators: !, -, +, ~, typeof, void, delete
+      // Postfix operators: ++, --
+      if (unaryIR.prefix !== false) {
+        return `(${unaryIR.operator}${argument})`;
+      } else {
+        return `(${argument}${unaryIR.operator})`;
+      }
     }
 
     case IRNodeType.MEMBER_EXPRESSION_IR: {
@@ -119,12 +156,14 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
         const childExprs = children
           .map((c: IIRNode) => {
             const childExpr = this._emitExpression(c);
+            if (!childExpr) return null; // Skip null expressions
             // Only wrap strings (LiteralIR) in Text nodes, not elements
             if (c.type === IRNodeType.LITERAL_IR) {
               return `document.createTextNode(${childExpr})`;
             }
             return childExpr;
           })
+          .filter((expr: string | null) => expr !== null)
           .join(', ');
 
         return `((${elVar}) => { ${elVar}.append(${childExprs}); return ${elVar}; })(t_element('${elementIR.tagName}', ${propsStr}))`;

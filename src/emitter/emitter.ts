@@ -36,6 +36,8 @@ export const Emitter = function (this: IEmitterInternal, config?: IEmitterConfig
     code: [],
     usedNames: new Set(),
     elementCounter: 0,
+    _debugIterationCount: 0,
+    _maxIterations: 5000, // Reduced from 100000 to trigger error faster
   };
 
   Object.defineProperty(this, 'context', {

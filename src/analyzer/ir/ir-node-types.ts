@@ -24,12 +24,14 @@ export enum IRNodeType {
   CALL_EXPRESSION_IR = 'CallExpressionIR',
   ARROW_FUNCTION_IR = 'ArrowFunctionIR',
   BINARY_EXPRESSION_IR = 'BinaryExpressionIR',
+  UNARY_EXPRESSION_IR = 'UnaryExpressionIR',
   MEMBER_EXPRESSION_IR = 'MemberExpressionIR',
   CONDITIONAL_EXPRESSION_IR = 'ConditionalExpressionIR',
 
   // Statement IR
   VARIABLE_DECLARATION_IR = 'VariableDeclarationIR',
   RETURN_STATEMENT_IR = 'ReturnStatementIR',
+  IF_STATEMENT_IR = 'IfStatementIR',
   IMPORT = 'ImportIR',
   EXPORT = 'ExportIR',
 
@@ -253,6 +255,16 @@ export interface IBinaryExpressionIR extends IIRNode {
 }
 
 /**
+ * Unary Expression IR Node
+ */
+export interface IUnaryExpressionIR extends IIRNode {
+  type: IRNodeType.UNARY_EXPRESSION_IR;
+  operator: string;
+  argument: IIRNode;
+  prefix: boolean;
+}
+
+/**
  * Member Expression IR Node
  */
 export interface IMemberExpressionIR extends IIRNode {
@@ -321,6 +333,16 @@ export interface IVariableDeclarationIR extends IIRNode {
 export interface IReturnStatementIR extends IIRNode {
   type: IRNodeType.RETURN_STATEMENT_IR;
   argument: IIRNode | null;
+}
+
+/**
+ * If Statement IR Node
+ */
+export interface IIfStatementIR extends IIRNode {
+  type: IRNodeType.IF_STATEMENT_IR;
+  test: IIRNode;
+  consequent: IIRNode | IIRNode[];
+  alternate: IIRNode | IIRNode[] | null;
 }
 
 /**

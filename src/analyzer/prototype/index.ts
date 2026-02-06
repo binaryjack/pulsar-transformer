@@ -2,13 +2,13 @@
  * Prototype method attachment for Analyzer
  */
 
-import { Analyzer } from '../analyzer.js'
+import { Analyzer } from '../analyzer.js';
 
 // Import analysis methods
-import { analyzeComponentReference } from './analyze-component-reference.js'
-import { _detectEventHandlers, _isPureComponent, analyzeComponent } from './analyze-component.js'
-import { _handlerAccessesSignals, analyzeElement } from './analyze-element.js'
-import { analyzeExport } from './analyze-export.js'
+import { analyzeComponentReference } from './analyze-component-reference.js';
+import { _detectEventHandlers, _isPureComponent, analyzeComponent } from './analyze-component.js';
+import { _handlerAccessesSignals, analyzeElement } from './analyze-element.js';
+import { analyzeExport } from './analyze-export.js';
 import {
   _analyzeArrowFunction,
   _analyzeBinaryExpression,
@@ -17,17 +17,19 @@ import {
   _analyzeIdentifier,
   _analyzeLiteral,
   _analyzeMemberExpression,
+  _analyzeUnaryExpression,
   _isFunctionPure,
   _isParameter,
   analyzeExpression,
-} from './analyze-expression.js'
-import { analyzeImport } from './analyze-import.js'
-import { analyzeReturn } from './analyze-return.js'
-import { _isInCurrentScope, analyzeSignalBinding } from './analyze-signal-binding.js'
-import { analyzeVariable } from './analyze-variable.js'
-import { _analyzeNode, analyze } from './analyze.js'
-import { getContext, getErrors, hasErrors } from './context.js'
-import { addError, enterScope, exitScope, isSignal, registerSignal } from './helpers.js'
+} from './analyze-expression.js';
+import { analyzeIfStatement } from './analyze-if-statement.js';
+import { analyzeImport } from './analyze-import.js';
+import { analyzeReturn } from './analyze-return.js';
+import { _isInCurrentScope, analyzeSignalBinding } from './analyze-signal-binding.js';
+import { analyzeVariable } from './analyze-variable.js';
+import { _analyzeNode, analyze } from './analyze.js';
+import { getContext, getErrors, hasErrors } from './context.js';
+import { addError, enterScope, exitScope, isSignal, registerSignal } from './helpers.js';
 
 // Attach public methods
 Analyzer.prototype.analyze = analyze;
@@ -87,6 +89,13 @@ Object.defineProperty(Analyzer.prototype, '_analyzeVariable', {
 
 Object.defineProperty(Analyzer.prototype, '_analyzeReturn', {
   value: analyzeReturn,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Analyzer.prototype, '_analyzeIfStatement', {
+  value: analyzeIfStatement,
   writable: true,
   enumerable: false,
   configurable: false,
@@ -173,6 +182,13 @@ Object.defineProperty(Analyzer.prototype, '_analyzeArrowFunction', {
 
 Object.defineProperty(Analyzer.prototype, '_analyzeBinaryExpression', {
   value: _analyzeBinaryExpression,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Analyzer.prototype, '_analyzeUnaryExpression', {
+  value: _analyzeUnaryExpression,
   writable: true,
   enumerable: false,
   configurable: false,

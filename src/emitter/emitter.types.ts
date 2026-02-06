@@ -73,6 +73,16 @@ export interface IEmitContext {
    * Counter for generating unique element variable names
    */
   elementCounter: number;
+
+  /**
+   * Debug iteration counter for detecting infinite loops
+   */
+  _debugIterationCount?: number;
+
+  /**
+   * Max iterations before throwing error (safety check)
+   */
+  _maxIterations?: number;
 }
 
 /**
