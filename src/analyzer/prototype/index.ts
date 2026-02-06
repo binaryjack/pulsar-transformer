@@ -17,6 +17,7 @@ import {
   _analyzeIdentifier,
   _analyzeLiteral,
   _analyzeMemberExpression,
+  _analyzeTemplateLiteral,
   _analyzeUnaryExpression,
   _isFunctionPure,
   _isParameter,
@@ -154,6 +155,13 @@ Object.defineProperty(Analyzer.prototype, '_isSignal', {
 // Attach expression analysis helpers
 Object.defineProperty(Analyzer.prototype, '_analyzeLiteral', {
   value: _analyzeLiteral,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Analyzer.prototype, '_analyzeTemplateLiteral', {
+  value: _analyzeTemplateLiteral,
   writable: true,
   enumerable: false,
   configurable: false,

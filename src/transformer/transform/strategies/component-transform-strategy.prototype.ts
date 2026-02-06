@@ -192,6 +192,57 @@ export function _generateReturnStatement(
 }
 
 /**
+ * Private: Convert IR expression to TypeScript expression (simplified)
+ */
+function irToTsExpression(ir: any): ts.Expression {
+  if (!ir) {
+    return ts.factory.createIdentifier('undefined');
+  }
+
+  switch (ir.type) {
+    case 'CallExpressionIR': {
+      const callee =
+        ir.callee.type === 'IdentifierIR'
+          ? ts.factory.createIdentifier(ir.callee.name)
+          : ts.factory.createIdentifier('unknown');
+
+      const args = (ir.arguments || []).map((arg: any) => irToTsExpression(arg));
+
+      return ts.factory.createCallExpression(callee, undefined, args);
+    }
+
+    case 'IdentifierIR':
+      return ts.factory.createIdentifier(ir.name);
+
+    case 'LiteralIR':
+      if (typeof ir.value === 'number') {
+        return ts.factory.createNumericLiteral(ir.value);
+      }
+      if (typeof ir.value === 'string') {
+        return ts.factory.createStringLiteral(ir.value);
+      }
+      if (typeof ir.value === 'boolean') {
+        return ir.value ? ts.factory.createTrue() : ts.factory.createFalse();
+      }
+      return ts.factory.createNull();
+
+    case 'ArrowFunctionIR':
+      // Simplified arrow function - just create a placeholder
+      return ts.factory.createArrowFunction(
+        undefined,
+        undefined,
+        [],
+        undefined,
+        ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+        ts.factory.createBlock([], false)
+      );
+
+    default:
+      return ts.factory.createIdentifier('undefined');
+  }
+}
+
+/**
  * Private: Generate signal declarations
  */
 export function _generateSignalDeclarations(
@@ -206,40 +257,69 @@ export function _generateSignalDeclarations(
     if (stmt.type === 'VariableDeclarationIR') {
       const varDecl = stmt as IVariableDeclarationIR;
       if (varDecl.isSignalDeclaration) {
-        // const [count, setCount] = createSignal(0);
-        const declaration = ts.factory.createVariableStatement(
-          undefined,
-          ts.factory.createVariableDeclarationList(
-            [
-              ts.factory.createVariableDeclaration(
-                ts.factory.createArrayBindingPattern([
-                  ts.factory.createBindingElement(
-                    undefined,
-                    undefined,
-                    ts.factory.createIdentifier(varDecl.name)
-                  ),
-                  ts.factory.createBindingElement(
-                    undefined,
-                    undefined,
-                    ts.factory.createIdentifier(
-                      `set${varDecl.name.charAt(0).toUpperCase()}${varDecl.name.slice(1)}`
-                    )
-                  ),
-                ]),
-                undefined,
-                undefined,
-                ts.factory.createCallExpression(
-                  ts.factory.createIdentifier('createSignal'),
-                  undefined,
-                  [ts.factory.createNumericLiteral(0)] // Default value
-                )
-              ),
-            ],
-            ts.NodeFlags.Const
-          )
-        );
+        // Determine the actual function being called
+        const initializer = varDecl.initializer as any;
+        const functionName = initializer?.callee?.name || 'createSignal';
 
-        declarations.push(declaration);
+        // Functions that return [getter, setter] tuple - NEED destructuring
+        const needsDestructuring =
+          functionName === 'createSignal' ||
+          functionName === 'useState' ||
+          functionName === 'signal';
+
+        // Functions that return just getter function - NO destructuring
+        // createMemo, createEffect, createResource return single function
+
+        if (needsDestructuring) {
+          // const [count, setCount] = createSignal(0);
+          const declaration = ts.factory.createVariableStatement(
+            undefined,
+            ts.factory.createVariableDeclarationList(
+              [
+                ts.factory.createVariableDeclaration(
+                  ts.factory.createArrayBindingPattern([
+                    ts.factory.createBindingElement(
+                      undefined,
+                      undefined,
+                      ts.factory.createIdentifier(varDecl.name)
+                    ),
+                    ts.factory.createBindingElement(
+                      undefined,
+                      undefined,
+                      ts.factory.createIdentifier(
+                        `set${varDecl.name.charAt(0).toUpperCase()}${varDecl.name.slice(1)}`
+                      )
+                    ),
+                  ]),
+                  undefined,
+                  undefined,
+                  irToTsExpression(initializer)
+                ),
+              ],
+              ts.NodeFlags.Const
+            )
+          );
+
+          declarations.push(declaration);
+        } else {
+          // const memo = createMemo(() => ...);
+          const declaration = ts.factory.createVariableStatement(
+            undefined,
+            ts.factory.createVariableDeclarationList(
+              [
+                ts.factory.createVariableDeclaration(
+                  ts.factory.createIdentifier(varDecl.name),
+                  undefined,
+                  undefined,
+                  irToTsExpression(initializer)
+                ),
+              ],
+              ts.NodeFlags.Const
+            )
+          );
+
+          declarations.push(declaration);
+        }
       }
     }
   }

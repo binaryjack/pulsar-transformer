@@ -31,9 +31,72 @@ export function _parseForStatement(this: IParserInternal): IForStatementNode {
   this._advance(); // Consume '('
 
   // Parse init (optional)
+  // Init can be either a variable declaration (let i = 0) or an expression (i = 0)
   let init: IASTNode | null = null;
   if (this._getCurrentToken()!.type !== TokenType.SEMICOLON) {
-    init = _parseSimpleExpression.call(this);
+    const currentToken = this._getCurrentToken()!;
+    // Check if it's a variable declaration (let/const)
+    if (currentToken.type === TokenType.LET || currentToken.type === TokenType.CONST) {
+      // Parse variable declaration inline (without consuming semicolon)
+      const varStartToken = this._getCurrentToken()!;
+      const kind = varStartToken.value as 'const' | 'let';
+      this._advance(); // Consume let/const
+
+      // Parse identifier
+      const idToken = this._expect('IDENTIFIER', 'Expected identifier in variable declaration');
+      const id = {
+        type: ASTNodeType.IDENTIFIER,
+        name: idToken!.value,
+        location: {
+          start: {
+            line: idToken!.line,
+            column: idToken!.column,
+            offset: idToken!.start,
+          },
+          end: {
+            line: idToken!.line,
+            column: idToken!.column + idToken!.value.length,
+            offset: idToken!.end,
+          },
+        },
+      };
+
+      // Parse initializer (optional)
+      let varInit: IASTNode | null = null;
+      if (this._match('ASSIGN')) {
+        varInit = this._parseExpression();
+      }
+
+      // Get end position (current token is the one after the init expression/identifier)
+      const endToken = this._getCurrentToken()!;
+
+      // Create variable declaration node (don't consume semicolon - for loop needs it)
+      init = {
+        type: ASTNodeType.VARIABLE_DECLARATION,
+        kind,
+        declarations: [
+          {
+            id,
+            init: varInit,
+          },
+        ],
+        location: {
+          start: {
+            line: varStartToken.line,
+            column: varStartToken.column,
+            offset: varStartToken.start,
+          },
+          end: {
+            line: endToken.line,
+            column: endToken.column,
+            offset: endToken.start,
+          },
+        },
+      } as any;
+    } else {
+      // Otherwise parse as expression (supports assignment, calls, etc.)
+      init = this._parseExpression();
+    }
   }
 
   // Expect semicolon
@@ -45,7 +108,7 @@ export function _parseForStatement(this: IParserInternal): IForStatementNode {
   // Parse test (optional)
   let test: IASTNode | null = null;
   if (this._getCurrentToken()!.type !== TokenType.SEMICOLON) {
-    test = _parseSimpleExpression.call(this);
+    test = this._parseExpression();
   }
 
   // Expect semicolon
@@ -57,7 +120,7 @@ export function _parseForStatement(this: IParserInternal): IForStatementNode {
   // Parse update (optional)
   let update: IASTNode | null = null;
   if (this._getCurrentToken()!.type !== TokenType.RPAREN) {
-    update = _parseSimpleExpression.call(this);
+    update = this._parseExpression();
   }
 
   // Expect closing paren

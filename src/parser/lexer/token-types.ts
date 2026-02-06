@@ -86,6 +86,8 @@ export enum TokenType {
   GT_EQUAL = 'GT_EQUAL', // >=
   AND_AND = 'AND_AND', // &&
   OR_OR = 'OR_OR', // ||
+  PLUS_PLUS = 'PLUS_PLUS', // ++ (increment)
+  MINUS_MINUS = 'MINUS_MINUS', // -- (decrement)
 
   // Delimiters
   LPAREN = 'LPAREN', // (

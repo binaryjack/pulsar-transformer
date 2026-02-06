@@ -23,13 +23,30 @@ export function _emitVariableDeclaration(this: IEmitterInternal, ir: IVariableDe
 
     this._addLine(`${kind} [${namesStr}] = ${initExpr};`);
   } else if (isSignalDeclaration) {
-    // Signal declaration without destructuring: const value = createSignal(init);
-    this.context.imports.addImport(this.context.config.runtimePaths.core!, 'createSignal');
+    // Check what function is being called
+    const functionName = (initializer as any)?.callee?.name || 'createSignal';
 
-    const setterName = `set${name.charAt(0).toUpperCase()}${name.slice(1)}`;
-    const initExpr = initializer ? this._emitExpression(initializer) : 'undefined';
+    // Functions that return [getter, setter] tuple - NEED destructuring
+    const needsDestructuring =
+      functionName === 'createSignal' || functionName === 'useState' || functionName === 'signal';
 
-    this._addLine(`${kind} [${name}, ${setterName}] = ${initExpr};`);
+    if (needsDestructuring) {
+      // const [count, setCount] = createSignal(0);
+      this.context.imports.addImport(this.context.config.runtimePaths.core!, functionName);
+
+      const setterName = `set${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+      const initExpr = initializer ? this._emitExpression(initializer) : 'undefined';
+
+      this._addLine(`${kind} [${name}, ${setterName}] = ${initExpr};`);
+    } else {
+      // const memo = createMemo(() => ...);
+      // createMemo, createEffect, createResource return single function - NO destructuring
+      this.context.imports.addImport(this.context.config.runtimePaths.core!, functionName);
+
+      const initExpr = initializer ? this._emitExpression(initializer) : 'undefined';
+
+      this._addLine(`${kind} ${name} = ${initExpr};`);
+    }
   } else if (isDestructuring && destructuringNames) {
     // Regular destructuring: const [a, b] = value;
     const namesStr = destructuringNames.join(', ');

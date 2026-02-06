@@ -4,10 +4,10 @@
  * Main tokenization logic - converts source string into token array.
  */
 
-import { Lexer } from '../lexer.js'
-import type { ILexerInternal } from '../lexer.types.js'
-import type { IToken } from '../token-types.js'
-import { TokenType } from '../token-types.js'
+import { Lexer } from '../lexer.js';
+import type { ILexerInternal } from '../lexer.types.js';
+import type { IToken } from '../token-types.js';
+import { TokenType } from '../token-types.js';
 
 /**
  * Tokenize source code into tokens
@@ -23,6 +23,11 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
   this._column = 1;
   this._tokens = [];
   this._current = 0;
+
+  // Reset JSX context tracking
+  this._jsxBraceDepth = 0;
+  this._inJSXExpression = false;
+  this._inJSXElement = false;
 
   while (this._position < source.length) {
     // Use proper Unicode iteration to handle surrogate pairs
@@ -373,9 +378,14 @@ function _readString(this: ILexerInternal, start: number, line: number, column: 
 }
 
 /**
- * Read template literal (simplified - treats entire content as string) 
+ * Read template literal (simplified - treats entire content as string)
  */
-function _readTemplateLiteral(this: ILexerInternal, start: number, line: number, column: number): IToken {
+function _readTemplateLiteral(
+  this: ILexerInternal,
+  start: number,
+  line: number,
+  column: number
+): IToken {
   let value = '';
 
   this._position++; // Skip opening backtick
@@ -505,6 +515,32 @@ function _readSingleChar(
     this._position++;
     this._column++;
 
+    // Track JSX context for proper string handling in JSX expressions
+    if (char === '<') {
+      // Check if this is likely JSX (< followed by letter or /)
+      const nextChar = this._source[this._position];
+      if (nextChar && (this._isAlpha(nextChar) || nextChar === '/')) {
+        this._inJSXElement = true;
+      }
+    } else if (char === '>') {
+      // Exiting JSX tag, but may still be in JSX expression
+      this._inJSXElement = false;
+    } else if (char === '{') {
+      // Entering JSX expression if we're in a JSX element
+      if (this._inJSXElement || this._jsxBraceDepth > 0) {
+        this._jsxBraceDepth++;
+        this._inJSXExpression = true;
+      }
+    } else if (char === '}') {
+      // Exiting JSX expression
+      if (this._jsxBraceDepth > 0) {
+        this._jsxBraceDepth--;
+        if (this._jsxBraceDepth === 0) {
+          this._inJSXExpression = false;
+        }
+      }
+    }
+
     // Check for multi-char operators
     if (char === '=' && this._source[this._position] === '=') {
       if (this._source[this._position + 1] === '=') {
@@ -603,6 +639,34 @@ function _readSingleChar(
       return {
         type: TokenType.OR_OR,
         value: '||',
+        line,
+        column,
+        start,
+        end: this._position,
+      };
+    }
+
+    // Check for increment operator: ++
+    if (char === '+' && this._source[this._position] === '+') {
+      this._position++;
+      this._column++;
+      return {
+        type: TokenType.PLUS_PLUS,
+        value: '++',
+        line,
+        column,
+        start,
+        end: this._position,
+      };
+    }
+
+    // Check for decrement operator: --
+    if (char === '-' && this._source[this._position] === '-') {
+      this._position++;
+      this._column++;
+      return {
+        type: TokenType.MINUS_MINUS,
+        value: '--',
         line,
         column,
         start,
@@ -733,8 +797,8 @@ export {
   _readSingleLineComment,
   _readString,
   _readTemplateLiteral,
-  _recognizeToken
-}
+  _recognizeToken,
+};
 
 // Attach private methods to prototype
 Object.assign(Lexer.prototype, {

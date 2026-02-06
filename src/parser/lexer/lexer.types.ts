@@ -5,7 +5,7 @@
  * Prototype-based pattern, following Pulsar standards.
  */
 
-import type { IToken } from './token-types.js'
+import type { IToken } from './token-types.js';
 
 /**
  * Public Lexer interface
@@ -37,6 +37,11 @@ export interface ILexerInternal extends ILexer {
   _column: number;
   _tokens: IToken[];
   _current: number;
+
+  // JSX context tracking
+  _jsxBraceDepth: number;
+  _inJSXExpression: boolean;
+  _inJSXElement: boolean;
 
   // Private helper methods
   _recognizeToken(start: number, line: number, column: number): IToken | null;

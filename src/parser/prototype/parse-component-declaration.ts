@@ -142,7 +142,29 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
 
           // Skip TypeScript type annotation if present (: type)
           if (this._match('COLON')) {
-            while (!this._check('COMMA') && !this._check('RPAREN') && !this._isAtEnd()) {
+            // Track nesting depth for braces, brackets, and parentheses in type annotations
+            let depth = 0;
+            while (true) {
+              const tok = this._peek(0);
+              if (!tok || this._isAtEnd()) break;
+
+              // Track opening delimiters
+              if (tok.type === 'LBRACE' || tok.type === 'LBRACKET' || tok.type === 'LPAREN') {
+                depth++;
+              }
+              // Track closing delimiters
+              else if (tok.type === 'RBRACE' || tok.type === 'RBRACKET' || tok.type === 'RPAREN') {
+                if (depth === 0) {
+                  // We're at the closing paren of the parameter list
+                  break;
+                }
+                depth--;
+              }
+              // Stop at comma if we're at depth 0 (between parameters)
+              else if (tok.type === 'COMMA' && depth === 0) {
+                break;
+              }
+
               this._advance();
             }
           }
@@ -161,8 +183,21 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
 
         // Skip TypeScript type annotation if present (: type)
         if (this._match('COLON')) {
-          // Skip type tokens until we hit comma or closing paren
-          while (!this._check('COMMA') && !this._check('RPAREN') && !this._isAtEnd()) {
+          // Track nesting depth for complex types
+          let depth = 0;
+          while (true) {
+            const tok = this._peek(0);
+            if (!tok || this._isAtEnd()) break;
+
+            if (tok.type === 'LBRACE' || tok.type === 'LBRACKET' || tok.type === 'LPAREN') {
+              depth++;
+            } else if (tok.type === 'RBRACE' || tok.type === 'RBRACKET' || tok.type === 'RPAREN') {
+              if (depth === 0) break;
+              depth--;
+            } else if (tok.type === 'COMMA' && depth === 0) {
+              break;
+            }
+
             this._advance();
           }
         }
@@ -187,6 +222,14 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
     }
 
     this._expect('RPAREN', 'Expected ")" after parameters');
+  }
+
+  // Skip TypeScript return type annotation if present (: ReturnType)
+  if (this._match('COLON')) {
+    // Skip type tokens until we hit LBRACE (component body start)
+    while (!this._check('LBRACE') && !this._isAtEnd()) {
+      this._advance();
+    }
   }
 
   // Parse body: { ... }

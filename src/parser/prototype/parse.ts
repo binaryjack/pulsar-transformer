@@ -261,13 +261,18 @@ function _expect(this: IParserInternal, type: string, message: string) {
   const token = this._getCurrentToken();
 
   if (token?.type !== type) {
+    // Enhanced error message with actual token found
+    const enhancedMessage = token
+      ? `${message} (found ${token.type}: "${token.value}" at line ${token.line}, column ${token.column})`
+      : message;
+
     this._addError({
       code: 'PSR-E001',
-      message,
+      message: enhancedMessage,
       location: token ? { line: token.line, column: token.column } : { line: 0, column: 0 },
       token: token || undefined,
     });
-    throw new Error(message);
+    throw new Error(enhancedMessage);
   }
 
   return this._advance();

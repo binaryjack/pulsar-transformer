@@ -28,6 +28,9 @@ export function analyzeExpression(this: IAnalyzerInternal, node: IASTNode): IIRN
     case ASTNodeType.LITERAL:
       return this._analyzeLiteral(node as any);
 
+    case ASTNodeType.TEMPLATE_LITERAL:
+      return this._analyzeTemplateLiteral(node as any);
+
     case ASTNodeType.IDENTIFIER:
       return this._analyzeIdentifier(node as any);
 
@@ -68,6 +71,25 @@ function _analyzeLiteral(this: IAnalyzerInternal, node: any): ILiteralIR {
     type: IRNodeType.LITERAL_IR,
     value: node.value,
     rawValue: node.raw || String(node.value),
+    metadata: {
+      sourceLocation: node.location?.start,
+      optimizations: {
+        isStatic: true,
+        isPure: true,
+      },
+    },
+  };
+}
+
+/**
+ * Analyze template literal
+ * For now, treat template literals as string literals (embedded expressions not yet supported)
+ */
+function _analyzeTemplateLiteral(this: IAnalyzerInternal, node: any): ILiteralIR {
+  return {
+    type: IRNodeType.LITERAL_IR,
+    value: node.value,
+    rawValue: node.raw || `\`${node.value}\``,
     metadata: {
       sourceLocation: node.location?.start,
       optimizations: {
@@ -316,6 +338,7 @@ export {
   _analyzeIdentifier,
   _analyzeLiteral,
   _analyzeMemberExpression,
+  _analyzeTemplateLiteral,
   _analyzeUnaryExpression,
   _isFunctionPure,
   _isParameter

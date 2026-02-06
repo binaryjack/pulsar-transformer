@@ -13,9 +13,9 @@ import type {
   IPSRElementNode,
   IPSRFragmentNode,
   IPSRSpreadAttributeNode,
-} from '../ast/index.js';
-import { ASTNodeType } from '../ast/index.js';
-import type { IParserInternal } from '../parser.types.js';
+} from '../ast/index.js'
+import { ASTNodeType } from '../ast/index.js'
+import type { IParserInternal } from '../parser.types.js'
 
 /**
  * Helper to check if tag name starts with uppercase (component reference)
@@ -239,22 +239,29 @@ function _parsePSRAttribute(
     // Dynamic value: {expression}
     else if (this._match('LBRACE')) {
       isStatic = false;
-      value = this._parseJSXExpression();
+      
+      // Check if this is an empty expression (JSX comment was skipped by lexer)
+      if (this._check('RBRACE')) {
+        this._advance(); // Consume RBRACE
+        value = null;     // Empty/comment value
+      } else {
+        value = this._parseJSXExpression();
 
-      // Check if expression parsing failed
-      if (value === null) {
-        this._addError({
-          code: 'PSR-E003',
-          message: 'Failed to parse expression in JSX attribute',
-          location: {
-            line: this._getCurrentToken()?.line || 0,
-            column: this._getCurrentToken()?.column || 0,
-          },
-        });
-        return null;
+        // Check if expression parsing failed
+        if (value === null) {
+          this._addError({
+            code: 'PSR-E003',
+            message: 'Failed to parse expression in JSX attribute',
+            location: {
+              line: this._getCurrentToken()?.line || 0,
+              column: this._getCurrentToken()?.column || 0,
+            },
+          });
+          return null;
+        }
+
+        this._expect('RBRACE', 'Expected "}" after expression');
       }
-
-      this._expect('RBRACE', 'Expected "}" after expression');
     }
   }
 
@@ -298,9 +305,17 @@ function _parsePSRChild(this: IParserInternal, parentTagName?: string): any {
     return this._parsePSRElement();
   }
 
-  // Expression: {expr}
+  // Expression: {expr} or JSX comment {/* ... */}  
   if (token.type === 'LBRACE') {
     this._advance();
+    
+    // Check if this is an empty expression (JSX comment was skipped by lexer)
+    // The lexer skips comments, so if we see RBRACE immediately, it was a comment
+    if (this._check('RBRACE')) {
+      this._advance(); // Consume the RBRACE
+      return null; // Skip JSX comments in output
+    }
+    
     const expr = this._parseJSXExpression();
     this._expect('RBRACE', 'Expected "}" after expression');
     return expr;
@@ -485,5 +500,6 @@ export {
   _parseJSXExpression,
   _parseNonObjectExpression,
   _parsePSRAttribute,
-  _parsePSRChild,
-};
+  _parsePSRChild
+}
+

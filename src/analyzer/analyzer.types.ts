@@ -67,6 +67,7 @@ export interface IAnalyzerInternal extends IAnalyzer {
 
   // Expression analysis helpers
   _analyzeLiteral(node: any): IIRNode;
+  _analyzeTemplateLiteral(node: any): IIRNode;
   _analyzeIdentifier(node: any): IIdentifierIR;
   _analyzeCallExpression(node: any): IIRNode;
   _analyzeArrowFunction(node: any): IIRNode;

@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { createTestParser } from '../../__tests__/test-helpers';
 import type {
   IDoWhileStatementNode,
   IForStatementNode,
   IWhileStatementNode,
 } from '../../ast-node-types';
-import { createParser } from '../../create-parser';
 
 describe('Loop Statement Parsers', () => {
   describe('_parseForStatement', () => {
     it('should parse basic for loop', () => {
       const source = 'for (let i = 0; i < 10; i++) { console.log(i); }';
-      const parser = createParser(source);
+      const parser = createTestParser(source);
       const result = parser._parseForStatement() as IForStatementNode;
 
       expect(result.type).toBe('FOR_STATEMENT');

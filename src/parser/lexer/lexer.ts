@@ -55,4 +55,26 @@ export const Lexer = function (this: ILexerInternal, config: ILexerConfig = {}) 
     enumerable: false,
     configurable: false,
   });
+
+  // JSX context tracking properties
+  Object.defineProperty(this, '_jsxBraceDepth', {
+    value: 0,
+    writable: true,
+    enumerable: false,
+    configurable: false,
+  });
+
+  Object.defineProperty(this, '_inJSXExpression', {
+    value: false,
+    writable: true,
+    enumerable: false,
+    configurable: false,
+  });
+
+  Object.defineProperty(this, '_inJSXElement', {
+    value: false,
+    writable: true,
+    enumerable: false,
+    configurable: false,
+  });
 } as unknown as { new (config?: ILexerConfig): ILexerInternal };
