@@ -33,7 +33,7 @@ export function parseJSXFragment(this: IParserInternal): IPSRFragmentNode {
   const children: any[] = [];
 
   while (!this._isClosingFragment() && !this._isAtEnd()) {
-    const child = this._parsePSRChild();
+    const child = this._parsePSRChild(undefined);
     if (child) {
       children.push(child);
     }
@@ -70,4 +70,3 @@ export function parseJSXFragment(this: IParserInternal): IPSRFragmentNode {
 export function _isClosingFragment(this: IParserInternal): boolean {
   return this._check('LT') && this._peek(1)?.type === 'SLASH' && this._peek(2)?.type === 'GT';
 }
-

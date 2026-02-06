@@ -228,7 +228,7 @@ function _parseLoopBody(this: IParserInternal): IBlockStatementNode | IASTNode {
 /**
  * Helper: Parse block statement
  */
-function _parseBlockStatement(this: IParserInternal): IBlockStatementNode {
+export function _parseBlockStatement(this: IParserInternal): IBlockStatementNode {
   const startToken = this._getCurrentToken();
 
   // Expect opening brace

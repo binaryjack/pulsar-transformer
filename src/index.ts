@@ -8,7 +8,7 @@
 // ===== CORE PIPELINE =====
 
 // Lexer exports
-export { createLexer, TokenType } from './parser/lexer/index.js';
+export { TokenType, createLexer } from './parser/lexer/index.js';
 export type { ILexer, ILexerConfig, IToken } from './parser/lexer/index.js';
 
 // Parser exports
@@ -18,18 +18,18 @@ export type { IParser, IParserConfig } from './parser/parser.types.js';
 // AST exports
 export type {
   ASTNodeType,
-  IArrowFunctionNode,
   IASTNode,
+  IArrowFunctionNode,
   ICallExpressionNode,
   IComponentDeclarationNode,
   IExpressionStatementNode,
   IIdentifierNode,
   ILiteralNode,
-  IProgramNode,
   IPSRAttributeNode,
   IPSRElementNode,
   IPSREventHandlerNode,
   IPSRSignalBindingNode,
+  IProgramNode,
   IReturnStatementNode,
   IVariableDeclarationNode,
 } from './parser/ast/ast-node-types.js';
@@ -45,14 +45,14 @@ export type {
   IComponentIR,
   IElementIR,
   IEventHandlerIR,
-  IIdentifierIR,
   IIRMetadata,
   IIRNode,
+  IIdentifierIR,
   ILiteralIR,
+  IRNodeType,
   IRegistryLookupIR,
   IRegistryRegistrationIR,
   IReturnStatementIR,
-  IRNodeType,
   ISignalBindingIR,
   IVariableDeclarationIR,
 } from './analyzer/ir/ir-node-types.js';
@@ -93,6 +93,34 @@ export type {
 
 // ===== UTILITIES =====
 
+// Debug Logger
+export { createDebugLogger } from './debug/create-debug-logger.js';
+export type {
+  DebugChannel,
+  DebugLevel,
+  IDebugLogEntry,
+  IDebugLogger,
+  IDebugLoggerConfig,
+} from './debug/debug-logger.types.js';
+
+// Validator
+export { createValidator } from './validator/create-validator.js';
+export {
+  validateImports,
+  validateJsxTransformed,
+  validateSignalsWired,
+} from './validator/rules/index.js';
+export type {
+  IValidationContext,
+  IValidationIssue,
+  IValidationResult,
+  IValidationRule,
+  IValidator,
+  IValidatorConfig,
+  ValidationIssueType,
+  ValidationSeverity,
+} from './validator/validator.types.js';
+
 // Error handling
 export { TransformerError } from './error/transformer-error.js';
 
@@ -117,6 +145,7 @@ export const PIPELINE_STATUS = {
   transform: 'complete', // 19/19 tests ✅
   emitter: 'complete', // 25/25 tests ✅
   pipeline: 'complete', // Integration implemented ✅
+  debug: 'complete', // Debug logger implemented ✅
+  validator: 'complete', // Output validator implemented ✅
   guards: 'pending', // Not started
-  debug: 'pending', // Not started
 } as const;

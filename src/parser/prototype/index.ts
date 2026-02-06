@@ -16,15 +16,20 @@ import { parseComponentDeclaration } from './parse-component-declaration.js';
 import { _parseDecorator } from './parse-decorator.js';
 import { _parseEnumDeclaration } from './parse-enum-declaration.js';
 import {
+  _isKeywordAsIdentifier,
+  _parseArrayLiteral,
   _parseArrowFunctionOrGrouping,
   _parseExportDeclaration,
   _parseExpressionStatement,
   _parseLiteral,
+  _parseObjectLiteral,
+  _parseTemplateLiteral,
   parseExpression,
 } from './parse-expression.js';
 import {
   _parseBreakStatement,
   _parseContinueStatement,
+  _parseIfStatement,
   _parseThrowStatement,
 } from './parse-flow-control.js';
 import { parseFunctionDeclaration } from './parse-function-declaration.js';
@@ -32,6 +37,7 @@ import { parseImportDeclaration } from './parse-import-declaration.js';
 import { parseInterfaceDeclaration } from './parse-interface-declaration.js';
 import { _isClosingFragment, parseJSXFragment } from './parse-jsx-fragment.js';
 import {
+  _parseBlockStatement,
   _parseDoWhileStatement,
   _parseForStatement,
   _parseWhileStatement,
@@ -39,6 +45,8 @@ import {
 import { _parseNamespaceDeclaration, _skipTypeAlias } from './parse-namespace-declaration.js';
 import {
   _isClosingTag,
+  _parseJSXExpression,
+  _parseNonObjectExpression,
   _parsePSRAttribute,
   _parsePSRChild,
   parsePSRElement,
@@ -261,8 +269,22 @@ Object.defineProperty(Parser.prototype, '_parseDoWhileStatement', {
   configurable: false,
 });
 
+Object.defineProperty(Parser.prototype, '_parseBlockStatement', {
+  value: _parseBlockStatement,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
 Object.defineProperty(Parser.prototype, '_parseThrowStatement', {
   value: _parseThrowStatement,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseIfStatement', {
+  value: _parseIfStatement,
   writable: true,
   enumerable: false,
   configurable: false,
@@ -292,6 +314,34 @@ Object.defineProperty(Parser.prototype, '_parseExpression', {
 // Attach all other helper methods
 Object.defineProperty(Parser.prototype, '_parseLiteral', {
   value: _parseLiteral,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseTemplateLiteral', {
+  value: _parseTemplateLiteral,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseObjectLiteral', {
+  value: _parseObjectLiteral,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_isKeywordAsIdentifier', {
+  value: _isKeywordAsIdentifier,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseArrayLiteral', {
+  value: _parseArrayLiteral,
   writable: true,
   enumerable: false,
   configurable: false,
@@ -334,6 +384,20 @@ Object.defineProperty(Parser.prototype, '_parsePSRAttribute', {
 
 Object.defineProperty(Parser.prototype, '_parsePSRChild', {
   value: _parsePSRChild,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseJSXExpression', {
+  value: _parseJSXExpression,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Parser.prototype, '_parseNonObjectExpression', {
+  value: _parseNonObjectExpression,
   writable: true,
   enumerable: false,
   configurable: false,

@@ -65,6 +65,11 @@ export function analyze(this: IAnalyzerInternal, ast: IASTNode): IIRNode {
  * Analyze a single AST node and convert to IR
  */
 function _analyzeNode(this: IAnalyzerInternal, node: IASTNode): IIRNode | null {
+  // Guard against null/undefined nodes
+  if (!node || !node.type) {
+    return null;
+  }
+
   switch (node.type) {
     case ASTNodeType.COMPONENT_DECLARATION:
       return this._analyzeComponent(node);
@@ -84,13 +89,27 @@ function _analyzeNode(this: IAnalyzerInternal, node: IASTNode): IIRNode | null {
     case ASTNodeType.PSR_ELEMENT:
       return this._analyzeElement(node);
 
+    case ASTNodeType.PSR_COMPONENT_REFERENCE:
+      return this._analyzeComponentReference(node);
+
     case ASTNodeType.PSR_SIGNAL_BINDING:
       return this._analyzeSignalBinding(node);
+
+    case ASTNodeType.PSR_TEXT_NODE:
+      // Convert text node to literal IR
+      return {
+        type: 'LiteralIR',
+        value: (node as any).value,
+        raw: `"${(node as any).value}"`,
+      } as any;
 
     case ASTNodeType.CALL_EXPRESSION:
     case ASTNodeType.LITERAL:
     case ASTNodeType.IDENTIFIER:
     case ASTNodeType.ARROW_FUNCTION:
+    case ASTNodeType.MEMBER_EXPRESSION:
+    case ASTNodeType.BINARY_EXPRESSION:
+    case ASTNodeType.CONDITIONAL_EXPRESSION:
       return this._analyzeExpression(node);
 
     default:

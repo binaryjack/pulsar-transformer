@@ -57,6 +57,7 @@ export interface IParserInternal extends IParser {
   _parseTryStatement(): any;
   _parseSwitchStatement(): any;
   _parseThrowStatement(): any;
+  _parseIfStatement(): any;
   _parseForStatement(): any;
   _parseWhileStatement(): any;
   _parseDoWhileStatement(): any;
@@ -70,7 +71,9 @@ export interface IParserInternal extends IParser {
   _parseJSXFragment(): any;
   _parsePSRSignalBinding(): any;
   _parsePSRAttribute(): any;
-  _parsePSRChild(): any;
+  _parsePSRChild(parentTagName?: string): any;
+  _parseJSXExpression(): any;
+  _parseNonObjectExpression(): any;
   _parseExpression(): any;
   _parseExpressionStatement(): any;
   _parseImportDeclaration(): any;
@@ -78,6 +81,10 @@ export interface IParserInternal extends IParser {
   _parseArrowFunctionOrGrouping(): any;
   _parseCallOrIdentifier(): any;
   _parseLiteral(): any;
+  _parseTemplateLiteral(): any;
+  _parseObjectLiteral(): any;
+  _parseArrayLiteral(): any;
+  _isKeywordAsIdentifier(): boolean;
 
   // Helper methods
   _isAtEnd(): boolean;

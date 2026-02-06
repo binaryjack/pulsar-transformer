@@ -65,6 +65,7 @@ export enum ASTNodeType {
   BLOCK_STATEMENT = 'BlockStatement',
   RETURN_STATEMENT = 'ReturnStatement',
   EXPRESSION_STATEMENT = 'ExpressionStatement',
+  IF_STATEMENT = 'IfStatement',
   TRY_STATEMENT = 'TryStatement',
   CATCH_CLAUSE = 'CatchClause',
   THROW_STATEMENT = 'ThrowStatement',
@@ -86,15 +87,20 @@ export enum ASTNodeType {
   // Expressions
   IDENTIFIER = 'Identifier',
   LITERAL = 'Literal',
+  TEMPLATE_LITERAL = 'TemplateLiteral',
   CALL_EXPRESSION = 'CallExpression',
   ARROW_FUNCTION = 'ArrowFunction',
   BINARY_EXPRESSION = 'BinaryExpression',
+  UNARY_EXPRESSION = 'UnaryExpression',
+  CONDITIONAL_EXPRESSION = 'ConditionalExpression',
   MEMBER_EXPRESSION = 'MemberExpression',
+  AS_EXPRESSION = 'AsExpression',
   ARRAY_PATTERN = 'ArrayPattern',
   OBJECT_PATTERN = 'ObjectPattern',
 
   // PSR-specific
   PSR_ELEMENT = 'PSRElement',
+  PSR_COMPONENT_REFERENCE = 'PSRComponentReference',
   PSR_FRAGMENT = 'PSRFragment',
   PSR_ATTRIBUTE = 'PSRAttribute',
   PSR_SPREAD_ATTRIBUTE = 'PSRSpreadAttribute',
@@ -247,6 +253,19 @@ export interface IExpressionStatementNode extends IASTNode {
 }
 
 /**
+ * If Statement
+ *
+ * @example
+ * if (condition) { ... } else { ... }
+ */
+export interface IIfStatementNode extends IASTNode {
+  readonly type: ASTNodeType.IF_STATEMENT;
+  readonly test: IASTNode;
+  readonly consequent: IASTNode;
+  readonly alternate: IASTNode | null;
+}
+
+/**
  * Identifier
  *
  * @example
@@ -272,6 +291,18 @@ export interface ILiteralNode extends IASTNode {
 }
 
 /**
+ * Template literal value
+ *
+ * @example
+ * `Hello ${name}`, `Simple template literal`
+ */
+export interface ITemplateLiteralNode extends IASTNode {
+  readonly type: ASTNodeType.TEMPLATE_LITERAL;
+  readonly value: string;
+  readonly raw: string;
+}
+
+/**
  * Call Expression
  *
  * @example
@@ -281,6 +312,32 @@ export interface ICallExpressionNode extends IASTNode {
   readonly type: ASTNodeType.CALL_EXPRESSION;
   readonly callee: IIdentifierNode;
   readonly arguments: IASTNode[];
+}
+
+/**
+ * TypeScript As Expression (Type Assertion)
+ *
+ * @example
+ * value as string
+ * element as HTMLElement
+ */
+export interface IAsExpressionNode extends IASTNode {
+  readonly type: ASTNodeType.AS_EXPRESSION;
+  readonly expression: IASTNode;
+  readonly typeAnnotation: IASTNode;
+}
+
+/**
+ * Conditional Expression (ternary)
+ *
+ * @example
+ * condition ? a : b
+ */
+export interface IConditionalExpressionNode extends IASTNode {
+  readonly type: ASTNodeType.CONDITIONAL_EXPRESSION;
+  readonly test: IASTNode;
+  readonly consequent: IASTNode;
+  readonly alternate: IASTNode;
 }
 
 /**
@@ -331,6 +388,24 @@ export interface IObjectPatternNode extends IASTNode {
 export interface IPSRElementNode extends IASTNode {
   readonly type: ASTNodeType.PSR_ELEMENT;
   readonly tagName: string;
+  readonly attributes: (IPSRAttributeNode | IPSRSpreadAttributeNode)[];
+  readonly children: IASTNode[];
+  readonly selfClosing: boolean;
+}
+
+/**
+ * PSR Component Reference
+ *
+ * Represents a reference to another component (uppercase tag name)
+ *
+ * @example
+ * <Card />
+ * <Button onClick={handleClick}>Click</Button>
+ * <UserProfile user={currentUser} />
+ */
+export interface IPSRComponentReferenceNode extends IASTNode {
+  readonly type: ASTNodeType.PSR_COMPONENT_REFERENCE;
+  readonly componentName: string;
   readonly attributes: (IPSRAttributeNode | IPSRSpreadAttributeNode)[];
   readonly children: IASTNode[];
   readonly selfClosing: boolean;

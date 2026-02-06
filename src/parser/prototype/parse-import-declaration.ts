@@ -34,7 +34,7 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
   // Check for type-only import: import type { Foo } from './types'
   if (this._check('TYPE')) {
     const nextToken = this._tokens[this._current + 1];
-    if (nextToken && nextToken!.type === 'LBRACE') {
+    if (nextToken?.type === 'LBRACE') {
       isTypeOnly = true;
       this._advance(); // consume 'type'
     }
@@ -168,7 +168,7 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
       let isSpecifierTypeOnly = false;
       if (this._check('TYPE')) {
         const nextToken = this._tokens[this._current + 1];
-        if (nextToken && nextToken!.type === 'IDENTIFIER') {
+        if (nextToken?.type === 'IDENTIFIER') {
           isSpecifierTypeOnly = true;
           this._advance(); // consume 'type'
         }
@@ -256,18 +256,18 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
 
   // Expect 'from' keyword
   const fromToken = this._getCurrentToken();
-  if (!fromToken || fromToken!.value !== 'from') {
+  if (fromToken?.value !== 'from') {
     this._addError({
       code: 'MISSING_FROM',
       message: "Expected 'from' after import specifiers",
       location: (fromToken
         ? {
             start: {
-              line: fromToken!.line,
-              column: fromToken!.column,
+              line: fromToken.line,
+              column: fromToken.column,
             },
             end: {
-              line: fromToken!.line,
+              line: fromToken.line,
               column: fromToken!.column + fromToken!.value.length,
             },
           }

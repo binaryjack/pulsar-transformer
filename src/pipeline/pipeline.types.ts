@@ -4,7 +4,9 @@
  * Types for the PSR → TypeScript transformation pipeline.
  */
 
+import type { IDebugLoggerConfig } from '../debug/debug-logger.types.js';
 import type { IEmitterConfig } from '../emitter/emitter.types.js';
+import type { IValidationResult, IValidatorConfig } from '../validator/validator.types.js';
 
 /**
  * Pipeline configuration
@@ -21,9 +23,24 @@ export interface IPipelineConfig {
   debug?: boolean;
 
   /**
+   * Debug logger configuration
+   */
+  debugLogger?: Partial<IDebugLoggerConfig>;
+
+  /**
+   * Validator configuration
+   */
+  validator?: Partial<IValidatorConfig>;
+
+  /**
    * Source file path (for error messages)
    */
   filePath?: string;
+
+  /**
+   * Enable strict mode (fail on warnings)
+   */
+  strict?: boolean;
 }
 
 /**
@@ -49,6 +66,11 @@ export interface IPipelineResult {
    * Performance metrics
    */
   metrics?: IPipelineMetrics;
+
+  /**
+   * Validation result
+   */
+  validation?: IValidationResult;
 }
 
 /**
@@ -57,7 +79,7 @@ export interface IPipelineResult {
 export interface IPipelineDiagnostic {
   type: 'error' | 'warning' | 'info';
   message: string;
-  phase: 'lexer' | 'parser' | 'analyzer' | 'transform' | 'emitter';
+  phase: 'lexer' | 'parser' | 'analyzer' | 'transform' | 'emitter' | 'validator' | 'pipeline';
   location?: {
     line: number;
     column: number;

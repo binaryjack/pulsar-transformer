@@ -36,7 +36,7 @@ export class TransformerError extends Error {
       componentInfo: context.componentInfo,
       parentContext: context.parentContext,
       sessionId: context.sessionId,
-      stackTrace: new Error().stack,
+      stackTrace: new Error('Stack trace capture').stack,
     };
 
     // Maintain proper prototype chain

@@ -9,10 +9,13 @@ import { ASTNodeType } from '../../parser/ast/index.js';
 import type { IAnalyzerInternal } from '../analyzer.types.js';
 import type {
   IArrowFunctionIR,
+  IBinaryExpressionIR,
   ICallExpressionIR,
+  IConditionalExpressionIR,
   IIdentifierIR,
   IIRNode,
   ILiteralIR,
+  IMemberExpressionIR,
 } from '../ir/index.js';
 import { IRNodeType } from '../ir/index.js';
 
@@ -32,6 +35,15 @@ export function analyzeExpression(this: IAnalyzerInternal, node: IASTNode): IIRN
 
     case ASTNodeType.ARROW_FUNCTION:
       return this._analyzeArrowFunction(node as any);
+
+    case ASTNodeType.BINARY_EXPRESSION:
+      return this._analyzeBinaryExpression(node as any);
+
+    case ASTNodeType.MEMBER_EXPRESSION:
+      return this._analyzeMemberExpression(node as any);
+
+    case ASTNodeType.CONDITIONAL_EXPRESSION:
+      return this._analyzeConditionalExpression(node as any);
 
     default:
       // Fallback to literal
@@ -98,19 +110,20 @@ function _analyzeIdentifier(this: IAnalyzerInternal, node: any): IIdentifierIR {
  * Analyze call expression
  */
 function _analyzeCallExpression(this: IAnalyzerInternal, node: any): ICallExpressionIR {
-  const callee = this._analyzeIdentifier(node.callee) as IIdentifierIR;
+  const callee = this._analyzeNode(node.callee) as IIRNode;
   const args = node.arguments.map((arg: any) => this._analyzeNode(arg));
 
   // Detect signal creation - support both signal() and createSignal()
+  const calleeName = callee.type === IRNodeType.IDENTIFIER_IR ? (callee as any).name : null;
   const isSignalCreation =
-    callee.name === 'signal' ||
-    callee.name === 'createSignal' ||
-    callee.name === 'createMemo' ||
-    callee.name === 'createEffect';
+    calleeName === 'signal' ||
+    calleeName === 'createSignal' ||
+    calleeName === 'createMemo' ||
+    calleeName === 'createEffect';
 
   // Detect Pulsar primitives
   const isPulsarPrimitive =
-    isSignalCreation || callee.name === 'createResource' || callee.name === 'createStore';
+    isSignalCreation || calleeName === 'createResource' || calleeName === 'createStore';
 
   return {
     type: IRNodeType.CALL_EXPRESSION_IR,
@@ -128,6 +141,73 @@ function _analyzeCallExpression(this: IAnalyzerInternal, node: any): ICallExpres
 }
 
 /**
+ * Analyze binary expression
+ */
+function _analyzeBinaryExpression(this: IAnalyzerInternal, node: any): IBinaryExpressionIR {
+  const left = this._analyzeNode(node.left);
+  const right = this._analyzeNode(node.right);
+
+  // Check for null operands (unsupported node types)
+  if (!left) {
+    const leftType = node.left ? node.left.type : 'null';
+    throw new Error(
+      `Unsupported node type '${leftType}' in binary expression (left operand) at ${node.location?.start?.line}:${node.location?.start?.column}`
+    );
+  }
+  if (!right) {
+    const rightType = node.right ? node.right.type : 'null';
+    throw new Error(
+      `Unsupported node type '${rightType}' in binary expression (right operand) at ${node.location?.start?.line}:${node.location?.start?.column}`
+    );
+  }
+
+  return {
+    type: IRNodeType.BINARY_EXPRESSION_IR,
+    operator: node.operator,
+    left,
+    right,
+    metadata: {
+      sourceLocation: node.location?.start,
+    },
+  };
+}
+
+/**
+ * Analyze member expression
+ */
+function _analyzeMemberExpression(this: IAnalyzerInternal, node: any): IMemberExpressionIR {
+  const object = this._analyzeNode(node.object);
+  const property = this._analyzeIdentifier(node.property);
+
+  return {
+    type: IRNodeType.MEMBER_EXPRESSION_IR,
+    object,
+    property,
+    metadata: {
+      sourceLocation: node.location?.start,
+    },
+  };
+}
+
+/**
+ * Analyze conditional expression
+ */
+function _analyzeConditionalExpression(
+  this: IAnalyzerInternal,
+  node: any
+): IConditionalExpressionIR {
+  return {
+    type: IRNodeType.CONDITIONAL_EXPRESSION_IR,
+    test: this._analyzeNode(node.test),
+    consequent: this._analyzeNode(node.consequent),
+    alternate: this._analyzeNode(node.alternate),
+    metadata: {
+      sourceLocation: node.location?.start,
+    },
+  };
+}
+
+/**
  * Analyze arrow function
  */
 function _analyzeArrowFunction(this: IAnalyzerInternal, node: any): IArrowFunctionIR {
@@ -138,9 +218,14 @@ function _analyzeArrowFunction(this: IAnalyzerInternal, node: any): IArrowFuncti
 
   // Analyze body
   let body: IIRNode | IIRNode[];
-  if (Array.isArray(node.body)) {
+  if (node.body && node.body.type === ASTNodeType.BLOCK_STATEMENT) {
+    // Block body: () => { statements }
+    body = node.body.body.map((stmt: any) => this._analyzeNode(stmt));
+  } else if (Array.isArray(node.body)) {
+    // Array of statements (shouldn't happen from parser, but handle it)
     body = node.body.map((stmt: any) => this._analyzeNode(stmt));
   } else {
+    // Expression body: () => expression
     body = this._analyzeNode(node.body);
   }
 
@@ -171,10 +256,13 @@ function _analyzeArrowFunction(this: IAnalyzerInternal, node: any): IArrowFuncti
 /**
  * Check if function is pure
  */
-function _isFunctionPure(this: IAnalyzerInternal, body: IIRNode | IIRNode[]): boolean {
+function _isFunctionPure(this: IAnalyzerInternal, body: IIRNode | IIRNode[] | null): boolean {
+  // Null or undefined body is considered pure
+  if (!body) return true;
+
   // Simple heuristic: function is pure if it only contains expressions
   if (Array.isArray(body)) {
-    return body.every((node) => node.type !== IRNodeType.CALL_EXPRESSION_IR);
+    return body.every((node) => node && node.type !== IRNodeType.CALL_EXPRESSION_IR);
   }
   return body.type !== IRNodeType.CALL_EXPRESSION_IR;
 }
@@ -193,9 +281,12 @@ function _isParameter(this: IAnalyzerInternal, name: string): boolean {
 // Export helpers
 export {
   _analyzeArrowFunction,
+  _analyzeBinaryExpression,
   _analyzeCallExpression,
+  _analyzeConditionalExpression,
   _analyzeIdentifier,
   _analyzeLiteral,
+  _analyzeMemberExpression,
   _isFunctionPure,
   _isParameter,
 };

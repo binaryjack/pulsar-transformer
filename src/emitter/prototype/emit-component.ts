@@ -24,8 +24,8 @@ export function _emitComponent(this: IEmitterInternal, ir: IComponentIR): void {
   this._addLine(`function ${name}(${paramList}) {`);
   this.context.indentLevel++;
 
-  // Generate registry wrapper
-  this._addLine(`return $REGISTRY.execute('${registryKey}', () => {`);
+  // Generate registry wrapper with null parentId
+  this._addLine(`return $REGISTRY.execute('${registryKey}', null, () => {`);
   this.context.indentLevel++;
 
   // Emit body statements

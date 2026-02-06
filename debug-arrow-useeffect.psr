@@ -1,0 +1,11 @@
+/**
+ * Minimal test: Arrow function with block body
+ */
+
+component Test() {
+  useEffect(() => {
+    console.log('test');
+  });
+  
+  return <div>Test</div>;
+}

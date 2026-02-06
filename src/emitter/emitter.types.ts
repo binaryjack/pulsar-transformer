@@ -68,6 +68,11 @@ export interface IEmitContext {
    * Generated variable names (for uniqueness)
    */
   usedNames: Set<string>;
+
+  /**
+   * Counter for generating unique element variable names
+   */
+  elementCounter: number;
 }
 
 /**

@@ -3,11 +3,12 @@ import type {
   IBreakStatementNode,
   IContinueStatementNode,
   IIdentifierNode,
+  IIfStatementNode,
   IThrowStatementNode,
-} from '../ast/ast-node-types.js';
-import { ASTNodeType } from '../ast/ast-node-types.js';
-import { TokenType } from '../lexer/token-types.js';
-import type { IParserInternal } from '../parser.types.js';
+} from '../ast/ast-node-types.js'
+import { ASTNodeType } from '../ast/ast-node-types.js'
+import { TokenType } from '../lexer/token-types.js'
+import type { IParserInternal } from '../parser.types.js'
 
 /**
  * Parses throw statements
@@ -285,4 +286,55 @@ function _parseSimpleExpression(this: IParserInternal): IASTNode {
   }
 
   throw new Error(`Unexpected token in expression: ${token!.value}`);
+}
+
+/**
+ * Parses if statements
+ * Supports: if (condition) { block } [else { block }]
+ */
+export function _parseIfStatement(this: IParserInternal): IIfStatementNode {
+  const startToken = this._getCurrentToken();
+
+  // Expect 'if'
+  this._expect('IF', 'Expected "if"');
+
+  // Expect opening parenthesis
+  this._expect('LPAREN', 'Expected "(" after "if"');
+
+  // Parse condition expression
+  const test = this._parseExpression();
+
+  // Expect closing parenthesis
+  this._expect('RPAREN', 'Expected ")" after if condition');
+
+  // Parse consequent (then block)
+  const consequent = this._parseStatement();
+
+  // Parse optional else clause
+  let alternate = null;
+  if (this._check('ELSE')) {
+    this._advance(); // consume 'else'
+    alternate = this._parseStatement();
+  }
+
+  const endToken = this._getCurrentToken();
+
+  return {
+    type: ASTNodeType.IF_STATEMENT,
+    test,
+    consequent,
+    alternate,
+    location: {
+      start: {
+        line: startToken!.line,
+        column: startToken!.column,
+        offset: startToken!.start,
+      },
+      end: {
+        line: endToken!.line,
+        column: endToken!.column,
+        offset: endToken!.end,
+      },
+    },
+  } as IIfStatementNode;
 }

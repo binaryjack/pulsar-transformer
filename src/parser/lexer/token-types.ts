@@ -65,6 +65,7 @@ export enum TokenType {
   IDENTIFIER = 'IDENTIFIER',
   STRING = 'STRING',
   NUMBER = 'NUMBER',
+  TEMPLATE_LITERAL = 'TEMPLATE_LITERAL',
 
   // Operators
   ASSIGN = 'ASSIGN', // =
@@ -76,6 +77,15 @@ export enum TokenType {
   ARROW = 'ARROW', // =>
   PIPE = 'PIPE', // | (for union types)
   AMPERSAND = 'AMPERSAND', // & (for intersection types)
+  MODULO = 'MODULO', // %
+  EQUALS = 'EQUALS', // ==
+  STRICT_EQUALS = 'STRICT_EQUALS', // ===
+  NOT_EQUALS = 'NOT_EQUALS', // !=
+  STRICT_NOT_EQUALS = 'STRICT_NOT_EQUALS', // !==
+  LT_EQUAL = 'LT_EQUAL', // <=
+  GT_EQUAL = 'GT_EQUAL', // >=
+  AND_AND = 'AND_AND', // &&
+  OR_OR = 'OR_OR', // ||
 
   // Delimiters
   LPAREN = 'LPAREN', // (
@@ -89,6 +99,7 @@ export enum TokenType {
   DOT = 'DOT', // .
   COLON = 'COLON', // :
   QUESTION = 'QUESTION', // ? (for optional properties)
+  EXCLAMATION = 'EXCLAMATION', // ! (for text content)
 
   // JSX-like
   LT = 'LT', // <

@@ -13,6 +13,7 @@ export enum IRNodeType {
 
   // Component IR
   COMPONENT_IR = 'ComponentIR',
+  COMPONENT_CALL_IR = 'ComponentCallIR',
   ELEMENT_IR = 'ElementIR',
   SIGNAL_BINDING_IR = 'SignalBindingIR',
   EVENT_HANDLER_IR = 'EventHandlerIR',
@@ -22,6 +23,9 @@ export enum IRNodeType {
   IDENTIFIER_IR = 'IdentifierIR',
   CALL_EXPRESSION_IR = 'CallExpressionIR',
   ARROW_FUNCTION_IR = 'ArrowFunctionIR',
+  BINARY_EXPRESSION_IR = 'BinaryExpressionIR',
+  MEMBER_EXPRESSION_IR = 'MemberExpressionIR',
+  CONDITIONAL_EXPRESSION_IR = 'ConditionalExpressionIR',
 
   // Statement IR
   VARIABLE_DECLARATION_IR = 'VariableDeclarationIR',
@@ -133,6 +137,19 @@ export interface IElementIR extends IIRNode {
 }
 
 /**
+ * Component Call IR Node
+ *
+ * Represents a call to another component (e.g., <Card />)
+ */
+export interface IComponentCallIR extends IIRNode {
+  type: IRNodeType.COMPONENT_CALL_IR;
+  componentName: string;
+  attributes: IAttributeIR[];
+  children: IIRNode[];
+  selfClosing: boolean;
+}
+
+/**
  * Attribute IR
  */
 export interface IAttributeIR {
@@ -211,7 +228,7 @@ export interface IIdentifierIR extends IIRNode {
  */
 export interface ICallExpressionIR extends IIRNode {
   type: IRNodeType.CALL_EXPRESSION_IR;
-  callee: IIdentifierIR;
+  callee: IIRNode;
   arguments: IIRNode[];
 
   /**
@@ -223,6 +240,35 @@ export interface ICallExpressionIR extends IIRNode {
    * Whether this is a Pulsar primitive call
    */
   isPulsarPrimitive: boolean;
+}
+
+/**
+ * Binary Expression IR Node
+ */
+export interface IBinaryExpressionIR extends IIRNode {
+  type: IRNodeType.BINARY_EXPRESSION_IR;
+  operator: string;
+  left: IIRNode;
+  right: IIRNode;
+}
+
+/**
+ * Member Expression IR Node
+ */
+export interface IMemberExpressionIR extends IIRNode {
+  type: IRNodeType.MEMBER_EXPRESSION_IR;
+  object: IIRNode;
+  property: IIdentifierIR;
+}
+
+/**
+ * Conditional Expression IR Node
+ */
+export interface IConditionalExpressionIR extends IIRNode {
+  type: IRNodeType.CONDITIONAL_EXPRESSION_IR;
+  test: IIRNode;
+  consequent: IIRNode;
+  alternate: IIRNode;
 }
 
 /**

@@ -35,6 +35,7 @@ export const Emitter = function (this: IEmitterInternal, config?: IEmitterConfig
     indentLevel: 0,
     code: [],
     usedNames: new Set(),
+    elementCounter: 0,
   };
 
   Object.defineProperty(this, 'context', {

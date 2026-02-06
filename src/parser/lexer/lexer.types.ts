@@ -5,7 +5,7 @@
  * Prototype-based pattern, following Pulsar standards.
  */
 
-import type { IToken } from './token-types.js';
+import type { IToken } from './token-types.js'
 
 /**
  * Public Lexer interface
@@ -46,8 +46,11 @@ export interface ILexerInternal extends ILexer {
   _readIdentifierOrKeyword(start: number, line: number, column: number): IToken;
   _readNumber(start: number, line: number, column: number): IToken;
   _readString(start: number, line: number, column: number): IToken;
+  _readTemplateLiteral(start: number, line: number, column: number): IToken;
   _readSignalBinding(start: number, line: number, column: number): IToken;
   _readSingleChar(start: number, line: number, column: number): IToken | null;
+  _readSingleLineComment(start: number, line: number, column: number): IToken | null;
+  _readMultiLineComment(start: number, line: number, column: number): IToken | null;
 }
 
 /**

@@ -4,11 +4,11 @@
  * Main entry point - converts PSR source code into AST.
  */
 
-import type { IASTNode, IProgramNode } from '../ast/index.js';
-import { ASTNodeType } from '../ast/index.js';
-import { createLexer } from '../lexer/index.js';
-import { TokenType } from '../lexer/token-types.js';
-import type { IParserInternal } from '../parser.types.js';
+import type { IASTNode, IProgramNode } from '../ast/index.js'
+import { ASTNodeType } from '../ast/index.js'
+import { createLexer } from '../lexer/index.js'
+import { TokenType } from '../lexer/token-types.js'
+import type { IParserInternal } from '../parser.types.js'
 
 /**
  * Parse PSR source code into AST
@@ -65,15 +65,15 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
   }
 
   // Decorator (@) - parse decorators and continue to decorated item
-  if (token.type === 'AT') {
+  if (token.type === TokenType.AT) {
     const decorators: any[] = [];
-    while (this._getCurrentToken()?.type === 'AT') {
+    while (this._getCurrentToken()?.type === TokenType.AT) {
       decorators.push(this._parseDecorator());
     }
 
     // After decorators, parse the decorated item (class or method)
     const nextToken = this._getCurrentToken();
-    if (nextToken?.value === 'class' || nextToken?.value === 'abstract') {
+    if (nextToken?.type === TokenType.CLASS) {
       const classNode = this._parseClassDeclaration() as any;
       classNode.decorators = decorators;
       return classNode;
@@ -83,38 +83,38 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
   }
 
   // Component declaration
-  if (token.value === 'component') {
+  if (token.type === TokenType.COMPONENT) {
     return this._parseComponentDeclaration();
   }
 
   // Enum declaration (including const enums) - MUST come before variable declaration
-  if (token.value === 'enum') {
+  if (token.type === TokenType.ENUM) {
     return this._parseEnumDeclaration();
   }
-  if (token.value === 'const') {
+  if (token.type === TokenType.CONST) {
     const nextToken = this._peek(1);
-    if (nextToken?.value === 'enum') {
+    if (nextToken?.type === TokenType.ENUM) {
       return this._parseEnumDeclaration();
     }
   }
 
   // Variable declaration
-  if (token.value === 'const' || token.value === 'let') {
+  if (token.type === TokenType.CONST || token.type === TokenType.LET) {
     return this._parseVariableDeclaration();
   }
 
   // Function declaration (including async functions)
-  if (token.value === 'function' || token.value === 'async') {
+  if (token.type === TokenType.FUNCTION || token.type === TokenType.ASYNC) {
     return this._parseFunctionDeclaration();
   }
 
   // Class declaration (including abstract classes)
-  if (token.value === 'class' || token.value === 'abstract') {
+  if (token.type === TokenType.CLASS) {
     return this._parseClassDeclaration();
   }
 
   // Interface declaration
-  if (token.value === 'interface') {
+  if (token.type === TokenType.INTERFACE) {
     return this._parseInterfaceDeclaration();
   }
 
@@ -124,22 +124,22 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
   }
 
   // Type alias declaration
-  if (token.value === 'type') {
+  if (token.type === TokenType.TYPE) {
     return this._parseTypeAlias();
   }
 
   // Import declaration
-  if (token.value === 'import') {
+  if (token.type === TokenType.IMPORT) {
     return this._parseImportDeclaration();
   }
 
   // Export declaration
-  if (token.value === 'export') {
+  if (token.type === TokenType.EXPORT) {
     return this._parseExportDeclaration();
   }
 
   // Return statement
-  if (token.value === 'return') {
+  if (token.type === TokenType.RETURN) {
     return this._parseReturnStatement();
   }
 
@@ -168,39 +168,29 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
     return this._parseDoWhileStatement();
   }
 
+  // If statement
+  if (token.type === TokenType.IF) {
+    return this._parseIfStatement();
+  }
+
   // Throw statement
-  if (token.value === 'throw') {
+  if (token.type === TokenType.THROW) {
     return this._parseThrowStatement();
   }
 
-  // Switch statement
-  if (token.value === 'switch') {
-    return this._parseSwitchStatement();
-  }
-
-  // For loop
-  if (token.value === 'for') {
-    return this._parseForStatement();
-  }
-
-  // While loop
-  if (token.value === 'while') {
-    return this._parseWhileStatement();
-  }
-
-  // Do-while loop
-  if (token.value === 'do') {
-    return this._parseDoWhileStatement();
-  }
-
   // Break statement
-  if (token.value === 'break') {
+  if (token.type === TokenType.BREAK) {
     return this._parseBreakStatement();
   }
 
   // Continue statement
-  if (token.value === 'continue') {
+  if (token.type === TokenType.CONTINUE) {
     return this._parseContinueStatement();
+  }
+
+  // Block statement
+  if (token.type === TokenType.LBRACE) {
+    return this._parseBlockStatement();
   }
 
   // Expression statement
@@ -212,7 +202,7 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
  */
 function _isAtEnd(this: IParserInternal): boolean {
   const token = this._getCurrentToken();
-  return !token || token.type === 'EOF';
+  return !token || token.type === TokenType.EOF;
 }
 
 /**
@@ -233,10 +223,14 @@ function _peek(this: IParserInternal, offset: number = 0) {
  * Advance to next token
  */
 function _advance(this: IParserInternal) {
+  const before = this._tokens[this._current];
   if (!this._isAtEnd()) {
     this._current++;
   }
-  return this._tokens[this._current - 1];
+  const returned = this._tokens[this._current - 1];
+  const after = this._tokens[this._current];
+  
+  return returned;
 }
 
 /**
@@ -266,7 +260,7 @@ function _match(this: IParserInternal, ...types: string[]): boolean {
 function _expect(this: IParserInternal, type: string, message: string) {
   const token = this._getCurrentToken();
 
-  if (!token || token.type !== type) {
+  if (token?.type !== type) {
     this._addError({
       code: 'PSR-E001',
       message,
@@ -304,5 +298,6 @@ export {
   _isAtEnd,
   _match,
   _parseStatement,
-  _peek,
-};
+  _peek
+}
+

@@ -52,6 +52,12 @@ export function _emitStatement(this: IEmitterInternal, ir: IIRNode): void {
       this._emitEventHandler(ir);
       break;
 
+    case IRNodeType.CALL_EXPRESSION_IR:
+      // Expression statement - emit call expression with semicolon
+      const callExpr = this._emitExpression(ir);
+      this._addLine(`${callExpr};`);
+      break;
+
     case IRNodeType.REGISTRY_REGISTRATION_IR:
     case IRNodeType.REGISTRY_LOOKUP_IR:
       // Skip - handled by component emitter

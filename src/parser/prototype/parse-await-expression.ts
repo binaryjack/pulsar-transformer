@@ -109,17 +109,33 @@ function _parseCallExpression(this: IParserInternal, callee: any): any {
 
   this._advance(); // consume (
 
-  // Parse arguments (simplified)
+  // Parse arguments properly
   const args: any[] = [];
 
-  while (this._getCurrentToken()!.type !== TokenType.RPAREN) {
-    // Skip everything until closing paren
-    // In real implementation, parse argument expressions
-    this._advance();
+  // Check if there are arguments
+  if (!this._check('RPAREN')) {
+    do {
+      // Parse each argument as an expression
+      const argument = this._parseExpression();
+      if (argument) {
+        args.push(argument);
+      } else {
+        // If we can't parse the argument, report error and break
+        this._addError({
+          code: 'PSR-E003',
+          message: 'Expected argument expression',
+          location: {
+            line: this._getCurrentToken()?.line || 0,
+            column: this._getCurrentToken()?.column || 0,
+          },
+          token: this._getCurrentToken(),
+        });
+        break;
+      }
+    } while (this._match('COMMA'));
   }
 
-  const endToken = this._getCurrentToken()!;
-  this._advance(); // consume )
+  const endToken = this._expect('RPAREN', 'Expected ")" after function arguments');
 
   return {
     type: ASTNodeType.CALL_EXPRESSION,
@@ -128,9 +144,9 @@ function _parseCallExpression(this: IParserInternal, callee: any): any {
     location: {
       start: startToken,
       end: {
-        line: endToken.line,
-        column: endToken.column + 1,
-        offset: endToken.end,
+        line: endToken!.line,
+        column: endToken!.column + 1,
+        offset: endToken!.end,
       },
     },
   };

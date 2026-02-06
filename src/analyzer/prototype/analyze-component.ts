@@ -54,6 +54,22 @@ export function analyzeComponent(
     }
   }
 
+  // If the LAST statement is an ElementIR (no explicit return), wrap it in ReturnStatementIR
+  // This handles both cases:
+  // 1. component Foo() { <div/> } - single ElementIR
+  // 2. component Foo() { const x = 1; <div/> } - multiple statements with trailing ElementIR
+  if (
+    body.length > 0 &&
+    body[body.length - 1].type === IRNodeType.ELEMENT_IR &&
+    !node.returnStatement
+  ) {
+    const element = body[body.length - 1];
+    body[body.length - 1] = {
+      type: IRNodeType.RETURN_STATEMENT_IR,
+      argument: element,
+    } as any;
+  }
+
   // Analyze return expression
   let returnExpression: IIRNode | null = null;
   if (node.returnStatement) {

@@ -46,44 +46,148 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
     },
   };
 
-  // Parse parameters: ()
-  this._expect('LPAREN', 'Expected "(" after component name');
-
+  // Parse parameters: () - optional when no parameters
   const params: IIdentifierNode[] = [];
+  const hasParams = this._match('LPAREN');
 
-  // Parse parameter list (if any)
-  if (!this._check('RPAREN')) {
-    do {
-      const paramToken = this._expect('IDENTIFIER', 'Expected parameter name');
+  if (hasParams) {
+    // Parse parameter list (if any)
+    if (!this._check('RPAREN')) {
+      do {
+        // Check for object destructuring: { prop1, prop2, ...rest }
+        if (this._check('LBRACE')) {
+          this._advance(); // consume {
 
-      // Skip TypeScript type annotation if present (: type)
-      if (this._match('COLON')) {
-        // Skip type tokens until we hit comma or closing paren
-        while (!this._check('COMMA') && !this._check('RPAREN') && !this._isAtEnd()) {
-          this._advance();
+          const properties: any[] = [];
+
+          // Parse destructuring properties
+          while (!this._check('RBRACE') && !this._isAtEnd()) {
+            // Check for rest parameter: ...rest
+            if (this._check('SPREAD')) {
+              this._advance(); // consume ...
+              const restToken = this._expect('IDENTIFIER', 'Expected identifier after ...');
+
+              properties.push({
+                type: 'RestElement',
+                argument: {
+                  type: ASTNodeType.IDENTIFIER,
+                  name: restToken!.value,
+                  location: {
+                    start: {
+                      line: restToken!.line,
+                      column: restToken!.column,
+                      offset: restToken!.start,
+                    },
+                    end: {
+                      line: restToken!.line,
+                      column: restToken!.column + restToken!.value.length,
+                      offset: restToken!.end,
+                    },
+                  },
+                },
+              });
+
+              // Rest must be last
+              break;
+            }
+
+            const propToken = this._expect('IDENTIFIER', 'Expected property name');
+
+            // Check for default value: prop = value
+            let defaultValue = null;
+            if (this._match('ASSIGN')) {
+              // Skip the default value expression
+              let depth = 0;
+              while (!this._check('COMMA') && !this._check('RBRACE') && !this._isAtEnd()) {
+                const tok = this._getCurrentToken();
+                if (tok?.type === 'LPAREN' || tok?.type === 'LBRACE' || tok?.type === 'LBRACKET')
+                  depth++;
+                if (tok?.type === 'RPAREN' || tok?.type === 'RBRACE' || tok?.type === 'RBRACKET')
+                  depth--;
+                if (depth < 0) break;
+                this._advance();
+              }
+            }
+
+            properties.push({
+              type: 'Property',
+              key: {
+                type: ASTNodeType.IDENTIFIER,
+                name: propToken!.value,
+              },
+              value: {
+                type: ASTNodeType.IDENTIFIER,
+                name: propToken!.value,
+              },
+              location: {
+                start: {
+                  line: propToken!.line,
+                  column: propToken!.column,
+                  offset: propToken!.start,
+                },
+                end: {
+                  line: propToken!.line,
+                  column: propToken!.column + propToken!.value.length,
+                  offset: propToken!.end,
+                },
+              },
+            });
+
+            if (!this._match('COMMA')) {
+              break;
+            }
+          }
+
+          this._expect('RBRACE', 'Expected "}" after destructuring properties');
+
+          // Skip TypeScript type annotation if present (: type)
+          if (this._match('COLON')) {
+            while (!this._check('COMMA') && !this._check('RPAREN') && !this._isAtEnd()) {
+              this._advance();
+            }
+          }
+
+          // Add the whole destructuring pattern as a single parameter
+          params.push({
+            type: 'ObjectPattern',
+            properties,
+          } as any);
+
+          continue;
         }
-      }
 
-      params.push({
-        type: ASTNodeType.IDENTIFIER,
-        name: paramToken!.value,
-        location: {
-          start: {
-            line: paramToken!.line,
-            column: paramToken!.column,
-            offset: paramToken!.start,
+        // Simple parameter (not destructuring)
+        const paramToken = this._expect('IDENTIFIER', 'Expected parameter name');
+
+        // Skip TypeScript type annotation if present (: type)
+        if (this._match('COLON')) {
+          // Skip type tokens until we hit comma or closing paren
+          while (!this._check('COMMA') && !this._check('RPAREN') && !this._isAtEnd()) {
+            this._advance();
+          }
+        }
+
+        params.push({
+          type: ASTNodeType.IDENTIFIER,
+          name: paramToken!.value,
+          location: {
+            start: {
+              line: paramToken!.line,
+              column: paramToken!.column,
+              offset: paramToken!.start,
+            },
+            end: {
+              line: paramToken!.line,
+              column: paramToken!.column + paramToken!.value.length,
+              offset: paramToken!.end,
+            },
           },
-          end: {
-            line: paramToken!.line,
-            column: paramToken!.column + paramToken!.value.length,
-            offset: paramToken!.end,
-          },
-        },
-      });
-    } while (this._match('COMMA'));
+        });
+      } while (this._match('COMMA'));
+    }
+
+    this._expect('RPAREN', 'Expected ")" after parameters');
   }
-
-  this._expect('RPAREN', 'Expected ")" after parameters');
 
   // Parse body: { ... }
   this._expect('LBRACE', 'Expected "{" before component body');
