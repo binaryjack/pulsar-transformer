@@ -1,0 +1,17 @@
+/**
+ * Minimal test: Object literal in function arguments
+ */
+
+component Test() {
+  const result = someFunction(value1, {
+    componentName: 'Test',
+    assertions: {
+      dom: {
+        tagName: 'div',
+        minChildren: 2,
+      },
+    },
+  });
+  
+  return <div>Test</div>;
+}

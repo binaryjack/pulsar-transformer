@@ -1,0 +1,15 @@
+/**
+ * Test: IF statement with negated function call condition
+ */
+
+component Test() {
+  const filterActive = () => false;
+  const items = () => [1, 2, 3];
+  
+  const filtered = () => {
+    if (!filterActive()) return items();
+    return [];
+  };
+  
+  return <div>Test</div>;
+}
