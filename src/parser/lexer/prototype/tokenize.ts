@@ -4,10 +4,11 @@
  * Main tokenization logic - converts source string into token array.
  */
 
-import { Lexer } from '../lexer.js';
-import type { ILexerInternal } from '../lexer.types.js';
-import type { IToken } from '../token-types.js';
-import { TokenType } from '../token-types.js';
+import { Lexer } from '../lexer.js'
+import type { ILexerInternal } from '../lexer.types.js'
+import { ScanMode } from '../lexer.types.js'
+import type { IToken } from '../token-types.js'
+import { TokenType } from '../token-types.js'
 
 /**
  * Tokenize source code into tokens
@@ -20,7 +21,7 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
   this._source = source;
   this._position = 0;
   this._line = 1;
-  this._column = 1;
+  this._lineStart = 0; // Babel pattern: track where line starts
   this._tokens = [];
   this._current = 0;
 
@@ -28,6 +29,7 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
   this._jsxBraceDepth = 0;
   this._inJSXExpression = false;
   this._inJSXElement = false;
+  this._scanMode = ScanMode.JAVASCRIPT;
 
   while (this._position < source.length) {
     // Use proper Unicode iteration to handle surrogate pairs
@@ -49,28 +51,33 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
       }
     }
 
-    // Skip Unicode whitespace (spaces, tabs, and Unicode whitespace)
-    if (/\p{White_Space}/u.test(currentChar)) {
+    // Skip Unicode whitespace ONLY if NOT in JSX text mode
+    // In JSX text mode, whitespace is significant and should be included in JSX_TEXT tokens
+    const currentScanMode = this._scanMode as ScanMode;
+    if (currentScanMode !== ScanMode.JSX_TEXT && /\p{White_Space}/u.test(currentChar)) {
       this._position += currentChar.length;
-      this._column += currentChar.length;
+      // Column is calculated, not incremented
       continue;
     }
 
     // Handle Unicode line terminators and newlines
+    // In JSX text mode, newlines are significant and handled by _scanJSXText
     if (
-      /\p{Line_Separator}|\p{Paragraph_Separator}/u.test(currentChar) ||
-      currentChar === '\n' ||
-      currentChar === '\r'
+      currentScanMode !== ScanMode.JSX_TEXT &&
+      (/\p{Line_Separator}|\p{Paragraph_Separator}/u.test(currentChar) ||
+        currentChar === '\n' ||
+        currentChar === '\r')
     ) {
       this._position += currentChar.length;
       this._line++;
-      this._column = 1;
+      this._lineStart = this._position; // Babel pattern: track line start position
       continue;
     }
 
     // Try to recognize token
     const startPosition = this._position;
-    const token = this._recognizeToken(this._position, this._line, this._column);
+    const column = this._getCurrentColumn(); // Calculate column at token start
+    const token = this._recognizeToken(startPosition, this._line, column);
 
     if (token) {
       this._tokens.push(token);
@@ -82,7 +89,7 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
       // Filter problematic characters (null, control chars)
       if (currentCodePoint === 0 || /\p{Control}/u.test(currentChar)) {
         this._position += currentChar.length; // Skip silently
-        this._column += currentChar.length;
+        // Column is calculated, not incremented
         continue;
       }
 
@@ -110,34 +117,37 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
 
         if (isValidTextChar) {
           // Use the properly constructed Unicode character
+          const column = this._getCurrentColumn();
           this._tokens.push({
             type: TokenType.IDENTIFIER,
             value: currentChar,
             line: this._line,
-            column: this._column,
+            column,
             start: this._position,
             end: this._position + currentChar.length,
           });
 
           this._position += currentChar.length;
-          this._column += currentChar.length;
+          // Column is calculated, not incremented
           continue;
         }
       }
 
       // Still throw for truly unexpected characters
+      const column = this._getCurrentColumn();
       throw new Error(
-        `PSR-E001: Unexpected character '${currentChar}' (U+${currentCodePoint.toString(16).toUpperCase()}) at line ${this._line}, column ${this._column}`
+        `PSR-E001: Unexpected character '${currentChar}' (U+${currentCodePoint.toString(16).toUpperCase()}) at line ${this._line}, column ${column}`
       );
     }
   }
 
   // Add EOF token
+  const column = this._getCurrentColumn();
   this._tokens.push({
     type: TokenType.EOF,
     value: '',
     line: this._line,
-    column: this._column,
+    column,
     start: this._position,
     end: this._position,
   });
@@ -154,8 +164,22 @@ function _recognizeToken(this: ILexerInternal): IToken | null {
   const char = this._source[this._position];
   const start = this._position;
   const line = this._line;
-  const column = this._column;
+  const column = this._getCurrentColumn();
 
+  // JSX TEXT MODE: Scan text content until < or {
+  if (this._scanMode === ScanMode.JSX_TEXT) {
+    // Check if we're at < or {
+    if (char === '<' || char === '{') {
+      // Switch back to JavaScript mode to tokenize the delimiter properly
+      this._scanMode = ScanMode.JAVASCRIPT;
+      return this._readSingleChar(start, line, column);
+    }
+
+    // Scan JSX text content
+    return this._scanJSXText(start, line, column);
+  }
+
+  // JAVASCRIPT MODE: Normal tokenization
   // Keywords and identifiers
   if (this._isAlpha(char)) {
     return this._readIdentifierOrKeyword(start, line, column);
@@ -238,7 +262,6 @@ function _readIdentifierOrKeyword(
     if (this._isAlphaNumeric(char)) {
       value += char;
       this._position++;
-      this._column++;
     } else {
       break;
     }
@@ -316,7 +339,6 @@ function _readNumber(this: ILexerInternal, start: number, line: number, column: 
     if (this._isDigit(char) || char === '.') {
       value += char;
       this._position++;
-      this._column++;
     } else {
       break;
     }
@@ -340,30 +362,25 @@ function _readString(this: ILexerInternal, start: number, line: number, column: 
   let value = '';
 
   this._position++; // Skip opening quote
-  this._column++;
 
   while (this._position < this._source.length) {
     const char = this._source[this._position];
 
     if (char === quote) {
       this._position++; // Skip closing quote
-      this._column++;
       break;
     }
 
     if (char === '\\') {
       // Handle escape sequences
       this._position++;
-      this._column++;
       if (this._position < this._source.length) {
         value += this._source[this._position];
         this._position++;
-        this._column++;
       }
     } else {
       value += char;
       this._position++;
-      this._column++;
     }
   }
 
@@ -389,34 +406,28 @@ function _readTemplateLiteral(
   let value = '';
 
   this._position++; // Skip opening backtick
-  this._column++;
 
   while (this._position < this._source.length) {
     const char = this._source[this._position];
 
     if (char === '`') {
       this._position++; // Skip closing backtick
-      this._column++;
       break;
     }
 
     if (char === '\\') {
       // Handle escape sequences
       this._position++;
-      this._column++;
       if (this._position < this._source.length) {
         value += this._source[this._position];
         this._position++;
-        this._column++;
       }
     } else {
       value += char;
       this._position++;
-      if (char === '\n') {
+      if (char === '\n' || char === '\r') {
         this._line++;
-        this._column = 1;
-      } else {
-        this._column++;
+        this._lineStart = this._position;
       }
     }
   }
@@ -442,7 +453,6 @@ function _readSignalBinding(
 ): IToken {
   let value = '$(';
   this._position += 2; // Skip $(
-  this._column += 2;
 
   // Read identifier
   while (this._position < this._source.length) {
@@ -451,11 +461,9 @@ function _readSignalBinding(
     if (this._isAlphaNumeric(char)) {
       value += char;
       this._position++;
-      this._column++;
     } else if (char === ')') {
       value += char;
       this._position++;
-      this._column++;
       break;
     } else {
       throw new Error(`PSR-E002: Invalid signal binding at line ${line}, column ${column}`);
@@ -513,7 +521,48 @@ function _readSingleChar(
 
   if (type) {
     this._position++;
-    this._column++;
+
+    // TYPE CONTEXT: In type context, < and > are always generic brackets, never compound operators
+    if (this._inTypeLevel > 0) {
+      if (char === '<') {
+        return {
+          type: TokenType.LT,
+          value: '<',
+          line,
+          column,
+          start,
+          end: this._position,
+          context: 'TYPE',
+        };
+      }
+      if (char === '>') {
+        return {
+          type: TokenType.GT,
+          value: '>',
+          line,
+          column,
+          start,
+          end: this._position,
+          context: 'TYPE',
+        };
+      }
+    }
+
+    // Check for closing tag: </
+    if (char === '<' && this._source[this._position] === '/') {
+      this._position++;
+      // Exiting JSX element - switch to JavaScript mode
+      this._inJSXElement = false;
+      this._scanMode = ScanMode.JAVASCRIPT;
+      return {
+        type: TokenType.LESS_THAN_SLASH,
+        value: '</',
+        line,
+        column,
+        start,
+        end: this._position,
+      };
+    }
 
     // Track JSX context for proper string handling in JSX expressions
     if (char === '<') {
@@ -521,15 +570,28 @@ function _readSingleChar(
       const nextChar = this._source[this._position];
       if (nextChar && (this._isAlpha(nextChar) || nextChar === '/')) {
         this._inJSXElement = true;
+        // Don't switch to JSX_TEXT yet - wait for > to close the opening tag
       }
     } else if (char === '>') {
-      // Exiting JSX tag, but may still be in JSX expression
-      this._inJSXElement = false;
+      // Just closed an opening tag, enter JSX text mode for children
+      // But check if it was a self-closing tag (/>) or closing tag
+      const prevChar = this._position >= 2 ? this._source[this._position - 2] : '';
+      const wasSelfClosing = prevChar === '/';
+
+      if (this._inJSXElement && !wasSelfClosing) {
+        // Not a self-closing tag, enter JSX text mode
+        this._scanMode = ScanMode.JSX_TEXT;
+      } else if (wasSelfClosing) {
+        // Self-closing tag, exit JSX element
+        this._inJSXElement = false;
+        this._scanMode = ScanMode.JAVASCRIPT;
+      }
     } else if (char === '{') {
-      // Entering JSX expression if we're in a JSX element
-      if (this._inJSXElement || this._jsxBraceDepth > 0) {
+      // Entering JSX expression
+      if (this._scanMode === ScanMode.JSX_TEXT || this._jsxBraceDepth > 0) {
         this._jsxBraceDepth++;
         this._inJSXExpression = true;
+        this._scanMode = ScanMode.JAVASCRIPT;
       }
     } else if (char === '}') {
       // Exiting JSX expression
@@ -537,6 +599,10 @@ function _readSingleChar(
         this._jsxBraceDepth--;
         if (this._jsxBraceDepth === 0) {
           this._inJSXExpression = false;
+          // Switch back to JSX text mode if still in JSX element
+          if (this._inJSXElement) {
+            this._scanMode = ScanMode.JSX_TEXT;
+          }
         }
       }
     }
@@ -545,7 +611,6 @@ function _readSingleChar(
     if (char === '=' && this._source[this._position] === '=') {
       if (this._source[this._position + 1] === '=') {
         this._position += 2;
-        this._column += 2;
         return {
           type: TokenType.STRICT_EQUALS,
           value: '===',
@@ -557,7 +622,6 @@ function _readSingleChar(
       }
 
       this._position++;
-      this._column++;
       return {
         type: TokenType.EQUALS,
         value: '==',
@@ -571,7 +635,6 @@ function _readSingleChar(
     if (char === '!' && this._source[this._position] === '=') {
       if (this._source[this._position + 1] === '=') {
         this._position += 2;
-        this._column += 2;
         return {
           type: TokenType.STRICT_NOT_EQUALS,
           value: '!==',
@@ -583,7 +646,6 @@ function _readSingleChar(
       }
 
       this._position++;
-      this._column++;
       return {
         type: TokenType.NOT_EQUALS,
         value: '!=',
@@ -596,7 +658,6 @@ function _readSingleChar(
 
     if (char === '<' && this._source[this._position] === '=') {
       this._position++;
-      this._column++;
       return {
         type: TokenType.LT_EQUAL,
         value: '<=',
@@ -609,7 +670,6 @@ function _readSingleChar(
 
     if (char === '>' && this._source[this._position] === '=') {
       this._position++;
-      this._column++;
       return {
         type: TokenType.GT_EQUAL,
         value: '>=',
@@ -622,7 +682,6 @@ function _readSingleChar(
 
     if (char === '&' && this._source[this._position] === '&') {
       this._position++;
-      this._column++;
       return {
         type: TokenType.AND_AND,
         value: '&&',
@@ -635,7 +694,6 @@ function _readSingleChar(
 
     if (char === '|' && this._source[this._position] === '|') {
       this._position++;
-      this._column++;
       return {
         type: TokenType.OR_OR,
         value: '||',
@@ -649,7 +707,6 @@ function _readSingleChar(
     // Check for increment operator: ++
     if (char === '+' && this._source[this._position] === '+') {
       this._position++;
-      this._column++;
       return {
         type: TokenType.PLUS_PLUS,
         value: '++',
@@ -663,7 +720,6 @@ function _readSingleChar(
     // Check for decrement operator: --
     if (char === '-' && this._source[this._position] === '-') {
       this._position++;
-      this._column++;
       return {
         type: TokenType.MINUS_MINUS,
         value: '--',
@@ -676,7 +732,6 @@ function _readSingleChar(
 
     if (char === '=' && this._source[this._position] === '>') {
       this._position++;
-      this._column++;
       return {
         type: TokenType.ARROW,
         value: '=>',
@@ -694,7 +749,6 @@ function _readSingleChar(
       this._source[this._position + 1] === '.'
     ) {
       this._position += 2;
-      this._column += 2;
       return {
         type: TokenType.SPREAD,
         value: '...',
@@ -730,7 +784,6 @@ function _readSingleLineComment(
 ): IToken | null {
   // Skip //
   this._position += 2;
-  this._column += 2;
 
   // Read until end of line
   while (
@@ -739,7 +792,6 @@ function _readSingleLineComment(
     this._source[this._position] !== '\r'
   ) {
     this._position++;
-    this._column++;
   }
 
   // Return null to skip adding comment to token stream
@@ -758,23 +810,19 @@ function _readMultiLineComment(
 ): IToken | null {
   // Skip /*
   this._position += 2;
-  this._column += 2;
 
   // Read until */
   while (this._position < this._source.length - 1) {
     if (this._source[this._position] === '*' && this._source[this._position + 1] === '/') {
       // Skip */
       this._position += 2;
-      this._column += 2;
       return null; // Skip adding comment to token stream
     }
 
     // Track newlines within comments
     if (this._source[this._position] === '\n' || this._source[this._position] === '\r') {
       this._line++;
-      this._column = 1;
-    } else {
-      this._column++;
+      this._lineStart = this._position;
     }
 
     this._position++;
@@ -797,8 +845,8 @@ export {
   _readSingleLineComment,
   _readString,
   _readTemplateLiteral,
-  _recognizeToken,
-};
+  _recognizeToken
+}
 
 // Attach private methods to prototype
 Object.assign(Lexer.prototype, {

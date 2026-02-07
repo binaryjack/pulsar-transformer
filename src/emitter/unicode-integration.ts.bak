@@ -1,0 +1,72 @@
+/**
+ * Emitter Integration - Unicode Handler
+ *
+ * Integrates unicode escape/unescape into emitter.
+ * Ensures proper unicode handling in JSX attributes and text.
+ */
+
+import { analyzeUnicode, escapeUnicode } from '../utils/unicode-handler.js';
+
+/**
+ * Emit JSX attribute value with proper unicode handling
+ */
+export function emitJSXAttributeValue(value: string, useExpressionContainer = true): string {
+  const analysis = analyzeUnicode(value);
+
+  // If no special chars, emit as plain string literal
+  if (!analysis.requiresEscape) {
+    return `"${value}"`;
+  }
+
+  // Escape unicode characters
+  const escaped = escapeUnicode(value);
+
+  // Use expression container for special chars (React pattern)
+  if (useExpressionContainer) {
+    return `{"${escaped}"}`;
+  }
+
+  return `"${escaped}"`;
+}
+
+/**
+ * Emit JSX text content with proper unicode handling
+ */
+export function emitJSXText(text: string): string {
+  const analysis = analyzeUnicode(text);
+
+  // No escaping needed
+  if (!analysis.requiresEscape) {
+    return text;
+  }
+
+  // Escape unicode in text content
+  return escapeUnicode(text);
+}
+
+/**
+ * Emit string literal with unicode handling
+ */
+export function emitStringLiteral(value: string, quote: '"' | "'" = '"'): string {
+  const analysis = analyzeUnicode(value);
+
+  if (!analysis.requiresEscape) {
+    return `${quote}${value}${quote}`;
+  }
+
+  const escaped = escapeUnicode(value);
+  return `${quote}${escaped}${quote}`;
+}
+
+/**
+ * Check if JSX attribute needs expression container
+ */
+export function needsExpressionContainer(value: string): boolean {
+  const analysis = analyzeUnicode(value);
+  return (
+    analysis.requiresEscape ||
+    analysis.hasLineBreak ||
+    analysis.hasControlChars ||
+    analysis.hasHighUnicode
+  );
+}

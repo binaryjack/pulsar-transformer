@@ -28,10 +28,7 @@ export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
   // Parse catch clause (optional)
   let handler: ICatchClauseNode | null = null;
 
-  if (
-    this._getCurrentToken()!.type === TokenType.IDENTIFIER &&
-    this._getCurrentToken()!.value === 'catch'
-  ) {
+  if (this._check('CATCH')) {
     const catchStart = this._getCurrentToken();
     this._advance(); // Consume 'catch'
 
@@ -99,10 +96,7 @@ export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
   // Parse finally block (optional)
   let finalizer: IBlockStatementNode | null = null;
 
-  if (
-    this._getCurrentToken()!.type === TokenType.IDENTIFIER &&
-    this._getCurrentToken()!.value === 'finally'
-  ) {
+  if (this._check('FINALLY')) {
     this._advance(); // Consume 'finally'
     finalizer = this._parseBlockStatement();
   }
@@ -135,55 +129,6 @@ export function _parseTryStatement(this: IParserInternal): ITryStatementNode {
     location: {
       start,
       end,
-    },
-  };
-}
-
-/**
- * Helper: Parse block statement { ... }
- */
-function _parseBlockStatement(this: IParserInternal): IBlockStatementNode {
-  const startToken = this._getCurrentToken();
-
-  // Expect opening brace
-  if (this._getCurrentToken()!.type !== TokenType.LBRACE) {
-    throw new Error(`Expected '{', got ${this._getCurrentToken()!.value}`);
-  }
-
-  this._advance(); // Consume '{'
-
-  // Parse statements
-  const body = [];
-
-  while (
-    this._getCurrentToken()!.type !== TokenType.RBRACE &&
-    this._getCurrentToken()!.type !== TokenType.EOF
-  ) {
-    body.push(this._parseStatement());
-  }
-
-  // Expect closing brace
-  if (this._getCurrentToken()!.type !== TokenType.RBRACE) {
-    throw new Error(`Expected '}', got ${this._getCurrentToken()!.value}`);
-  }
-
-  const endToken = this._getCurrentToken();
-  this._advance(); // Consume '}'
-
-  return {
-    type: ASTNodeType.BLOCK_STATEMENT,
-    body,
-    location: {
-      start: {
-        line: startToken!.line,
-        column: startToken!.column,
-        offset: startToken!.start,
-      },
-      end: {
-        line: endToken!.line,
-        column: endToken!.column + 1,
-        offset: endToken!.end,
-      },
     },
   };
 }

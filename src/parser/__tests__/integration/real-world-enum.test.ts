@@ -17,11 +17,11 @@ describe('Real-World Enum Integration', () => {
       }
     `;
 
-    const parser = createParser(source);
-    const ast = parser.parse();
+    const parser = createParser();
+    const ast = parser.parse(source);
 
     expect(ast.body).toHaveLength(1);
-    expect(ast.body[0].type).toBe('ENUM_DECLARATION');
+    expect(ast.body[0].type).toBe('EnumDeclaration');
     const enumNode = ast.body[0];
     expect(enumNode.name?.name).toBe('HttpStatus');
   });
@@ -36,11 +36,11 @@ describe('Real-World Enum Integration', () => {
       }
     `;
 
-    const parser = createParser(source);
-    const ast = parser.parse();
+    const parser = createParser();
+    const ast = parser.parse(source);
 
     expect(ast.body).toHaveLength(1);
-    expect(ast.body[0].type).toBe('ENUM_DECLARATION');
+    expect(ast.body[0].type).toBe('EnumDeclaration');
   });
 
   it('should parse const enum for optimization', () => {
@@ -53,8 +53,8 @@ describe('Real-World Enum Integration', () => {
       }
     `;
 
-    const parser = createParser(source);
-    const ast = parser.parse();
+    const parser = createParser();
+    const ast = parser.parse(source);
 
     expect(ast.body).toHaveLength(1);
     const enumNode = ast.body[0];

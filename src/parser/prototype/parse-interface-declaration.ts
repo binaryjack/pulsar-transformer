@@ -14,9 +14,9 @@
  * }
  */
 
-import type { IIdentifierNode, IInterfaceDeclarationNode } from '../ast/index.js';
-import { ASTNodeType } from '../ast/index.js';
-import type { IParserInternal } from '../parser.types.js';
+import type { IIdentifierNode, IInterfaceDeclarationNode } from '../ast/index.js'
+import { ASTNodeType } from '../ast/index.js'
+import type { IParserInternal } from '../parser.types.js'
 
 /**
  * Parse interface declaration
@@ -59,6 +59,7 @@ export function parseInterfaceDeclaration(this: IParserInternal): IInterfaceDecl
 
   // Skip generic type parameters if present: <T>, <T, U>
   if (this._check('LT')) {
+    this._lexer.enterTypeContext(); // PHASE 3: Enable type-aware tokenization
     this._advance(); // consume <
     let angleDepth = 1;
 
@@ -66,9 +67,21 @@ export function parseInterfaceDeclaration(this: IParserInternal): IInterfaceDecl
       const token = this._getCurrentToken();
       if (!token) break;
 
-      if (token.type === 'LT') angleDepth++;
-      else if (token.type === 'GT') angleDepth--;
+      if (token.type === 'LT') {
+        angleDepth++;
+      } else if (token.type === 'GT') {
+        angleDepth--;
+      } else if (token.type === 'JSX_TEXT') {
+        // Skip JSX_TEXT tokens that might be generated for generic content
+      }
 
+      this._advance();
+    }
+
+    this._lexer.exitTypeContext(); // PHASE 3: Restore normal tokenization
+
+    // Skip any JSX_TEXT or whitespace tokens after generic parameters
+    while (this._check('JSX_TEXT') && !this._isAtEnd()) {
       this._advance();
     }
   }
@@ -106,11 +119,14 @@ export function parseInterfaceDeclaration(this: IParserInternal): IInterfaceDecl
   // Collect all tokens until matching closing brace
   const bodyTokens: string[] = [];
   let braceDepth = 1;
+  let parenDepth = 0; // Track parentheses for function types
+  let angleDepth = 0; // Track angle brackets for generics
 
   while (!this._isAtEnd() && braceDepth > 0) {
     const token = this._getCurrentToken();
     if (!token) break;
 
+    // Track depth of various bracket types
     if (token.type === 'LBRACE') {
       braceDepth++;
     } else if (token.type === 'RBRACE') {
@@ -118,6 +134,14 @@ export function parseInterfaceDeclaration(this: IParserInternal): IInterfaceDecl
       if (braceDepth === 0) {
         break; // Don't include the closing brace
       }
+    } else if (token.type === 'LPAREN') {
+      parenDepth++;
+    } else if (token.type === 'RPAREN') {
+      parenDepth--;
+    } else if (token.type === 'LT') {
+      angleDepth++;
+    } else if (token.type === 'GT') {
+      angleDepth--;
     }
 
     bodyTokens.push(token.value);

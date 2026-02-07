@@ -15,11 +15,11 @@ describe('Real-World Namespace Integration', () => {
       }
     `;
 
-    const parser = createParser(source);
-    const ast = parser.parse();
+    const parser = createParser();
+    const ast = parser.parse(source);
 
     expect(ast.body).toHaveLength(1);
-    expect(ast.body[0].type).toBe('NAMESPACE_DECLARATION');
+    expect(ast.body[0].type).toBe('NamespaceDeclaration');
   });
 
   it('should parse nested namespace structure', () => {
@@ -42,11 +42,11 @@ describe('Real-World Namespace Integration', () => {
       }
     `;
 
-    const parser = createParser(source);
-    const ast = parser.parse();
+    const parser = createParser();
+    const ast = parser.parse(source);
 
     expect(ast.body).toHaveLength(1);
-    expect(ast.body[0].type).toBe('NAMESPACE_DECLARATION');
+    expect(ast.body[0].type).toBe('NamespaceDeclaration');
   });
 
   it('should parse module declaration (legacy syntax)', () => {
@@ -58,10 +58,10 @@ describe('Real-World Namespace Integration', () => {
       }
     `;
 
-    const parser = createParser(source);
-    const ast = parser.parse();
+    const parser = createParser();
+    const ast = parser.parse(source);
 
     expect(ast.body).toHaveLength(1);
-    expect(ast.body[0].type).toBe('NAMESPACE_DECLARATION');
+    expect(ast.body[0].type).toBe('NamespaceDeclaration');
   });
 });

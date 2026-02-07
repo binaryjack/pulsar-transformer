@@ -96,6 +96,8 @@ export enum ASTNodeType {
   CONDITIONAL_EXPRESSION = 'ConditionalExpression',
   MEMBER_EXPRESSION = 'MemberExpression',
   AS_EXPRESSION = 'AsExpression',
+  OBJECT_EXPRESSION = 'ObjectExpression',
+  ARRAY_EXPRESSION = 'ArrayExpression',
   ARRAY_PATTERN = 'ArrayPattern',
   OBJECT_PATTERN = 'ObjectPattern',
 

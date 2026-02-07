@@ -11,7 +11,18 @@ import type { IEmitterInternal } from '../emitter.types.js';
  * Emit variable declaration
  */
 export function _emitVariableDeclaration(this: IEmitterInternal, ir: IVariableDeclarationIR): void {
-  const { kind, name, initializer, isSignalDeclaration, isDestructuring, destructuringNames } = ir;
+  const {
+    kind,
+    name,
+    initializer,
+    typeAnnotation,
+    isSignalDeclaration,
+    isDestructuring,
+    destructuringNames,
+  } = ir;
+
+  // Build type annotation string if present
+  const typeStr = typeAnnotation ? `: ${typeAnnotation.typeString}` : '';
 
   if (isSignalDeclaration && isDestructuring && destructuringNames) {
     // Signal declaration with destructuring: const [count, setCount] = createSignal(0);
@@ -21,7 +32,7 @@ export function _emitVariableDeclaration(this: IEmitterInternal, ir: IVariableDe
     const namesStr = destructuringNames.join(', ');
     const initExpr = initializer ? this._emitExpression(initializer) : 'undefined';
 
-    this._addLine(`${kind} [${namesStr}] = ${initExpr};`);
+    this._addLine(`${kind} [${namesStr}]${typeStr} = ${initExpr};`);
   } else if (isSignalDeclaration) {
     // Check what function is being called
     const functionName = (initializer as any)?.callee?.name || 'createSignal';
@@ -37,7 +48,7 @@ export function _emitVariableDeclaration(this: IEmitterInternal, ir: IVariableDe
       const setterName = `set${name.charAt(0).toUpperCase()}${name.slice(1)}`;
       const initExpr = initializer ? this._emitExpression(initializer) : 'undefined';
 
-      this._addLine(`${kind} [${name}, ${setterName}] = ${initExpr};`);
+      this._addLine(`${kind} [${name}, ${setterName}]${typeStr} = ${initExpr};`);
     } else {
       // const memo = createMemo(() => ...);
       // createMemo, createEffect, createResource return single function - NO destructuring
@@ -45,17 +56,17 @@ export function _emitVariableDeclaration(this: IEmitterInternal, ir: IVariableDe
 
       const initExpr = initializer ? this._emitExpression(initializer) : 'undefined';
 
-      this._addLine(`${kind} ${name} = ${initExpr};`);
+      this._addLine(`${kind} ${name}${typeStr} = ${initExpr};`);
     }
   } else if (isDestructuring && destructuringNames) {
     // Regular destructuring: const [a, b] = value;
     const namesStr = destructuringNames.join(', ');
     const initExpr = initializer ? ` = ${this._emitExpression(initializer)}` : '';
 
-    this._addLine(`${kind} [${namesStr}]${initExpr};`);
+    this._addLine(`${kind} [${namesStr}]${typeStr}${initExpr};`);
   } else {
     // Regular declaration: const x = value;
     const initExpr = initializer ? ` = ${this._emitExpression(initializer)}` : '';
-    this._addLine(`${kind} ${name}${initExpr};`);
+    this._addLine(`${kind} ${name}${typeStr}${initExpr};`);
   }
 }

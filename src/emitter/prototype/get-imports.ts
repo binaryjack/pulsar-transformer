@@ -4,11 +4,11 @@
  * Returns all tracked imports.
  */
 
-import type { IImportTrackerInternal } from '../emitter.types.js';
+import type { IImportTrackerInternal } from '../emitter.types.js'
 
 /**
  * Get all imports
  */
-export function getImports(this: IImportTrackerInternal): Map<string, Set<string>> {
+export function getImports(this: IImportTrackerInternal): Map<string, Set<string | null>> {
   return this.imports;
 }

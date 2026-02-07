@@ -10,6 +10,7 @@ import { _detectEventHandlers, _isPureComponent, analyzeComponent } from './anal
 import { _handlerAccessesSignals, analyzeElement } from './analyze-element.js';
 import { analyzeExport } from './analyze-export.js';
 import {
+  _analyzeArrayExpression,
   _analyzeArrowFunction,
   _analyzeBinaryExpression,
   _analyzeCallExpression,
@@ -17,6 +18,7 @@ import {
   _analyzeIdentifier,
   _analyzeLiteral,
   _analyzeMemberExpression,
+  _analyzeObjectExpression,
   _analyzeTemplateLiteral,
   _analyzeUnaryExpression,
   _isFunctionPure,
@@ -211,6 +213,20 @@ Object.defineProperty(Analyzer.prototype, '_analyzeMemberExpression', {
 
 Object.defineProperty(Analyzer.prototype, '_analyzeConditionalExpression', {
   value: _analyzeConditionalExpression,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Analyzer.prototype, '_analyzeObjectExpression', {
+  value: _analyzeObjectExpression,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Analyzer.prototype, '_analyzeArrayExpression', {
+  value: _analyzeArrayExpression,
   writable: true,
   enumerable: false,
   configurable: false,

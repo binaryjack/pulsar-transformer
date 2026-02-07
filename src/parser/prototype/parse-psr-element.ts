@@ -13,9 +13,10 @@ import type {
   IPSRElementNode,
   IPSRFragmentNode,
   IPSRSpreadAttributeNode,
-} from '../ast/index.js'
-import { ASTNodeType } from '../ast/index.js'
-import type { IParserInternal } from '../parser.types.js'
+} from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import type { IParserInternal } from '../parser.types.js';
+import { decodeHTMLEntities } from '../utils/decode-html-entities.js';
 
 /**
  * Helper to check if tag name starts with uppercase (component reference)
@@ -95,20 +96,38 @@ export function parsePSRElement(
     }
 
     // Parse closing tag: </TagName>
-    this._expect('LT', 'Expected "<"');
-    this._expect('SLASH', 'Expected "/"');
-    const closeTag = this._expect('IDENTIFIER', 'Expected closing tag name');
+    // Check for new LESS_THAN_SLASH token (</)
+    if (this._check('LESS_THAN_SLASH')) {
+      this._expect('LESS_THAN_SLASH', 'Expected "</"');
+      const closeTag = this._expect('IDENTIFIER', 'Expected closing tag name');
 
-    if (closeTag.value !== tagName) {
-      this._addError({
-        code: 'PSR-E003',
-        message: `Mismatched closing tag. Expected "</${tagName}>" but got "</${closeTag.value}>"`,
-        location: { line: closeTag.line, column: closeTag.column },
-        token: closeTag,
-      });
+      if (closeTag.value !== tagName) {
+        this._addError({
+          code: 'PSR-E003',
+          message: `Mismatched closing tag. Expected "</${tagName}>" but got "</${closeTag.value}>"`,
+          location: { line: closeTag.line, column: closeTag.column },
+          token: closeTag,
+        });
+      }
+
+      this._expect('GT', 'Expected ">" after closing tag');
+    } else {
+      // Legacy format: < / TagName >
+      this._expect('LT', 'Expected "<"');
+      this._expect('SLASH', 'Expected "/"');
+      const closeTag = this._expect('IDENTIFIER', 'Expected closing tag name');
+
+      if (closeTag.value !== tagName) {
+        this._addError({
+          code: 'PSR-E003',
+          message: `Mismatched closing tag. Expected "</${tagName}>" but got "</${closeTag.value}>"`,
+          location: { line: closeTag.line, column: closeTag.column },
+          token: closeTag,
+        });
+      }
+
+      this._expect('GT', 'Expected ">" after closing tag');
     }
-
-    this._expect('GT', 'Expected ">" after closing tag');
   }
 
   const endToken = this._getCurrentToken() || startToken;
@@ -239,11 +258,11 @@ function _parsePSRAttribute(
     // Dynamic value: {expression}
     else if (this._match('LBRACE')) {
       isStatic = false;
-      
+
       // Check if this is an empty expression (JSX comment was skipped by lexer)
       if (this._check('RBRACE')) {
         this._advance(); // Consume RBRACE
-        value = null;     // Empty/comment value
+        value = null; // Empty/comment value
       } else {
         value = this._parseJSXExpression();
 
@@ -305,17 +324,48 @@ function _parsePSRChild(this: IParserInternal, parentTagName?: string): any {
     return this._parsePSRElement();
   }
 
-  // Expression: {expr} or JSX comment {/* ... */}  
+  // JSX Text content (from JSX text scanning mode)
+  if (token.type === 'JSX_TEXT') {
+    // Decode HTML entities first, then normalize whitespace
+    const decoded = decodeHTMLEntities(token.value);
+    const textValue = normalizeJSXWhitespace(decoded);
+    this._advance();
+
+    // Skip empty text nodes
+    if (textValue.trim().length === 0) {
+      return null;
+    }
+
+    return {
+      type: ASTNodeType.LITERAL,
+      value: textValue,
+      raw: textValue,
+      location: {
+        start: {
+          line: token.line,
+          column: token.column,
+          offset: token.start,
+        },
+        end: {
+          line: token.line,
+          column: token.column + token.value.length,
+          offset: token.end,
+        },
+      },
+    };
+  }
+
+  // Expression: {expr} or JSX comment {/* ... */}
   if (token.type === 'LBRACE') {
     this._advance();
-    
+
     // Check if this is an empty expression (JSX comment was skipped by lexer)
     // The lexer skips comments, so if we see RBRACE immediately, it was a comment
     if (this._check('RBRACE')) {
       this._advance(); // Consume the RBRACE
       return null; // Skip JSX comments in output
     }
-    
+
     const expr = this._parseJSXExpression();
     this._expect('RBRACE', 'Expected "}" after expression');
     return expr;
@@ -342,6 +392,7 @@ function _parsePSRChild(this: IParserInternal, parentTagName?: string): any {
     while (
       this._getCurrentToken() &&
       !this._check('LT') &&
+      !this._check('LESS_THAN_SLASH') &&
       !this._check('LBRACE') &&
       !this._check('SIGNAL_BINDING') &&
       !this._isAtEnd() &&
@@ -394,6 +445,13 @@ function _parsePSRChild(this: IParserInternal, parentTagName?: string): any {
  * Check if current position is closing tag
  */
 function _isClosingTag(this: IParserInternal, tagName: string): boolean {
+  // Check for new LESS_THAN_SLASH token (</)
+  if (this._check('LESS_THAN_SLASH')) {
+    const closeTagToken = this._tokens[this._current + 1];
+    return closeTagToken && closeTagToken!.value === tagName;
+  }
+
+  // Legacy check for separate LT and SLASH tokens
   if (!this._check('LT')) {
     return false;
   }
@@ -494,12 +552,40 @@ function _parseNonObjectExpression(this: IParserInternal): any {
   return this._parseExpression();
 }
 
+/**
+ * Normalize JSX whitespace following React's rules
+ *
+ * Rules:
+ * 1. Remove leading/trailing whitespace on each line
+ * 2. Collapse consecutive whitespace into single space
+ * 3. Remove blank lines
+ * 4. Join remaining lines with single space
+ *
+ * @param text - Raw JSX text content
+ * @returns Normalized text
+ */
+function normalizeJSXWhitespace(text: string): string {
+  // Split into lines
+  const lines = text.split(/\r?\n/);
+
+  // Trim each line
+  const trimmedLines = lines.map((line) => line.trim());
+
+  // Filter out empty lines
+  const nonEmptyLines = trimmedLines.filter((line) => line.length > 0);
+
+  // Join with single space
+  const joined = nonEmptyLines.join(' ');
+
+  // Collapse consecutive whitespace
+  return joined.replace(/\s+/g, ' ');
+}
+
 // Export helper methods for prototype attachment
 export {
   _isClosingTag,
   _parseJSXExpression,
   _parseNonObjectExpression,
   _parsePSRAttribute,
-  _parsePSRChild
-}
-
+  _parsePSRChild,
+};

@@ -40,8 +40,7 @@ export function parseJSXFragment(this: IParserInternal): IPSRFragmentNode {
   }
 
   // Parse closing fragment tag: </>
-  this._expect('LT', 'Expected "<" for fragment closing');
-  this._expect('SLASH', 'Expected "/" for fragment closing');
+  this._expect('LESS_THAN_SLASH', 'Expected "</" for fragment closing');
   this._expect('GT', 'Expected ">" after fragment closing');
 
   const endToken = this._getCurrentToken() || startToken;
@@ -68,5 +67,5 @@ export function parseJSXFragment(this: IParserInternal): IPSRFragmentNode {
  * Check if current position is at closing fragment tag: </>
  */
 export function _isClosingFragment(this: IParserInternal): boolean {
-  return this._check('LT') && this._peek(1)?.type === 'SLASH' && this._peek(2)?.type === 'GT';
+  return this._check('LESS_THAN_SLASH') && this._peek(1)?.type === 'GT';
 }

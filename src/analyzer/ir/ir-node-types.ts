@@ -53,6 +53,12 @@ export interface IIRNode {
  */
 export interface IIRMetadata {
   /**
+   * Direct position properties for test compatibility
+   */
+  line?: number;
+  column?: number;
+
+  /**
    * Source location for debugging
    */
   sourceLocation?: {
@@ -310,6 +316,14 @@ export interface IVariableDeclarationIR extends IIRNode {
   kind: 'const' | 'let';
   name: string;
   initializer: IIRNode | null;
+
+  /**
+   * Type annotation from source (e.g. "string | number")
+   */
+  typeAnnotation?: {
+    type: 'TypeAnnotation';
+    typeString: string;
+  };
 
   /**
    * Whether this declares a signal

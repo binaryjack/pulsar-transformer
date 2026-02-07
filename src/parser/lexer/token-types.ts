@@ -108,6 +108,8 @@ export enum TokenType {
   GT = 'GT', // >
   SLASH = 'SLASH', // /
   SPREAD = 'SPREAD', // ... (for spread attributes)
+  JSX_TEXT = 'JSX_TEXT', // Text content inside JSX elements
+  LESS_THAN_SLASH = 'LESS_THAN_SLASH', // </ (closing tag start)
 
   // PSR-specific
   SIGNAL_BINDING = 'SIGNAL_BINDING', // $(identifier)
@@ -120,6 +122,11 @@ export enum TokenType {
 }
 
 /**
+ * Token context - indicates the parsing context where token appeared
+ */
+export type TokenContext = 'TYPE' | 'EXPR' | 'JSX';
+
+/**
  * Token interface
  */
 export interface IToken {
@@ -129,6 +136,7 @@ export interface IToken {
   readonly column: number;
   readonly start: number;
   readonly end: number;
+  readonly context?: TokenContext; // Optional: context hint for parser
 }
 
 /**

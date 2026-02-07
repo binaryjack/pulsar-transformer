@@ -5,7 +5,16 @@
  * Prototype-based pattern, following Pulsar standards.
  */
 
-import type { IToken } from './token-types.js';
+import type { IToken } from './token-types.js'
+
+/**
+ * Scanning modes for lexer context switching
+ */
+export enum ScanMode {
+  JAVASCRIPT = 0,
+  JSX_TEXT = 1,
+  JSX_ATTRIBUTE_VALUE = 2,
+}
 
 /**
  * Public Lexer interface
@@ -25,6 +34,41 @@ export interface ILexer {
    * Get current position
    */
   getPosition(): ILexerPosition;
+
+  /**
+   * Enter JSX element context
+   */
+  enterJSXElement(): void;
+
+  /**
+   * Exit JSX element context
+   */
+  exitJSXElement(): void;
+
+  /**
+   * Enter JSX expression context
+   */
+  enterJSXExpression(): void;
+
+  /**
+   * Exit JSX expression context
+   */
+  exitJSXExpression(): void;
+
+  /**
+   * Enter type context (for generic type parameters)
+   */
+  enterTypeContext(): void;
+
+  /**
+   * Exit type context
+   */
+  exitTypeContext(): void;
+
+  /**
+   * Check if currently in type context
+   */
+  isInTypeContext(): boolean;
 }
 
 /**
@@ -34,7 +78,7 @@ export interface ILexerInternal extends ILexer {
   _source: string;
   _position: number;
   _line: number;
-  _column: number;
+  _lineStart: number;
   _tokens: IToken[];
   _current: number;
 
@@ -42,8 +86,13 @@ export interface ILexerInternal extends ILexer {
   _jsxBraceDepth: number;
   _inJSXExpression: boolean;
   _inJSXElement: boolean;
+  _scanMode: ScanMode;
+
+  // Type context tracking (for generic types)
+  _inTypeLevel: number;
 
   // Private helper methods
+  _getCurrentColumn(): number;
   _recognizeToken(start: number, line: number, column: number): IToken | null;
   _isAlpha(char: string): boolean;
   _isDigit(char: string): boolean;
@@ -56,6 +105,7 @@ export interface ILexerInternal extends ILexer {
   _readSingleChar(start: number, line: number, column: number): IToken | null;
   _readSingleLineComment(start: number, line: number, column: number): IToken | null;
   _readMultiLineComment(start: number, line: number, column: number): IToken | null;
+  _scanJSXText(start: number, line: number, column: number): IToken | null;
 }
 
 /**

@@ -10,9 +10,10 @@
  * "hello"
  */
 
-import { ASTNodeType } from '../ast/index.js';
-import type { IParserInternal } from '../parser.types.js';
-import { parseExportDeclaration } from './parse-export-declaration.js';
+import { ASTNodeType } from '../ast/index.js'
+import { TokenType } from '../lexer/token-types.js'
+import type { IParserInternal } from '../parser.types.js'
+import { parseExportDeclaration } from './parse-export-declaration.js'
 
 /**
  * Parse expression
@@ -202,6 +203,27 @@ function _parseAsExpression(this: IParserInternal): any {
   let expression = _parsePrimaryExpression.call(this);
   if (!expression) return null;
 
+  // Check for postfix increment/decrement (i++, i--)
+  if (this._check('PLUS_PLUS') || this._check('MINUS_MINUS')) {
+    const operator = this._getCurrentToken()!;
+    this._advance(); // consume ++ or --
+
+    expression = {
+      type: ASTNodeType.UPDATE_EXPRESSION,
+      operator: operator.value,
+      argument: expression,
+      prefix: false, // postfix
+      location: {
+        start: expression.location.start,
+        end: {
+          line: operator.line,
+          column: operator.column + operator.value.length,
+          offset: operator.end,
+        },
+      },
+    };
+  }
+
   // Check for 'as' keyword
   if (this._check('AS')) {
     this._advance(); // consume 'as'
@@ -263,16 +285,43 @@ function _parsePrimaryExpression(this: IParserInternal): any {
   }
 
   // Unary operators: !, -, +, typeof, void, delete
+  // Prefix update operators: ++, --
   if (
     token.type === 'EXCLAMATION' ||
     token.type === 'MINUS' ||
     token.type === 'PLUS' ||
+    token.type === 'PLUS_PLUS' ||
+    token.type === 'MINUS_MINUS' ||
     token.value === 'typeof' ||
     token.value === 'void' ||
     token.value === 'delete'
   ) {
     const operator = this._advance();
     const argument = _parsePrimaryExpression.call(this); // Recursive for chained unary operators
+
+    // Use UPDATE_EXPRESSION for ++ and --
+    if (operator.type === 'PLUS_PLUS' || operator.type === 'MINUS_MINUS') {
+      return {
+        type: ASTNodeType.UPDATE_EXPRESSION,
+        operator: operator.value,
+        argument,
+        prefix: true,
+        location: {
+          start: {
+            line: operator.line,
+            column: operator.column,
+            offset: operator.start,
+          },
+          end: argument.location
+            ? argument.location.end
+            : {
+                line: operator.line,
+                column: operator.column + operator.value.length,
+                offset: operator.end,
+              },
+        },
+      };
+    }
 
     return {
       type: ASTNodeType.UNARY_EXPRESSION,
@@ -300,12 +349,12 @@ function _parsePrimaryExpression(this: IParserInternal): any {
   }
 
   // Await expression
-  if (token.value === 'await') {
+  if (token.type === TokenType.AWAIT) {
     return this._parseAwaitExpression();
   }
 
   // Yield expression
-  if (token.value === 'yield') {
+  if (token.type === TokenType.YIELD) {
     return this._parseYieldExpression();
   }
 
@@ -615,7 +664,7 @@ function _parseObjectLiteral(this: IParserInternal): any {
   }
 
   return {
-    type: 'ObjectExpression',
+    type: ASTNodeType.OBJECT_EXPRESSION,
     properties,
     location: {
       start: {
@@ -664,7 +713,7 @@ function _parseArrayLiteral(this: IParserInternal): any {
   const endToken = this._expect('RBRACKET', 'Expected "]" after array elements');
 
   return {
-    type: 'ArrayExpression',
+    type: ASTNodeType.ARRAY_EXPRESSION,
     elements,
     location: {
       start: {
@@ -942,6 +991,8 @@ function _consumeTypeArguments(this: IParserInternal): void {
     return;
   }
 
+  this._lexer.enterTypeContext(); // PHASE 3: Enable type-aware tokenization
+
   let depth = 0;
   let consumedCount = 0;
   while (!this._isAtEnd()) {
@@ -958,6 +1009,8 @@ function _consumeTypeArguments(this: IParserInternal): void {
       break;
     }
   }
+
+  this._lexer.exitTypeContext(); // PHASE 3: Restore normal tokenization
 }
 
 /**
@@ -1265,9 +1318,41 @@ function _parseArrowFunctionBody(this: IParserInternal, params: any[], startToke
  * Parse expression statement
  */
 function _parseExpressionStatement(this: IParserInternal): any {
+  const startToken = this._getCurrentToken()!;
   const expr = this._parseExpression();
+
+  // Consume optional semicolon
   this._match('SEMICOLON');
-  return expr;
+
+  const endToken = this._getCurrentToken() || startToken;
+
+  // If expression is a PSR node (fragment, element, component), return it directly (don't wrap in ExpressionStatement)
+  if (
+    expr &&
+    (expr.type === ASTNodeType.PSR_FRAGMENT ||
+      expr.type === ASTNodeType.PSR_ELEMENT ||
+      expr.type === ASTNodeType.PSR_COMPONENT_REFERENCE)
+  ) {
+    return expr;
+  }
+
+  // Wrap expression in ExpressionStatement
+  return {
+    type: ASTNodeType.EXPRESSION_STATEMENT,
+    expression: expr,
+    location: {
+      start: {
+        line: startToken.line,
+        column: startToken.column,
+        offset: startToken.start,
+      },
+      end: {
+        line: endToken.line,
+        column: endToken.column,
+        offset: endToken.end,
+      },
+    },
+  };
 }
 
 /**
@@ -1315,5 +1400,6 @@ export {
   _parseExpressionStatement,
   _parseLiteral,
   _parseObjectLiteral,
-  _parseTemplateLiteral,
-};
+  _parseTemplateLiteral
+}
+

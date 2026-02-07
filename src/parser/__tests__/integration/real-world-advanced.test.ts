@@ -98,8 +98,8 @@ describe('Real-World Advanced Features Integration', () => {
         };
       `;
 
-      const parser = createParser(source);
-      const ast = parser.parse();
+      const parser = createParser();
+      const ast = parser.parse(source);
 
       expect(ast.body).toHaveLength(1);
       expect(ast.body[0].type).toBe('VariableDeclaration');

@@ -20,11 +20,11 @@ describe('Real-World Control Flow Integration', () => {
       }
     `;
 
-    const parser = createParser(source);
-    const ast = parser.parse();
+    const parser = createParser();
+    const ast = parser.parse(source);
 
     expect(ast.body).toHaveLength(1);
-    expect(ast.body[0].type).toBe('FUNCTION_DECLARATION');
+    expect(ast.body[0].type).toBe('FunctionDeclaration');
   });
 
   it('should parse switch statement routing pattern', () => {
@@ -43,11 +43,11 @@ describe('Real-World Control Flow Integration', () => {
       }
     `;
 
-    const parser = createParser(source);
-    const ast = parser.parse();
+    const parser = createParser();
+    const ast = parser.parse(source);
 
     expect(ast.body).toHaveLength(1);
-    expect(ast.body[0].type).toBe('FUNCTION_DECLARATION');
+    expect(ast.body[0].type).toBe('FunctionDeclaration');
   });
 
   it('should parse complex loop with break/continue', () => {
@@ -69,11 +69,11 @@ describe('Real-World Control Flow Integration', () => {
       }
     `;
 
-    const parser = createParser(source);
-    const ast = parser.parse();
+    const parser = createParser();
+    const ast = parser.parse(source);
 
     expect(ast.body).toHaveLength(1);
-    expect(ast.body[0].type).toBe('FUNCTION_DECLARATION');
+    expect(ast.body[0].type).toBe('FunctionDeclaration');
   });
 
   it('should parse labeled break in nested loops', () => {
@@ -90,10 +90,10 @@ describe('Real-World Control Flow Integration', () => {
       }
     `;
 
-    const parser = createParser(source);
-    const ast = parser.parse();
+    const parser = createParser();
+    const ast = parser.parse(source);
 
     expect(ast.body).toHaveLength(1);
-    expect(ast.body[0].type).toBe('FUNCTION_DECLARATION');
+    expect(ast.body[0].type).toBe('FunctionDeclaration');
   });
 });

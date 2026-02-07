@@ -89,8 +89,46 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
   // Track import kind
   let importKind: 'named' | 'default' | 'side-effect' | 'namespace' | 'mixed' = 'named';
 
-  // Check for default import first (could be alone or followed by named imports)
-  if (this._check('IDENTIFIER')) {
+  // Check for namespace import FIRST (import * as name)
+  if (this._check('ASTERISK')) {
+    // Namespace import: import * as name from 'module'
+    importKind = 'namespace';
+    this._advance(); // consume *
+
+    // 'as' keyword can be either AS token or contextual keyword
+    if (!this._match('AS')) {
+      // Try as contextual keyword
+      const asToken = this._expect('IDENTIFIER', 'Expected as after * in namespace import');
+      if (asToken.value !== 'as') {
+        this._addError({
+          code: 'PSR-E001',
+          message: 'Expected as after * in namespace import',
+          location: { line: asToken.line, column: asToken.column },
+          token: asToken,
+        });
+      }
+    }
+
+    const specToken = this._expect('IDENTIFIER', 'Expected identifier after as');
+    specifiers.push({
+      type: ASTNodeType.IDENTIFIER,
+      name: specToken!.value,
+      location: {
+        start: {
+          line: specToken!.line,
+          column: specToken!.column,
+          offset: specToken!.start,
+        },
+        end: {
+          line: specToken!.line,
+          column: specToken!.column + specToken!.value.length,
+          offset: specToken!.end,
+        },
+      },
+    });
+  }
+  // Check for default import (could be alone or followed by named imports)
+  else if (this._check('IDENTIFIER')) {
     // Default import: import name from 'module'
     // OR mixed: import name, { named } from 'module'
     const specToken = this._advance();
@@ -209,28 +247,6 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     }
 
     this._expect('RBRACE', 'Expected } after import specifiers');
-  } else if (this._check('ASTERISK')) {
-    // Namespace import: import * as name from 'module'
-    importKind = 'namespace';
-    this._advance(); // consume *
-    this._expect('AS', 'Expected as after * in namespace import');
-    const specToken = this._expect('IDENTIFIER', 'Expected identifier after as');
-    specifiers.push({
-      type: ASTNodeType.IDENTIFIER,
-      name: specToken!.value,
-      location: {
-        start: {
-          line: specToken!.line,
-          column: specToken!.column,
-          offset: specToken!.start,
-        },
-        end: {
-          line: specToken!.line,
-          column: specToken!.column + specToken!.value.length,
-          offset: specToken!.end,
-        },
-      },
-    });
   } else if (this._check('IDENTIFIER')) {
     // This branch is now unreachable as IDENTIFIER is handled first above
     // Keeping for safety but default imports are handled earlier

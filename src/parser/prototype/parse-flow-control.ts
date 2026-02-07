@@ -5,10 +5,10 @@ import type {
   IIdentifierNode,
   IIfStatementNode,
   IThrowStatementNode,
-} from '../ast/ast-node-types.js'
-import { ASTNodeType } from '../ast/ast-node-types.js'
-import { TokenType } from '../lexer/token-types.js'
-import type { IParserInternal } from '../parser.types.js'
+} from '../ast/ast-node-types.js';
+import { ASTNodeType } from '../ast/ast-node-types.js';
+import { TokenType } from '../lexer/token-types.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Parses throw statements
@@ -18,10 +18,7 @@ export function _parseThrowStatement(this: IParserInternal): IThrowStatementNode
   const startToken = this._getCurrentToken();
 
   // Expect 'throw'
-  if (
-    this._getCurrentToken()!.type !== TokenType.IDENTIFIER ||
-    this._getCurrentToken()!.value !== 'throw'
-  ) {
+  if (!this._check('THROW')) {
     throw new Error(`Expected 'throw', got ${this._getCurrentToken()!.value}`);
   }
 
@@ -63,10 +60,7 @@ export function _parseBreakStatement(this: IParserInternal): IBreakStatementNode
   const startToken = this._getCurrentToken();
 
   // Expect 'break'
-  if (
-    this._getCurrentToken()!.type !== TokenType.IDENTIFIER ||
-    this._getCurrentToken()!.value !== 'break'
-  ) {
+  if (this._getCurrentToken()!.type !== TokenType.BREAK) {
     throw new Error(`Expected 'break', got ${this._getCurrentToken()!.value}`);
   }
 
@@ -132,10 +126,7 @@ export function _parseContinueStatement(this: IParserInternal): IContinueStateme
   const startToken = this._getCurrentToken();
 
   // Expect 'continue'
-  if (
-    this._getCurrentToken()!.type !== TokenType.IDENTIFIER ||
-    this._getCurrentToken()!.value !== 'continue'
-  ) {
+  if (this._getCurrentToken()!.type !== TokenType.CONTINUE) {
     throw new Error(`Expected 'continue', got ${this._getCurrentToken()!.value}`);
   }
 

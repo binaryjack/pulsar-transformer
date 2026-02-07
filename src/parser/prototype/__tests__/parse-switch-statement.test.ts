@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ISwitchStatementNode } from '../../ast-node-types';
+import { ASTNodeType } from '../../ast/ast-node-types';
 import { createParser } from '../../create-parser';
 
 describe('_parseSwitchStatement', () => {
@@ -9,7 +10,7 @@ describe('_parseSwitchStatement', () => {
       const parser = createParser(source);
       const result = parser._parseSwitchStatement() as ISwitchStatementNode;
 
-      expect(result.type).toBe('SWITCH_STATEMENT');
+      expect(result.type).toBe(ASTNodeType.SWITCH_STATEMENT);
       expect(result.cases).toHaveLength(1);
       expect(result.cases[0].test).not.toBeNull();
     });
@@ -87,8 +88,8 @@ describe('_parseSwitchStatement', () => {
       const parser = createParser(source);
       const result = parser._parseSwitchStatement() as ISwitchStatementNode;
 
-      expect(result.loc).toBeDefined();
-      expect(result.loc?.start.line).toBe(1);
+      expect(result.location).toBeDefined();
+      expect(result.location?.start.line).toBe(1);
     });
   });
 
@@ -115,7 +116,7 @@ describe('_parseSwitchStatement', () => {
       const parser = createParser(source);
       const result = parser._parseSwitchStatement() as ISwitchStatementNode;
 
-      expect(result.type).toBe('SWITCH_STATEMENT');
+      expect(result.type).toBe(ASTNodeType.SWITCH_STATEMENT);
     });
   });
 });

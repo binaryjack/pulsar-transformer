@@ -153,6 +153,8 @@ function _analyzeNode(this: IAnalyzerInternal, node: IASTNode): IIRNode | null {
     case ASTNodeType.BINARY_EXPRESSION:
     case ASTNodeType.UNARY_EXPRESSION:
     case ASTNodeType.CONDITIONAL_EXPRESSION:
+    case ASTNodeType.OBJECT_EXPRESSION:
+    case ASTNodeType.ARRAY_EXPRESSION:
       return this._analyzeExpression(node);
 
     default:

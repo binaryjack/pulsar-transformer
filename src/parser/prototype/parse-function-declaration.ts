@@ -12,9 +12,10 @@ import type {
   IFunctionDeclarationNode,
   IIdentifierNode,
   ITypeAnnotationNode,
-} from '../ast/index.js';
-import { ASTNodeType } from '../ast/index.js';
-import type { IParserInternal } from '../parser.types.js';
+} from '../ast/index.js'
+import { ASTNodeType } from '../ast/index.js'
+import { TokenType } from '../lexer/token-types.js'
+import type { IParserInternal } from '../parser.types.js'
 
 /**
  * Parse function declaration
@@ -27,7 +28,7 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
 
   // Check for async
   let isAsync = false;
-  if (startToken!.value === 'async') {
+  if (startToken.type === TokenType.ASYNC) {
     isAsync = true;
     this._advance();
   }
@@ -91,6 +92,8 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
       if (this._check('COLON')) {
         this._advance(); // consume :
 
+        this._lexer.enterTypeContext(); // PHASE 3: Enable type-aware tokenization
+
         // Read type tokens until we hit , or ) at depth 0
         const typeTokens: string[] = [];
         let braceDepth = 0;
@@ -125,12 +128,18 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
           else if (collectedToken!.value === '>') angleDepth--;
         }
 
+        this._lexer.exitTypeContext(); // PHASE 3: Restore normal tokenization
+
         if (typeTokens.length > 0) {
           typeAnnotation = {
             type: ASTNodeType.TYPE_ANNOTATION,
             typeString: typeTokens.join(' ').trim(),
             location: {
-              start: { line: paramToken!.line, column: paramToken!.column, offset: paramToken!.start },
+              start: {
+                line: paramToken!.line,
+                column: paramToken!.column,
+                offset: paramToken!.start,
+              },
               end: { line: paramToken!.line, column: paramToken!.column, offset: paramToken!.end },
             },
           };
@@ -147,6 +156,8 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
   let returnType: ITypeAnnotationNode | undefined;
   if (this._check('COLON')) {
     this._advance(); // consume :
+
+    this._lexer.enterTypeContext(); // PHASE 3: Enable type-aware tokenization
 
     const typeTokens: string[] = [];
     let braceDepth = 0;
@@ -186,6 +197,8 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
       else if (collectedToken!.value === '<') angleDepth++;
       else if (collectedToken!.value === '>') angleDepth--;
     }
+
+    this._lexer.exitTypeContext(); // PHASE 3: Restore normal tokenization
 
     if (typeTokens.length > 0) {
       returnType = {

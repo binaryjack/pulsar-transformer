@@ -49,7 +49,7 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
   }
 
   // Check for default export: export default ...
-  if (this._check('IDENTIFIER') && this._getCurrentToken()!.value === 'default') {
+  if (this._check('DEFAULT')) {
     this._advance(); // consume 'default'
     exportKind = 'default';
 

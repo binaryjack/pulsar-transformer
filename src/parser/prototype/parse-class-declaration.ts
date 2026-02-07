@@ -124,13 +124,16 @@ export function _parseClassDeclaration(this: IParserInternal): IClassDeclaration
         const token = this._getCurrentToken();
         if (!token) break;
 
-        if (token.type === 'LT') angleDepth++;
-        else if (token.type === 'GT') {
+        if (token.type === 'LT') {
+          angleDepth++;
+        } else if (token.type === 'GT') {
           angleDepth--;
           if (angleDepth === 0) {
             this._advance(); // consume final >
             break;
           }
+        } else if (token.type === 'JSX_TEXT') {
+          // Skip JSX_TEXT tokens that might be generated for generic content
         }
 
         this._advance();

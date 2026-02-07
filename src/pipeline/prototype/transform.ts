@@ -22,11 +22,11 @@ import type {
 /**
  * Transform PSR source to TypeScript
  */
-export function transform(
+export async function transform(
   this: IPipelineInternal,
   source: string,
   config?: IPipelineConfig
-): IPipelineResult {
+): Promise<IPipelineResult> {
   const startTime = performance.now();
   const diagnostics: IPipelineDiagnostic[] = [];
   const metrics = {
@@ -175,10 +175,16 @@ export function transform(
     // Phase 4: Transform - Optimize IR
     logger.log('transform', 'info', 'Optimizing IR');
     const transformStart = performance.now();
-    const optimizedIR = ir; // Pass through for now
+
+    // Import reactivity transformer
+    const { transformReactivity } = await import('../../transformer/reactivity-transformer.js');
+
+    // Apply reactivity transformations (signal → createSignal, etc.)
+    const optimizedIR = transformReactivity(ir);
+
     metrics.transformTime = performance.now() - transformStart;
 
-    logger.log('transform', 'info', 'IR optimization complete (pass-through)', {
+    logger.log('transform', 'info', 'IR optimization complete (reactivity transformed)', {
       duration: metrics.transformTime,
     });
 

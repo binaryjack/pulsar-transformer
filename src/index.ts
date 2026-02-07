@@ -8,7 +8,7 @@
 // ===== CORE PIPELINE =====
 
 // Lexer exports
-export { TokenType, createLexer } from './parser/lexer/index.js';
+export { createLexer, TokenType } from './parser/lexer/index.js';
 export type { ILexer, ILexerConfig, IToken } from './parser/lexer/index.js';
 
 // Parser exports
@@ -18,18 +18,18 @@ export type { IParser, IParserConfig } from './parser/parser.types.js';
 // AST exports
 export type {
   ASTNodeType,
-  IASTNode,
   IArrowFunctionNode,
+  IASTNode,
   ICallExpressionNode,
   IComponentDeclarationNode,
   IExpressionStatementNode,
   IIdentifierNode,
   ILiteralNode,
+  IProgramNode,
   IPSRAttributeNode,
   IPSRElementNode,
   IPSREventHandlerNode,
   IPSRSignalBindingNode,
-  IProgramNode,
   IReturnStatementNode,
   IVariableDeclarationNode,
 } from './parser/ast/ast-node-types.js';
@@ -45,14 +45,14 @@ export type {
   IComponentIR,
   IElementIR,
   IEventHandlerIR,
+  IIdentifierIR,
   IIRMetadata,
   IIRNode,
-  IIdentifierIR,
   ILiteralIR,
-  IRNodeType,
   IRegistryLookupIR,
   IRegistryRegistrationIR,
   IReturnStatementIR,
+  IRNodeType,
   ISignalBindingIR,
   IVariableDeclarationIR,
 } from './analyzer/ir/ir-node-types.js';
@@ -91,6 +91,27 @@ export type {
   IPipelineResult,
 } from './pipeline/pipeline.types.js';
 
+// ===== TESTING UTILITIES =====
+
+// PSR Test Runner exports
+export { createPSRTestRunner } from './testing/create-psr-test-runner.js';
+export type {
+  IDOMAssertion,
+  IEventTest,
+  IEventTestResult,
+  IPSRTestInput,
+  IPSRTestResult,
+  IPSRTestRunner,
+  IPSRTestRunnerConfig,
+  IReactivityTest,
+  IReactivityTestResult,
+  IRegistryMock,
+  IStyleAssertion,
+  ITestContext,
+  ITestError,
+  IValidationResult,
+} from './testing/psr-test-runner.types.js';
+
 // ===== UTILITIES =====
 
 // Debug Logger
@@ -113,7 +134,6 @@ export {
 export type {
   IValidationContext,
   IValidationIssue,
-  IValidationResult,
   IValidationRule,
   IValidator,
   IValidatorConfig,

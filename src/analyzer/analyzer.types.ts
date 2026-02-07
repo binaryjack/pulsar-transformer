@@ -75,6 +75,8 @@ export interface IAnalyzerInternal extends IAnalyzer {
   _analyzeUnaryExpression(node: any): IUnaryExpressionIR;
   _analyzeMemberExpression(node: any): IMemberExpressionIR;
   _analyzeConditionalExpression(node: any): IConditionalExpressionIR;
+  _analyzeObjectExpression(node: any): IIRNode;
+  _analyzeArrayExpression(node: any): IIRNode;
 
   // Component/element analysis helpers
   _detectEventHandlers(node: any): any[];

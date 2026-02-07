@@ -7,6 +7,7 @@
 
 import type { IIRNode } from '../../analyzer/ir/ir-node-types.js';
 import { IRNodeType } from '../../analyzer/ir/ir-node-types.js';
+import { escapeStringLiteral, needsUnicodeEscape } from '../../transformer/unicode-escaper.js';
 import type { IEmitterInternal } from '../emitter.types.js';
 
 /**
@@ -42,7 +43,56 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
       const literalIR = ir as any;
       const value = literalIR.value;
 
+      // Check if this is an ObjectExpression or ArrayExpression passthrough
+      if (
+        literalIR.metadata?.isObjectExpression &&
+        value &&
+        typeof value === 'object' &&
+        value.type === 'ObjectExpression'
+      ) {
+        // Emit object literal { key: value, ... }
+        const properties = value.properties || [];
+        if (properties.length === 0) {
+          return '{}';
+        }
+        const props = properties.map((prop: any) => {
+          if (prop.type === 'SpreadElement') {
+            const argExpr = this._emitExpression(prop.argument);
+            return `...${argExpr}`;
+          }
+          const keyName = prop.key.name;
+          const valueExpr = this._emitExpression(prop.value);
+          return `${keyName}: ${valueExpr}`;
+        });
+        return `{ ${props.join(', ')} }`;
+      }
+
+      if (
+        literalIR.metadata?.isArrayExpression &&
+        value &&
+        typeof value === 'object' &&
+        value.type === 'ArrayExpression'
+      ) {
+        // Emit array literal [element1, element2, ...]
+        const elements = value.elements || [];
+        if (elements.length === 0) {
+          return '[]';
+        }
+        const items = elements.map((elem: any) => {
+          if (elem.type === 'SpreadElement') {
+            const argExpr = this._emitExpression(elem.argument);
+            return `...${argExpr}`;
+          }
+          return this._emitExpression(elem);
+        });
+        return `[${items.join(', ')}]`;
+      }
+
       if (typeof value === 'string') {
+        // Check if unicode escaping is needed
+        if (needsUnicodeEscape(value)) {
+          return escapeStringLiteral(value);
+        }
         return JSON.stringify(value);
       } else if (value === null) {
         return 'null';

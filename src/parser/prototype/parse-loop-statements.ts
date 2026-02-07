@@ -8,6 +8,7 @@ import type {
 import { ASTNodeType } from '../ast/ast-node-types.js';
 import { TokenType } from '../lexer/token-types.js';
 import type { IParserInternal } from '../parser.types.js';
+import { parseExpression } from './parse-expression.js';
 
 /**
  * Parses for loop statements
@@ -177,7 +178,7 @@ export function _parseWhileStatement(this: IParserInternal): IWhileStatementNode
   this._advance(); // Consume '('
 
   // Parse test
-  const test = _parseSimpleExpression.call(this);
+  const test = parseExpression.call(this);
 
   // Expect closing paren
   if (this._getCurrentToken()!.type !== TokenType.RPAREN) {
@@ -242,7 +243,7 @@ export function _parseDoWhileStatement(this: IParserInternal): IDoWhileStatement
   this._advance(); // Consume '('
 
   // Parse test
-  const test = _parseSimpleExpression.call(this);
+  const test = parseExpression.call(this);
 
   // Expect closing paren
   if (this._getCurrentToken()!.type !== TokenType.RPAREN) {
@@ -334,53 +335,4 @@ export function _parseBlockStatement(this: IParserInternal): IBlockStatementNode
       },
     },
   } as any;
-}
-
-/**
- * Helper: Parse simple expression
- */
-function _parseSimpleExpression(this: IParserInternal): IASTNode {
-  const token = this._getCurrentToken();
-
-  if (token!.type === TokenType.IDENTIFIER) {
-    this._advance();
-    return {
-      type: ASTNodeType.IDENTIFIER,
-      name: token!.value,
-      location: {
-        start: {
-          line: token!.line,
-          column: token!.column,
-          offset: token!.start,
-        },
-        end: {
-          line: token!.line,
-          column: token!.column + token!.value.length,
-          offset: token!.end,
-        },
-      },
-    } as any;
-  }
-
-  if (token!.type === TokenType.NUMBER || token!.type === TokenType.STRING) {
-    this._advance();
-    return {
-      type: ASTNodeType.LITERAL,
-      value: token!.value,
-      location: {
-        start: {
-          line: token!.line,
-          column: token!.column,
-          offset: token!.start,
-        },
-        end: {
-          line: token!.line,
-          column: token!.column + token!.value.length,
-          offset: token!.end,
-        },
-      },
-    } as any;
-  }
-
-  throw new Error(`Unexpected token in expression: ${token!.value}`);
 }

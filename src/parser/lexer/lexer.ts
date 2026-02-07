@@ -5,7 +5,8 @@
  * Tokenizes PSR source code into tokens for parser consumption.
  */
 
-import type { ILexerConfig, ILexerInternal } from './lexer.types.js';
+import type { ILexerConfig, ILexerInternal } from './lexer.types.js'
+import { ScanMode } from './lexer.types.js'
 
 /**
  * Lexer constructor function
@@ -35,8 +36,8 @@ export const Lexer = function (this: ILexerInternal, config: ILexerConfig = {}) 
     configurable: false,
   });
 
-  Object.defineProperty(this, '_column', {
-    value: 1,
+  Object.defineProperty(this, '_lineStart', {
+    value: 0,
     writable: true,
     enumerable: false,
     configurable: false,
@@ -73,6 +74,21 @@ export const Lexer = function (this: ILexerInternal, config: ILexerConfig = {}) 
 
   Object.defineProperty(this, '_inJSXElement', {
     value: false,
+    writable: true,
+    enumerable: false,
+    configurable: false,
+  });
+
+  Object.defineProperty(this, '_scanMode', {
+    value: ScanMode.JAVASCRIPT,
+    writable: true,
+    enumerable: false,
+    configurable: false,
+  });
+
+  // Type context tracking properties
+  Object.defineProperty(this, '_inTypeLevel', {
+    value: 0,
     writable: true,
     enumerable: false,
     configurable: false,

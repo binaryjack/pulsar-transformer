@@ -1,5 +1,6 @@
 ﻿import { describe, expect, it } from 'vitest';
 import type { IFunctionDeclarationNode, IYieldExpressionNode } from '../../ast/ast-node-types.js';
+import { ASTNodeType } from '../../ast/ast-node-types.js';
 import { createParser } from '../../create-parser.js';
 
 describe('Yield Expression Parsing', () => {
@@ -12,7 +13,7 @@ describe('Yield Expression Parsing', () => {
       const yieldStmt = funcDecl.body.body[0];
       const yieldExpr = yieldStmt.expression as IYieldExpressionNode;
 
-      expect(yieldExpr.type).toBe('YieldExpression');
+      expect(yieldExpr.type).toBe(ASTNodeType.YIELD_EXPRESSION);
       expect(yieldExpr.argument).toBeNull();
       expect(yieldExpr.delegate).toBe(false);
     });
@@ -25,9 +26,9 @@ describe('Yield Expression Parsing', () => {
       const yieldStmt = funcDecl.body.body[0];
       const yieldExpr = yieldStmt.expression as IYieldExpressionNode;
 
-      expect(yieldExpr.type).toBe('YieldExpression');
+      expect(yieldExpr.type).toBe(ASTNodeType.YIELD_EXPRESSION);
       expect(yieldExpr.argument).not.toBeNull();
-      expect(yieldExpr.argument.type).toBe('Identifier');
+      expect(yieldExpr.argument.type).toBe(ASTNodeType.IDENTIFIER);
       expect(yieldExpr.delegate).toBe(false);
     });
 
@@ -39,9 +40,9 @@ describe('Yield Expression Parsing', () => {
       const yieldStmt = funcDecl.body.body[0];
       const yieldExpr = yieldStmt.expression as IYieldExpressionNode;
 
-      expect(yieldExpr.type).toBe('YieldExpression');
+      expect(yieldExpr.type).toBe(ASTNodeType.YIELD_EXPRESSION);
       expect(yieldExpr.argument).not.toBeNull();
-      expect(yieldExpr.argument.type).toBe('Literal');
+      expect(yieldExpr.argument.type).toBe(ASTNodeType.LITERAL);
     });
   });
 
@@ -54,7 +55,7 @@ describe('Yield Expression Parsing', () => {
       const yieldStmt = funcDecl.body.body[0];
       const yieldExpr = yieldStmt.expression as IYieldExpressionNode;
 
-      expect(yieldExpr.type).toBe('YieldExpression');
+      expect(yieldExpr.type).toBe(ASTNodeType.YIELD_EXPRESSION);
       expect(yieldExpr.delegate).toBe(true);
       expect(yieldExpr.argument).not.toBeNull();
     });
@@ -68,7 +69,7 @@ describe('Yield Expression Parsing', () => {
       const yieldExpr = yieldStmt.expression as IYieldExpressionNode;
 
       expect(yieldExpr.delegate).toBe(true);
-      expect(yieldExpr.argument.type).toBe('Identifier');
+      expect(yieldExpr.argument.type).toBe(ASTNodeType.IDENTIFIER);
     });
   });
 
@@ -118,8 +119,7 @@ describe('Yield Expression Parsing', () => {
       const yieldStmt = funcDecl.body.body[0];
       const yieldExpr = yieldStmt.expression as IYieldExpressionNode;
 
-      expect(yieldExpr.argument.type).toBe('Literal');
+      expect(yieldExpr.argument.type).toBe(ASTNodeType.LITERAL);
     });
   });
 });
-

@@ -15,6 +15,6 @@ export function getPosition(this: ILexerInternal): ILexerPosition {
   return {
     position: this._position,
     line: this._line,
-    column: this._column,
+    column: this._getCurrentColumn(), // Babel pattern: calculate, don't store
   };
 }

@@ -230,10 +230,15 @@ describe('Import Analysis', () => {
       const parser = createParser();
       const ast = parser.parse(source);
       const analyzer = createAnalyzer({});
-      const ir = analyzer.analyze(ast) as IComponentIR;
+      const ir = analyzer.analyze(ast);
+
+      // Get the ComponentIR from the ProgramIR children
+      const componentIR = (ir as any).children[0] as IComponentIR;
 
       // Find the identifier 'utils'
-      const varDecls = ir.body.filter((node) => node.type === IRNodeType.VARIABLE_DECLARATION_IR);
+      const varDecls = componentIR.body.filter(
+        (node) => node.type === IRNodeType.VARIABLE_DECLARATION_IR
+      );
       const secondDecl = varDecls[1] as any;
       const identifier = secondDecl.initializer as IIdentifierIR;
 

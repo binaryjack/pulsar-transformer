@@ -50,10 +50,7 @@ export function _parseSwitchStatement(this: IParserInternal): ISwitchStatementNo
     this._getCurrentToken()!.type !== TokenType.RBRACE &&
     this._getCurrentToken()!.type !== TokenType.EOF
   ) {
-    if (
-      this._getCurrentToken()!.type === TokenType.IDENTIFIER &&
-      (this._getCurrentToken()!.value === 'case' || this._getCurrentToken()!.value === 'default')
-    ) {
+    if (this._check('CASE') || this._check('DEFAULT')) {
       cases.push(_parseSwitchCase.call(this));
     } else {
       // Skip unexpected tokens
@@ -102,7 +99,7 @@ function _parseSwitchCase(this: IParserInternal): ISwitchCaseNode {
   let test: IASTNode | null = null;
 
   // Check if 'case' or 'default'
-  if (this._getCurrentToken()!.value === 'case') {
+  if (this._check('CASE')) {
     this._advance(); // Consume 'case'
 
     // Parse test expression
@@ -114,7 +111,7 @@ function _parseSwitchCase(this: IParserInternal): ISwitchCaseNode {
     }
 
     this._advance(); // Consume ':'
-  } else if (this._getCurrentToken()!.value === 'default') {
+  } else if (this._check('DEFAULT')) {
     this._advance(); // Consume 'default'
 
     // Expect colon
@@ -133,10 +130,8 @@ function _parseSwitchCase(this: IParserInternal): ISwitchCaseNode {
   while (
     this._getCurrentToken()!.type !== TokenType.RBRACE &&
     this._getCurrentToken()!.type !== TokenType.EOF &&
-    !(
-      this._getCurrentToken()!.type === TokenType.IDENTIFIER &&
-      (this._getCurrentToken()!.value === 'case' || this._getCurrentToken()!.value === 'default')
-    )
+    !this._check('CASE') &&
+    !this._check('DEFAULT')
   ) {
     consequent.push(this._parseStatement());
   }

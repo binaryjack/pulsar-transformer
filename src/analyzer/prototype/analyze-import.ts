@@ -51,6 +51,8 @@ export function analyzeImport(this: IAnalyzerInternal, node: IImportDeclarationN
     }),
     isTypeOnly: node.isTypeOnly,
     metadata: {
+      line: node.location?.start?.line ?? 1,
+      column: node.location?.start?.column ?? 1,
       sourceLocation: node.location?.start,
     },
   };

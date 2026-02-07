@@ -4,7 +4,7 @@
  * Defines interfaces for code generation from optimized IR.
  */
 
-import type { IIRNode } from '../analyzer/ir/ir-node-types.js';
+import type { IIRNode } from '../analyzer/ir/ir-node-types.js'
 
 /**
  * Emitter configuration options
@@ -97,7 +97,7 @@ export interface IImportTracker {
   /**
    * Get all imports
    */
-  getImports(): Map<string, Set<string>>;
+  getImports(): Map<string, Set<string | null>>;
 
   /**
    * Generate import statements
@@ -114,7 +114,7 @@ export interface IImportTracker {
  * Internal import tracker interface (with prototype methods)
  */
 export interface IImportTrackerInternal extends IImportTracker {
-  imports: Map<string, Set<string>>;
+  imports: Map<string, Set<string | null>>;
   _formatImport(source: string, specifiers: Set<string | null>): string;
 }
 

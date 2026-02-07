@@ -105,7 +105,7 @@ export interface IPipeline {
   /**
    * Transform PSR source to TypeScript
    */
-  transform(source: string, config?: IPipelineConfig): IPipelineResult;
+  transform(source: string, config?: IPipelineConfig): Promise<IPipelineResult>;
 
   /**
    * Get pipeline configuration

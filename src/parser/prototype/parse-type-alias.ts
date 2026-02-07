@@ -52,27 +52,39 @@ export function parseTypeAlias(this: IParserInternal): ITypeAliasNode | null {
     },
   };
 
-  // Skip generic type parameters if present: <T>, <T, U>
-  if (this._check('LT')) {
-    this._advance(); // consume <
-    let angleDepth = 1;
-
-    while (!this._isAtEnd() && angleDepth > 0) {
+  // NOTE: For now, we don't parse generic type parameters in the type name
+  // (e.g., the <T> in "type Nullable<T> = ..."). We just skip to the = sign.
+  // This is a simplification because properly parsing generics requires
+  // preventing the lexer from entering JSX mode when it sees <.
+  // We skip all tokens until we find ASSIGN (=)
+  if (this._getCurrentToken() && this._getCurrentToken()!.type !== 'ASSIGN') {
+    // Skip tokens until we find = (handle JSX tokens that might be generated)
+    let angleDepth = 0;
+    while (!this._isAtEnd()) {
       const token = this._getCurrentToken();
       if (!token) break;
 
-      if (token.value === '<') angleDepth++;
-      else if (token.value === '>') angleDepth--;
+      // Check if this is the = sign
+      if (token.type === 'ASSIGN' && angleDepth === 0) break;
+
+      // Track angle bracket depth to handle nested generics
+      if (token.type === 'LT') {
+        angleDepth++;
+      } else if (token.type === 'GT') {
+        angleDepth--;
+      } else if (token.type === 'JSX_TEXT' || token.type === 'IDENTIFIER') {
+        // Skip JSX_TEXT and identifiers that might be inside generic parameters
+      }
 
       this._advance();
     }
   }
 
-  // Expect =
+  //  Expect =
   this._expect('ASSIGN', 'Expected "=" after type name');
 
   // Collect type definition until semicolon
-  const typeTokens: string[] = [];
+  const typeTokens: Array<{ value: string; type: string }> = [];
   let braceDepth = 0;
   let bracketDepth = 0;
   let parenDepth = 0;
@@ -82,9 +94,9 @@ export function parseTypeAlias(this: IParserInternal): ITypeAliasNode | null {
     const token = this._getCurrentToken();
     if (!token) break;
 
-    // Stop at semicolon when all brackets are balanced
+    // Stop at semicolon when all brackets are balanced (check BEFORE collecting)
     if (
-      token.type === 'SEMICOLON' &&
+      (token.type === 'SEMICOLON' || token.value === ';') &&
       braceDepth === 0 &&
       bracketDepth === 0 &&
       parenDepth === 0 &&
@@ -93,26 +105,27 @@ export function parseTypeAlias(this: IParserInternal): ITypeAliasNode | null {
       break;
     }
 
-    // Collect token
-    typeTokens.push(token.value);
-    this._advance();
+    // Track depth BEFORE collecting
+    if (token.type === 'LBRACE') braceDepth++;
+    else if (token.type === 'RBRACE') braceDepth--;
+    else if (token.type === 'LBRACKET') bracketDepth++;
+    else if (token.type === 'RBRACKET') bracketDepth--;
+    else if (token.type === 'LPAREN') parenDepth++;
+    else if (token.type === 'RPAREN') parenDepth--;
+    else if (token.value === '<' || token.type === 'LT') angleDepth++;
+    else if (token.value === '>' || token.type === 'GT') angleDepth--;
 
-    // Track depth AFTER collecting
-    const collectedToken = token;
-    if (collectedToken!.type === 'LBRACE') braceDepth++;
-    else if (collectedToken!.type === 'RBRACE') braceDepth--;
-    else if (collectedToken!.type === 'LBRACKET') bracketDepth++;
-    else if (collectedToken!.type === 'RBRACKET') bracketDepth--;
-    else if (collectedToken!.type === 'LPAREN') parenDepth++;
-    else if (collectedToken!.type === 'RPAREN') parenDepth--;
-    else if (collectedToken!.value === '<') angleDepth++;
-    else if (collectedToken!.value === '>') angleDepth--;
+    // Preserve quotes for string literals
+    const tokenValue = token.type === 'STRING' ? `'${token.value}'` : token.value;
+    typeTokens.push({ value: tokenValue, type: token.type });
+    this._advance();
   }
 
   // Consume optional semicolon
   this._match('SEMICOLON');
 
-  const typeAnnotation = typeTokens.join(' ').trim();
+  // Smart join: add spaces only where needed
+  const typeAnnotation = _joinTypeTokens(typeTokens);
 
   return {
     type: ASTNodeType.TYPE_ALIAS,
@@ -131,4 +144,75 @@ export function parseTypeAlias(this: IParserInternal): ITypeAliasNode | null {
       },
     },
   };
+}
+
+/**
+ * Join type tokens with smart whitespace handling
+ * Based on how TypeScript/Prettier handle type formatting:
+ * - NO spaces around: [ ] < > ( ) . ? !
+ * - Space after: , :
+ * - Space around: | & => extends keyof typeof in is
+ * - Preserve quotes in string literals
+ */
+function _joinTypeTokens(tokens: Array<{ value: string; type: string }>): string {
+  if (tokens.length === 0) return '';
+  if (tokens.length === 1) return tokens[0].value;
+
+  // Punctuation that NEVER has spaces around it
+  const noSpacePunctuation = new Set(['[', ']', '<', '>', '(', ')', '.', '?', '!']);
+
+  // Operators that need spaces around them
+  const spacedOperators = new Set(['|', '&', '=>', 'extends', 'keyof', 'typeof', 'in', 'is']);
+
+  // Punctuation that needs space AFTER but not before
+  const spaceAfter = new Set([',', ':']);
+
+  const result: string[] = [];
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i].value;
+    const prevToken = i > 0 ? tokens[i - 1].value : null;
+    const nextToken = i < tokens.length - 1 ? tokens[i + 1].value : null;
+
+    // Determine if we need a space before this token
+    let needsSpace = false;
+
+    if (result.length > 0 && prevToken) {
+      // NEVER add space if current token is no-space punctuation
+      if (noSpacePunctuation.has(token)) {
+        needsSpace = false;
+      }
+      // NEVER add space if previous token is no-space punctuation
+      else if (noSpacePunctuation.has(prevToken)) {
+        needsSpace = false;
+      }
+      // Space after comma or colon
+      else if (spaceAfter.has(prevToken)) {
+        needsSpace = true;
+      }
+      // Space around operators
+      else if (spacedOperators.has(token) || spacedOperators.has(prevToken)) {
+        needsSpace = true;
+      }
+      // Space between two word tokens (identifiers/keywords)
+      else if (_isWordToken(prevToken) && _isWordToken(token)) {
+        needsSpace = true;
+      }
+    }
+
+    if (needsSpace) {
+      result.push(' ');
+    }
+
+    result.push(token);
+  }
+
+  return result.join('');
+}
+
+/**
+ * Check if token is a word (identifier, keyword, etc.)
+ */
+function _isWordToken(token: string): boolean {
+  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(token);
 }

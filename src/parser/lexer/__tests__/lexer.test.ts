@@ -190,4 +190,64 @@ describe('Lexer', () => {
       expect(pos.column).toBeGreaterThanOrEqual(1);
     });
   });
+
+  describe('JSX context switching', () => {
+    it('should tokenize JSX text content', () => {
+      const lexer = createLexer();
+      const tokens = lexer.tokenize('<div>Hello World</div>');
+
+      expect(tokens).toContainEqual(
+        expect.objectContaining({
+          type: TokenType.JSX_TEXT,
+          value: 'Hello World',
+        })
+      );
+    });
+
+    it('should tokenize LESS_THAN_SLASH for closing tags', () => {
+      const lexer = createLexer();
+      const tokens = lexer.tokenize('<div></div>');
+
+      expect(tokens).toContainEqual(
+        expect.objectContaining({
+          type: TokenType.LESS_THAN_SLASH,
+          value: '</',
+        })
+      );
+    });
+
+    it('should handle JSX text with expressions', () => {
+      const lexer = createLexer();
+      const tokens = lexer.tokenize('<div>Count: {count}</div>');
+
+      // Should have JSX_TEXT, LBRACE, IDENTIFIER, RBRACE, LESS_THAN_SLASH
+      const types = tokens.map((t) => t.type);
+      expect(types).toContain(TokenType.JSX_TEXT);
+      expect(types).toContain(TokenType.LBRACE);
+      expect(types).toContain(TokenType.RBRACE);
+      expect(types).toContain(TokenType.LESS_THAN_SLASH);
+    });
+
+    it('should handle nested JSX elements', () => {
+      const lexer = createLexer();
+      const tokens = lexer.tokenize('<div><span>Hello</span></div>');
+
+      const types = tokens.map((t) => t.type);
+      expect(types).toContain(TokenType.LT); // <div
+      expect(types).toContain(TokenType.LT); // <span
+      expect(types).toContain(TokenType.JSX_TEXT); // Hello
+      expect(types).toContain(TokenType.LESS_THAN_SLASH); // </span
+      expect(types).toContain(TokenType.LESS_THAN_SLASH); // </div
+    });
+
+    it('should handle JSX text with special characters', () => {
+      const lexer = createLexer();
+      const tokens = lexer.tokenize('<div>Hello &lt; World</div>');
+
+      // The &lt; entity should be part of JSX_TEXT
+      const jsxTextToken = tokens.find((t) => t.type === TokenType.JSX_TEXT);
+      expect(jsxTextToken?.value).toBeTruthy();
+      expect(jsxTextToken?.value).toContain('&lt;');
+    });
+  });
 });

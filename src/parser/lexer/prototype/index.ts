@@ -4,9 +4,18 @@
  * Attaches all prototype methods to Lexer constructor.
  */
 
-import { Lexer } from '../lexer.js';
-import { getPosition } from './get-position.js';
-import { peek } from './peek.js';
+import { Lexer } from '../lexer.js'
+import { enterJSXElement } from './enter-jsx-element.js'
+import { enterJSXExpression } from './enter-jsx-expression.js'
+import { enterTypeContext } from './enter-type-context.js'
+import { exitJSXElement } from './exit-jsx-element.js'
+import { exitJSXExpression } from './exit-jsx-expression.js'
+import { exitTypeContext } from './exit-type-context.js'
+import { _getCurrentColumn } from './get-current-column.js'
+import { getPosition } from './get-position.js'
+import { isInTypeContext } from './is-in-type-context.js'
+import { peek } from './peek.js'
+import { _scanJSXText } from './scan-jsx-text.js'
 import {
   _isAlpha,
   _isAlphaNumeric,
@@ -18,12 +27,19 @@ import {
   _readString,
   _recognizeToken,
   tokenize,
-} from './tokenize.js';
+} from './tokenize.js'
 
 // Attach public methods to prototype
 Lexer.prototype.tokenize = tokenize;
 Lexer.prototype.peek = peek;
 Lexer.prototype.getPosition = getPosition;
+Lexer.prototype.enterJSXElement = enterJSXElement;
+Lexer.prototype.exitJSXElement = exitJSXElement;
+Lexer.prototype.enterJSXExpression = enterJSXExpression;
+Lexer.prototype.exitJSXExpression = exitJSXExpression;
+Lexer.prototype.enterTypeContext = enterTypeContext;
+Lexer.prototype.exitTypeContext = exitTypeContext;
+Lexer.prototype.isInTypeContext = isInTypeContext;
 
 // Attach private helper methods (non-enumerable)
 Object.defineProperty(Lexer.prototype, '_recognizeToken', {
@@ -84,6 +100,20 @@ Object.defineProperty(Lexer.prototype, '_readSignalBinding', {
 
 Object.defineProperty(Lexer.prototype, '_readSingleChar', {
   value: _readSingleChar,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Lexer.prototype, '_scanJSXText', {
+  value: _scanJSXText,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Lexer.prototype, '_getCurrentColumn', {
+  value: _getCurrentColumn,
   writable: true,
   enumerable: false,
   configurable: false,

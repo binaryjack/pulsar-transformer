@@ -4,11 +4,11 @@
  * Main entry point - converts PSR source code into AST.
  */
 
-import type { IASTNode, IProgramNode } from '../ast/index.js'
-import { ASTNodeType } from '../ast/index.js'
-import { createLexer } from '../lexer/index.js'
-import { TokenType } from '../lexer/token-types.js'
-import type { IParserInternal } from '../parser.types.js'
+import type { IASTNode, IProgramNode } from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import { createLexer } from '../lexer/index.js';
+import { TokenType } from '../lexer/token-types.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Parse PSR source code into AST
@@ -85,6 +85,17 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
   // Component declaration
   if (token.type === TokenType.COMPONENT) {
     return this._parseComponentDeclaration();
+  }
+
+  // JSX Fragment (<>...</>) or JSX Element (<Component>)
+  if (token.type === TokenType.LT) {
+    // Check if this is a JSX fragment by looking ahead for GT
+    const nextToken = this._peek(1);
+    if (nextToken?.type === 'GT') {
+      // This is a JSX fragment: <>
+      return this._parseJSXFragment();
+    }
+    // Otherwise, fall through to expression statement for JSX elements
   }
 
   // Enum declaration (including const enums) - MUST come before variable declaration
@@ -229,7 +240,7 @@ function _advance(this: IParserInternal) {
   }
   const returned = this._tokens[this._current - 1];
   const after = this._tokens[this._current];
-  
+
   return returned;
 }
 
@@ -303,6 +314,5 @@ export {
   _isAtEnd,
   _match,
   _parseStatement,
-  _peek
-}
-
+  _peek,
+};

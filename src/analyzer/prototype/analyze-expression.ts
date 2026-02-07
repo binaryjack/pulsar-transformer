@@ -4,9 +4,9 @@
  * Converts expression AST nodes to IR.
  */
 
-import type { IASTNode } from '../../parser/ast/index.js'
-import { ASTNodeType } from '../../parser/ast/index.js'
-import type { IAnalyzerInternal } from '../analyzer.types.js'
+import type { IASTNode } from '../../parser/ast/index.js';
+import { ASTNodeType } from '../../parser/ast/index.js';
+import type { IAnalyzerInternal } from '../analyzer.types.js';
 import type {
   IArrowFunctionIR,
   IBinaryExpressionIR,
@@ -17,8 +17,8 @@ import type {
   ILiteralIR,
   IMemberExpressionIR,
   IUnaryExpressionIR,
-} from '../ir/index.js'
-import { IRNodeType } from '../ir/index.js'
+} from '../ir/index.js';
+import { IRNodeType } from '../ir/index.js';
 
 /**
  * Analyze expression node
@@ -51,6 +51,12 @@ export function analyzeExpression(this: IAnalyzerInternal, node: IASTNode): IIRN
 
     case ASTNodeType.CONDITIONAL_EXPRESSION:
       return this._analyzeConditionalExpression(node as any);
+
+    case ASTNodeType.OBJECT_EXPRESSION:
+      return this._analyzeObjectExpression(node as any);
+
+    case ASTNodeType.ARRAY_EXPRESSION:
+      return this._analyzeArrayExpression(node as any);
 
     default:
       // Fallback to literal
@@ -137,7 +143,9 @@ function _analyzeIdentifier(this: IAnalyzerInternal, node: any): IIdentifierIR {
  */
 function _analyzeCallExpression(this: IAnalyzerInternal, node: any): ICallExpressionIR {
   const callee = this._analyzeNode(node.callee) as IIRNode;
-  const args = node.arguments.map((arg: any) => this._analyzeNode(arg)).filter((arg: IIRNode | null) => arg !== null);
+  const args = node.arguments
+    .map((arg: any) => this._analyzeNode(arg))
+    .filter((arg: IIRNode | null) => arg !== null);
 
   // Detect signal creation - support both signal() and createSignal()
   const calleeName = callee.type === IRNodeType.IDENTIFIER_IR ? (callee as any).name : null;
@@ -271,10 +279,14 @@ function _analyzeArrowFunction(this: IAnalyzerInternal, node: any): IArrowFuncti
   let body: IIRNode | IIRNode[];
   if (node.body && node.body.type === ASTNodeType.BLOCK_STATEMENT) {
     // Block body: () => { statements }
-    body = node.body.body.map((stmt: any) => this._analyzeNode(stmt)).filter((stmt: IIRNode | null) => stmt !== null);
+    body = node.body.body
+      .map((stmt: any) => this._analyzeNode(stmt))
+      .filter((stmt: IIRNode | null) => stmt !== null);
   } else if (Array.isArray(node.body)) {
     // Array of statements (shouldn't happen from parser, but handle it)
-    body = node.body.map((stmt: any) => this._analyzeNode(stmt)).filter((stmt: IIRNode | null) => stmt !== null);
+    body = node.body
+      .map((stmt: any) => this._analyzeNode(stmt))
+      .filter((stmt: IIRNode | null) => stmt !== null);
   } else {
     // Expression body: () => expression
     body = this._analyzeNode(node.body);
@@ -329,8 +341,86 @@ function _isParameter(this: IAnalyzerInternal, name: string): boolean {
   return variable ? variable.kind === 'parameter' : false;
 }
 
+/**
+ * Analyze object expression
+ * Converts ObjectExpression AST node by analyzing each property value to IR
+ */
+function _analyzeObjectExpression(this: IAnalyzerInternal, node: any): ILiteralIR {
+  // Analyze each property to convert to IR
+  const analyzedProperties = (node.properties || []).map((prop: any) => {
+    if (prop.type === 'SpreadElement') {
+      return {
+        type: 'SpreadElement',
+        argument: this._analyzeNode(prop.argument), // Convert to IR
+      };
+    }
+    return {
+      key: prop.key, // Keep key as-is (it's just an identifier name)
+      value: this._analyzeNode(prop.value), // Convert value to IR
+    };
+  });
+
+  // Create a synthetic ObjectExpression with analyzed properties
+  const analyzedNode = {
+    ...node,
+    properties: analyzedProperties,
+  };
+
+  return {
+    type: IRNodeType.LITERAL_IR,
+    value: analyzedNode,
+    rawValue: 'ObjectExpression',
+    metadata: {
+      sourceLocation: node.location?.start,
+      optimizations: {
+        isStatic: true,
+        isPure: true,
+      },
+      isObjectExpression: true,
+    },
+  } as any;
+}
+
+/**
+ * Analyze array expression
+ * Converts ArrayExpression AST node by analyzing each element to IR
+ */
+function _analyzeArrayExpression(this: IAnalyzerInternal, node: any): ILiteralIR {
+  // Analyze each element to convert to IR
+  const analyzedElements = (node.elements || []).map((elem: any) => {
+    if (elem.type === 'SpreadElement') {
+      return {
+        type: 'SpreadElement',
+        argument: this._analyzeNode(elem.argument), // Convert to IR
+      };
+    }
+    return this._analyzeNode(elem); // Convert element to IR
+  });
+
+  // Create a synthetic ArrayExpression with analyzed elements
+  const analyzedNode = {
+    ...node,
+    elements: analyzedElements,
+  };
+
+  return {
+    type: IRNodeType.LITERAL_IR,
+    value: analyzedNode,
+    rawValue: 'ArrayExpression',
+    metadata: {
+      sourceLocation: node.location?.start,
+      optimizations: {
+        isStatic: true,
+        isPure: true,
+      },
+      isArrayExpression: true,
+    },
+  } as any;
+}
+
 // Export helpers
 export {
+  _analyzeArrayExpression,
   _analyzeArrowFunction,
   _analyzeBinaryExpression,
   _analyzeCallExpression,
@@ -338,9 +428,9 @@ export {
   _analyzeIdentifier,
   _analyzeLiteral,
   _analyzeMemberExpression,
+  _analyzeObjectExpression,
   _analyzeTemplateLiteral,
   _analyzeUnaryExpression,
   _isFunctionPure,
-  _isParameter
-}
-
+  _isParameter,
+};

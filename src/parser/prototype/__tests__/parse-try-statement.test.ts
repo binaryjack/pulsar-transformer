@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ITryStatementNode } from '../../ast-node-types';
+import { ASTNodeType } from '../../ast/ast-node-types';
 import { createParser } from '../../create-parser';
 
 describe('_parseTryStatement', () => {
@@ -9,8 +10,8 @@ describe('_parseTryStatement', () => {
       const parser = createParser(source);
       const result = parser._parseTryStatement() as ITryStatementNode;
 
-      expect(result.type).toBe('TRY_STATEMENT');
-      expect(result.block.type).toBe('BLOCK_STATEMENT');
+      expect(result.type).toBe(ASTNodeType.TRY_STATEMENT);
+      expect(result.block.type).toBe(ASTNodeType.BLOCK_STATEMENT);
       expect(result.handler).not.toBeNull();
       expect(result.finalizer).toBeNull();
     });
@@ -32,7 +33,7 @@ describe('_parseTryStatement', () => {
 
       expect(result.handler).toBeNull();
       expect(result.finalizer).not.toBeNull();
-      expect(result.finalizer?.type).toBe('BLOCK_STATEMENT');
+      expect(result.finalizer?.type).toBe(ASTNodeType.BLOCK_STATEMENT);
     });
   });
 
@@ -66,7 +67,7 @@ describe('_parseTryStatement', () => {
       const parser = createParser(source);
       const result = parser._parseTryStatement() as ITryStatementNode;
 
-      expect(result.type).toBe('TRY_STATEMENT');
+      expect(result.type).toBe(ASTNodeType.TRY_STATEMENT);
       expect(result.handler).not.toBeNull();
     });
   });
@@ -77,8 +78,8 @@ describe('_parseTryStatement', () => {
       const parser = createParser(source);
       const result = parser._parseTryStatement() as ITryStatementNode;
 
-      expect(result.loc).toBeDefined();
-      expect(result.loc?.start.line).toBe(1);
+      expect(result.location).toBeDefined();
+      expect(result.location.start.line).toBe(1);
     });
   });
 
@@ -88,7 +89,7 @@ describe('_parseTryStatement', () => {
       const parser = createParser(source);
       const result = parser._parseTryStatement() as ITryStatementNode;
 
-      expect(result.block.type).toBe('BLOCK_STATEMENT');
+      expect(result.block.type).toBe(ASTNodeType.BLOCK_STATEMENT);
     });
 
     it('should parse empty catch block', () => {
@@ -96,7 +97,7 @@ describe('_parseTryStatement', () => {
       const parser = createParser(source);
       const result = parser._parseTryStatement() as ITryStatementNode;
 
-      expect(result.handler?.body.type).toBe('BLOCK_STATEMENT');
+      expect(result.handler?.body.type).toBe(ASTNodeType.BLOCK_STATEMENT);
     });
 
     it('should parse empty finally block', () => {
@@ -104,7 +105,7 @@ describe('_parseTryStatement', () => {
       const parser = createParser(source);
       const result = parser._parseTryStatement() as ITryStatementNode;
 
-      expect(result.finalizer?.type).toBe('BLOCK_STATEMENT');
+      expect(result.finalizer?.type).toBe(ASTNodeType.BLOCK_STATEMENT);
     });
   });
 });

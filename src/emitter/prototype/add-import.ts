@@ -14,5 +14,6 @@ export function addImport(this: IImportTrackerInternal, source: string, specifie
     this.imports.set(source, new Set());
   }
 
-  this.imports.get(source)!.add(specifier);
+  // Convert empty string to null for side-effect imports
+  this.imports.get(source)!.add(specifier === '' ? null : specifier);
 }

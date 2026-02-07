@@ -39,6 +39,14 @@ export function analyzeVariable(
   // Analyze initializer
   const initializer = declaration.init ? this._analyzeNode(declaration.init) : null;
 
+  // Preserve type annotation
+  const typeAnnotation = declaration.typeAnnotation
+    ? {
+        type: 'TypeAnnotation' as const,
+        typeString: declaration.typeAnnotation.typeString,
+      }
+    : undefined;
+
   // Detect signal declaration (createSignal, createMemo, etc.)
   const isSignalDeclaration =
     initializer?.type === IRNodeType.CALL_EXPRESSION_IR && (initializer as any).isSignalCreation;
@@ -77,6 +85,7 @@ export function analyzeVariable(
     kind,
     name,
     initializer,
+    typeAnnotation,
     isSignalDeclaration,
     isDestructuring,
     destructuringNames,
