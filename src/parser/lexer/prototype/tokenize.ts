@@ -216,8 +216,15 @@ function _recognizeToken(this: ILexerInternal): IToken | null {
   const line = this._line;
   const column = this._getCurrentColumn();
 
-  // JSX TEXT MODE: Scan text content until < or {
+  // JSX TEXT MODE: Scan text content until < or { or $(
   if (this._scanMode === ScanMode.JSX_TEXT) {
+    // Check if we're at $( (signal binding)
+    if (char === '$' && this._source[this._position + 1] === '(') {
+      // Switch back to JavaScript mode and tokenize signal binding
+      this._scanMode = ScanMode.JAVASCRIPT;
+      return this._readSignalBinding(start, line, column);
+    }
+
     // Check if we're at < or {
     if (char === '<' || char === '{') {
       // Switch back to JavaScript mode to tokenize the delimiter properly

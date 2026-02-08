@@ -263,6 +263,27 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
       }
     }
 
+    case IRNodeType.SIGNAL_BINDING_IR: {
+      const signalIR = ir as any;
+      const { signalName } = signalIR;
+
+      // Add required imports
+      this.context.imports.addImport(this.context.config.runtimePaths.registry!, '$REGISTRY');
+
+      // Debug logging if enabled
+      if (this.context.config.debug?.logSignalBindings) {
+        console.log(
+          `[EMITTER] Emitting signal binding for: ${signalName} (canOptimize: ${signalIR.canOptimize})`
+        );
+      }
+
+      // Generate IIFE that creates a text node and wires it to the signal
+      // Pattern: (() => { const _t = document.createTextNode(''); $REGISTRY.wire(_t, 'textContent', () => signalName()); return _t; })()
+      const textNodeVar = `_t${this.context.elementCounter++}`;
+      
+      return `(() => { const ${textNodeVar} = document.createTextNode(''); $REGISTRY.wire(${textNodeVar}, 'textContent', () => ${signalName}()); return ${textNodeVar}; })()`;
+    }
+
     case IRNodeType.ARROW_FUNCTION_IR: {
       const arrowIR = ir as any;
 

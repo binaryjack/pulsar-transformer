@@ -20,6 +20,11 @@ const DEFAULT_CONFIG: Required<IEmitterConfig> = {
     jsxRuntime: '@pulsar-framework/pulsar.dev/jsx-runtime',
     registry: '@pulsar-framework/pulsar.dev/registry',
   },
+  debug: {
+    logSignalBindings: false,
+    logElements: false,
+    logEventHandlers: false,
+  },
 };
 
 /**

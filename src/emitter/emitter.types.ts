@@ -38,6 +38,26 @@ export interface IEmitterConfig {
     jsxRuntime?: string;
     registry?: string;
   };
+
+  /**
+   * Debug options for fine-grained logging
+   */
+  debug?: {
+    /**
+     * Log signal binding emissions
+     */
+    logSignalBindings?: boolean;
+    
+    /**
+     * Log element emissions
+     */
+    logElements?: boolean;
+    
+    /**
+     * Log event handler emissions
+     */
+    logEventHandlers?: boolean;
+  };
 }
 
 /**

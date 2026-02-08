@@ -34,8 +34,8 @@ export function _scanJSXText(
   while (this._position < this._source.length) {
     const char = this._source[this._position];
 
-    // Stop at < or {
-    if (char === '<' || char === '{') {
+    // Stop at < or { or $(
+    if (char === '<' || char === '{' || (char === '$' && this._source[this._position + 1] === '(')) {
       break;
     }
 
