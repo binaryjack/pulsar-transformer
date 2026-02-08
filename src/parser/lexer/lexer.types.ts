@@ -81,6 +81,11 @@ export interface ILexer {
   reScanGreaterThanToken(): TokenType | undefined;
 
   /**
+   * Re-scan template token after expression in template literal
+   */
+  reScanTemplateToken(): IToken;
+
+  /**
    * Check if what follows can be a type argument in expression
    */
   canFollowTypeArguments(): boolean;
@@ -103,6 +108,9 @@ export interface ILexerInternal extends ILexer {
   _inJSXElement: boolean;
   _scanMode: ScanMode;
 
+  // Template literal state tracking
+  _templateLiteralStack: Array<{ head: boolean }> | undefined;
+
   // Type context tracking (for generic types)
   _inTypeLevel: number;
 
@@ -121,7 +129,12 @@ export interface ILexerInternal extends ILexer {
   _readIdentifierOrKeyword(start: number, line: number, column: number): IToken;
   _readNumber(start: number, line: number, column: number): IToken;
   _readString(start: number, line: number, column: number): IToken;
-  _readTemplateLiteral(start: number, line: number, column: number): IToken;
+  _readTemplateToken(start: number, line: number, column: number): IToken;
+  _scanTemplateAndSetTokenValue(
+    shouldEmitInvalidEscapeError: boolean,
+    isContinuation?: boolean
+  ): IToken;
+  reScanTemplateToken(): IToken;
   _readSignalBinding(start: number, line: number, column: number): IToken;
   _readSingleChar(start: number, line: number, column: number): IToken | null;
   _readSingleLineComment(start: number, line: number, column: number): IToken | null;

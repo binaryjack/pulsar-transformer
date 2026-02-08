@@ -96,17 +96,8 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
             // Check for default value: prop = value
             let defaultValue = null;
             if (this._match('ASSIGN')) {
-              // Skip the default value expression
-              let depth = 0;
-              while (!this._check('COMMA') && !this._check('RBRACE') && !this._isAtEnd()) {
-                const tok = this._getCurrentToken();
-                if (tok?.type === 'LPAREN' || tok?.type === 'LBRACE' || tok?.type === 'LBRACKET')
-                  depth++;
-                if (tok?.type === 'RPAREN' || tok?.type === 'RBRACE' || tok?.type === 'RBRACKET')
-                  depth--;
-                if (depth < 0) break;
-                this._advance();
-              }
+              // Parse the default value expression
+              defaultValue = this._parseExpression();
             }
 
             properties.push({
@@ -115,10 +106,19 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
                 type: ASTNodeType.IDENTIFIER,
                 name: propToken!.value,
               },
-              value: {
-                type: ASTNodeType.IDENTIFIER,
-                name: propToken!.value,
-              },
+              value: defaultValue
+                ? {
+                    type: 'AssignmentPattern',
+                    left: {
+                      type: ASTNodeType.IDENTIFIER,
+                      name: propToken!.value,
+                    },
+                    right: defaultValue,
+                  }
+                : {
+                    type: ASTNodeType.IDENTIFIER,
+                    name: propToken!.value,
+                  },
               location: {
                 start: {
                   line: propToken!.line,

@@ -35,44 +35,11 @@ export function analyze(this: IAnalyzerInternal, ast: IASTNode): IIRNode {
   const program = ast as IProgramNode;
   const irNodes: IIRNode[] = [];
 
-  // Analyze each top-level statement
-  const componentNames = new Set<string>();
-  const explicitlyExported = new Set<string>();
-
-  // First pass: collect all nodes and track exports
+  // Analyze each statement and build IR nodes
   for (const statement of program.body) {
     const irNode = this._analyzeNode(statement);
     if (irNode) {
-      if (irNode.type === IRNodeType.COMPONENT_IR) {
-        componentNames.add((irNode as any).name);
-      }
-      if (irNode.type === IRNodeType.EXPORT) {
-        const exportIR = irNode as any;
-        exportIR.specifiers?.forEach((spec: any) => {
-          explicitlyExported.add(spec.local);
-        });
-      }
       irNodes.push(irNode);
-    }
-  }
-
-  // Second pass: Auto-export components that aren't already exported
-  for (const componentName of componentNames) {
-    if (!explicitlyExported.has(componentName)) {
-      const exportIR: any = {
-        type: IRNodeType.EXPORT,
-        exportKind: 'named',
-        specifiers: [
-          {
-            type: 'ExportSpecifier',
-            local: componentName,
-            exported: componentName,
-          },
-        ],
-        source: null,
-        metadata: {},
-      };
-      irNodes.push(exportIR);
     }
   }
 
@@ -120,6 +87,10 @@ function _analyzeNode(this: IAnalyzerInternal, node: IASTNode): IIRNode | null {
       // Block statements are handled by analyzing their body statements
       // Return null for the block itself, as its statements are processed inline
       return null;
+
+    case ASTNodeType.EXPRESSION_STATEMENT:
+      // Expression statements (console.log, createEffect, etc.) - analyze the inner expression
+      return this._analyzeExpression((node as any).expression);
 
     case ASTNodeType.IMPORT_DECLARATION:
       return this._analyzeImport(node);

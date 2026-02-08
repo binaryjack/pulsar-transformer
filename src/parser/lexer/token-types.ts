@@ -66,6 +66,9 @@ export enum TokenType {
   STRING = 'STRING',
   NUMBER = 'NUMBER',
   TEMPLATE_LITERAL = 'TEMPLATE_LITERAL',
+  TEMPLATE_HEAD = 'TEMPLATE_HEAD', // `start${ - opening of template with expression
+  TEMPLATE_MIDDLE = 'TEMPLATE_MIDDLE', // }middle${ - middle part between expressions
+  TEMPLATE_TAIL = 'TEMPLATE_TAIL', // }end` - ending of template
 
   // Operators
   ASSIGN = 'ASSIGN', // =

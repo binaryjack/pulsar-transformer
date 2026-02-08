@@ -96,7 +96,7 @@ export async function transform(
       duration: metrics.parserTime,
     });
 
-    // Check parser errors
+    // FIX #4: Always fail on parser errors (removed strict mode check)
     if (parser.hasErrors()) {
       const errors = parser.getErrors();
       logger.log('parser', 'error', `Parser encountered ${errors.length} errors`, { errors });
@@ -110,9 +110,11 @@ export async function transform(
         });
       });
 
-      if (finalConfig.strict) {
-        throw new Error(`Parser failed with ${errors.length} errors`);
-      }
+      // Always throw on parser errors - never continue with broken AST
+      const errorDetails = errors
+        .map((e) => `  Line ${e.location?.line ?? '?'}:${e.location?.column ?? '?'} - ${e.message}`)
+        .join('\n');
+      throw new Error(`Parser failed with ${errors.length} errors:\n${errorDetails}`);
     }
 
     if (finalConfig.debug) {

@@ -21,6 +21,7 @@ export enum IRNodeType {
   // Expression IR
   LITERAL_IR = 'LiteralIR',
   IDENTIFIER_IR = 'IdentifierIR',
+  PARAM_PATTERN_IR = 'ParamPatternIR',
   CALL_EXPRESSION_IR = 'CallExpressionIR',
   ARROW_FUNCTION_IR = 'ArrowFunctionIR',
   BINARY_EXPRESSION_IR = 'BinaryExpressionIR',
@@ -93,7 +94,7 @@ export interface IIRMetadata {
 export interface IComponentIR extends IIRNode {
   type: IRNodeType.COMPONENT_IR;
   name: string;
-  params: IIdentifierIR[];
+  params: Array<IIdentifierIR | IParamPatternIR>;
   body: IIRNode[];
   returnExpression: IIRNode | null;
 
@@ -232,6 +233,28 @@ export interface IIdentifierIR extends IIRNode {
 }
 
 /**
+ * Parameter Pattern IR Node
+ * Represents object destructuring patterns in component parameters
+ */
+export interface IParamPatternIR extends IIRNode {
+  type: IRNodeType.PARAM_PATTERN_IR;
+
+  /**
+   * Properties being destructured
+   */
+  properties: Array<{
+    name: string;
+    hasDefault: boolean;
+    defaultValue?: IIRNode;
+  }>;
+
+  /**
+   * Whether this is an object pattern
+   */
+  isObjectPattern: boolean;
+}
+
+/**
  * Call Expression IR Node
  */
 export interface ICallExpressionIR extends IIRNode {
@@ -276,7 +299,8 @@ export interface IUnaryExpressionIR extends IIRNode {
 export interface IMemberExpressionIR extends IIRNode {
   type: IRNodeType.MEMBER_EXPRESSION_IR;
   object: IIRNode;
-  property: IIdentifierIR;
+  property: IIRNode; // Can be IIdentifierIR for non-computed or any expression for computed
+  computed?: boolean; // true for obj[expr], false/undefined for obj.prop
 }
 
 /**

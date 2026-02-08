@@ -22,7 +22,14 @@ export function _emitExport(this: IEmitterInternal, ir: IExportIR): void {
 
   // Handle default export
   if (exportKind === 'default') {
-    exportStatement = 'export default;';
+    if (specifiers.length > 0) {
+      // Export default with identifier: export default ComponentName;
+      const identifier = specifiers[0].local;
+      exportStatement = `export default ${identifier};`;
+    } else {
+      // No identifier provided, emit empty (legacy behavior for compatibility)
+      exportStatement = 'export default;';
+    }
   }
   // Handle export all
   else if (exportKind === 'all') {

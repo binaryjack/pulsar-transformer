@@ -29,6 +29,7 @@ import {
   _readSingleChar,
   _readString,
   _recognizeToken,
+  reScanTemplateToken,
   tokenize,
 } from './tokenize.js';
 
@@ -45,6 +46,7 @@ Lexer.prototype.exitTypeContext = exitTypeContext;
 Lexer.prototype.isInTypeContext = isInTypeContext;
 Lexer.prototype.reScanLessThanToken = reScanLessThanToken;
 Lexer.prototype.reScanGreaterThanToken = reScanGreaterThanToken;
+Lexer.prototype.reScanTemplateToken = reScanTemplateToken;
 Lexer.prototype.canFollowTypeArguments = canFollowTypeArguments;
 
 // Attach private helper methods (non-enumerable)

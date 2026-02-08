@@ -10,10 +10,10 @@
  * "hello"
  */
 
-import { ASTNodeType } from '../ast/index.js'
-import { TokenType } from '../lexer/token-types.js'
-import type { IParserInternal } from '../parser.types.js'
-import { parseExportDeclaration } from './parse-export-declaration.js'
+import { ASTNodeType } from '../ast/index.js';
+import { TokenType } from '../lexer/token-types.js';
+import type { IParserInternal } from '../parser.types.js';
+import { parseExportDeclaration } from './parse-export-declaration.js';
 
 /**
  * Parse expression
@@ -384,7 +384,7 @@ function _parsePrimaryExpression(this: IParserInternal): any {
   }
 
   // Template literal
-  if (token.type === 'TEMPLATE_LITERAL') {
+  if (token.type === 'TEMPLATE_LITERAL' || token.type === 'TEMPLATE_HEAD') {
     return this._parseTemplateLiteral();
   }
 
@@ -434,12 +434,12 @@ function _parseLiteral(this: IParserInternal): any {
 }
 
 /**
- * Parse template literal (simplified version treating as string literal)
+ * Parse template literal - supports embedded expressions
+ * Handles: `simple`, `hello ${name}`, `${a} middle ${b} end`
  */
 function _parseTemplateLiteral(this: IParserInternal): any {
-  const token = this._advance();
+  const token = this._getCurrentToken();
 
-  // Safety check: ensure token exists
   if (!token) {
     this._addError({
       code: 'UNEXPECTED_EOF_TEMPLATE',
@@ -452,51 +452,187 @@ function _parseTemplateLiteral(this: IParserInternal): any {
     return null;
   }
 
-  // Check for embedded expressions in template literal
-  if (token.value.includes('${')) {
-    this._addError({
-      code: 'UNSUPPORTED_TEMPLATE_EXPRESSION',
-      message:
-        'Template literals with embedded expressions (${...}) are not yet supported. Use simple template literals or string concatenation instead.',
-      location: {
-        line: token.line || 0,
-        column: token.column || 0,
-      },
-    });
-    // Return a simplified template literal without embedded expressions
+  const startLocation = {
+    line: token.line,
+    column: token.column,
+    offset: token.start,
+  };
+
+  // Simple template literal without expressions
+  if (token.type === 'TEMPLATE_LITERAL') {
+    this._advance();
     return {
       type: ASTNodeType.TEMPLATE_LITERAL,
-      value: token.value,
+      quasis: [
+        {
+          type: ASTNodeType.TEMPLATE_ELEMENT,
+          value: {
+            cooked: token.value,
+            raw: token.value,
+          },
+          tail: true,
+          location: {
+            start: startLocation,
+            end: {
+              line: token.line,
+              column: token.column + token.value.length + 2,
+              offset: token.end,
+            },
+          },
+        },
+      ],
+      expressions: [],
       raw: `\`${token.value}\``,
       location: {
-        start: {
-          line: token.line,
-          column: token.column,
-          offset: token.start,
-        },
+        start: startLocation,
         end: {
           line: token.line,
-          column: token.column + token.value.length + 2, // +2 for backticks
+          column: token.column + token.value.length + 2,
           offset: token.end,
         },
       },
     };
   }
 
+  // Template literal with expressions: `hello ${world}`
+  const quasis: any[] = [];
+  const expressions: any[] = [];
+
+  // Parse TEMPLATE_HEAD: `hello ${
+  if (token.type === 'TEMPLATE_HEAD') {
+    this._advance();
+    quasis.push({
+      type: ASTNodeType.TEMPLATE_ELEMENT,
+      value: {
+        cooked: token.value,
+        raw: token.value,
+      },
+      tail: false,
+      location: {
+        start: startLocation,
+        end: {
+          line: token.line,
+          column: token.column + token.value.length,
+          offset: token.end,
+        },
+      },
+    });
+
+    // Parse embedded expressions and middle/tail parts
+    while (!this._isAtEnd()) {
+      // Parse expression inside ${}
+      const expr = this._parseExpression();
+      if (expr) {
+        expressions.push(expr);
+      }
+
+      // Expect closing brace }
+      if (!this._check('RBRACE')) {
+        this._addError({
+          code: 'EXPECTED_RBRACE_TEMPLATE',
+          message: 'Expected "}" in template expression',
+          location: {
+            line: this._getCurrentToken()?.line || 0,
+            column: this._getCurrentToken()?.column || 0,
+          },
+        });
+        break;
+      }
+      this._advance(); // consume RBRACE
+
+      // After consuming RBRACE, the next token is already the template continuation
+      // (TEMPLATE_MIDDLE or TEMPLATE_TAIL) that the lexer automatically generated
+      const continuationToken = this._getCurrentToken();
+
+      if (
+        !continuationToken ||
+        (continuationToken.type !== 'TEMPLATE_MIDDLE' &&
+          continuationToken.type !== 'TEMPLATE_TAIL' &&
+          continuationToken.type !== 'TEMPLATE_LITERAL')
+      ) {
+        this._addError({
+          code: 'EXPECTED_TEMPLATE_CONTINUATION',
+          message: `Expected template continuation after expression, got ${continuationToken?.type || 'EOF'}`,
+          location: {
+            line: this._getCurrentToken()?.line || 0,
+            column: this._getCurrentToken()?.column || 0,
+          },
+        });
+        break;
+      }
+
+      // Parse TEMPLATE_MIDDLE: }middle${ or TEMPLATE_TAIL: }end` or TEMPLATE_LITERAL
+      if (
+        continuationToken.type === 'TEMPLATE_MIDDLE' ||
+        continuationToken.type === 'TEMPLATE_LITERAL'
+      ) {
+        quasis.push({
+          type: ASTNodeType.TEMPLATE_ELEMENT,
+          value: {
+            cooked: continuationToken.value,
+            raw: continuationToken.value,
+          },
+          tail: false,
+          location: {
+            start: {
+              line: continuationToken.line,
+              column: continuationToken.column,
+              offset: continuationToken.start,
+            },
+            end: {
+              line: continuationToken.line,
+              column: continuationToken.column + continuationToken.value.length,
+              offset: continuationToken.end,
+            },
+          },
+        });
+      } else if (continuationToken.type === 'TEMPLATE_TAIL') {
+        quasis.push({
+          type: ASTNodeType.TEMPLATE_ELEMENT,
+          value: {
+            cooked: continuationToken.value,
+            raw: continuationToken.value,
+          },
+          tail: true,
+          location: {
+            start: {
+              line: continuationToken.line,
+              column: continuationToken.column,
+              offset: continuationToken.start,
+            },
+            end: {
+              line: continuationToken.line,
+              column: continuationToken.column + continuationToken.value.length,
+              offset: continuationToken.end,
+            },
+          },
+        });
+        break; // End of template literal
+      } else {
+        this._addError({
+          code: 'EXPECTED_TEMPLATE_PART',
+          message: 'Expected template literal continuation',
+          location: {
+            line: continuationToken.line || 0,
+            column: continuationToken.column || 0,
+          },
+        });
+        break;
+      }
+    }
+  }
+
+  const endToken = this._getCurrentToken() || token;
   return {
     type: ASTNodeType.TEMPLATE_LITERAL,
-    value: token.value,
-    raw: `\`${token.value}\``,
+    quasis,
+    expressions,
     location: {
-      start: {
-        line: token.line,
-        column: token.column,
-        offset: token.start,
-      },
+      start: startLocation,
       end: {
-        line: token.line,
-        column: token.column + token.value.length + 2, // +2 for backticks
-        offset: token.end,
+        line: endToken.line,
+        column: endToken.column,
+        offset: endToken.end,
       },
     },
   };
@@ -961,8 +1097,9 @@ function _isTypeArgumentListStart(this: IParserInternal): boolean {
   let depth = 0;
   let offset = 0;
   let closingOffset = -1;
+  const MAX_LOOKAHEAD = 100; // Safety limit to prevent infinite loops
 
-  while (true) {
+  while (offset < MAX_LOOKAHEAD) {
     const token = this._peek(offset);
     if (!token) return false;
 
@@ -974,11 +1111,20 @@ function _isTypeArgumentListStart(this: IParserInternal): boolean {
         closingOffset = offset;
         break;
       }
+      // If depth goes negative, this isn't a type argument list
+      if (depth < 0) {
+        return false;
+      }
     } else if (token.type === 'EOF') {
       return false;
     }
 
     offset++;
+  }
+
+  // If we hit the lookahead limit, assume it's not a type argument list
+  if (offset >= MAX_LOOKAHEAD) {
+    return false;
   }
 
   const nextToken = this._peek(closingOffset + 1);
@@ -1036,7 +1182,8 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
 
   // Try to determine if this is arrow function or grouping
   // If first token is IDENTIFIER and followed by , or ), likely arrow function
-  // If first token is not IDENTIFIER, it's a grouping expression
+  // If first token is LBRACE or LBRACKET, likely object/array destructuring parameter
+  // If first token is not IDENTIFIER/LBRACE/LBRACKET, it's a grouping expression
 
   const firstToken = this._getCurrentToken();
 
@@ -1050,8 +1197,13 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
     return null;
   }
 
-  // Grouping expression: (expr)
-  if (firstToken.type !== 'IDENTIFIER') {
+  // Grouping expression: (expr) - only if NOT destructuring or identifier
+  if (
+    firstToken.type !== 'IDENTIFIER' &&
+    firstToken.type !== 'LBRACE' &&
+    firstToken.type !== 'LBRACKET' &&
+    firstToken.type !== 'SPREAD'
+  ) {
     const expr = this._parseExpression();
     this._expect('RPAREN', 'Expected ")"');
     return expr;
@@ -1114,6 +1266,40 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
         break;
       }
 
+      // Handle OBJECT DESTRUCTURING: ({ config, ...rest }) or ({ config }: Type)
+      if (currentToken?.type === 'LBRACE') {
+        const paramPattern = _parseObjectDestructuringParameter.call(this);
+        params.push(paramPattern);
+
+        // Skip type annotation if present: { config }: Type
+        if (this._match('COLON')) {
+          _skipTypeAnnotation.call(this);
+        }
+
+        // Continue if more params
+        if (!this._match('COMMA')) {
+          break;
+        }
+        continue;
+      }
+
+      // Handle ARRAY DESTRUCTURING: ([a, b]) or ([a, b]: Type)
+      if (currentToken?.type === 'LBRACKET') {
+        const paramPattern = _parseArrayDestructuringParameter.call(this);
+        params.push(paramPattern);
+
+        // Skip type annotation if present: [a, b]: Type
+        if (this._match('COLON')) {
+          _skipTypeAnnotation.call(this);
+        }
+
+        // Continue if more params
+        if (!this._match('COMMA')) {
+          break;
+        }
+        continue;
+      }
+
       if (currentToken?.type !== 'IDENTIFIER') {
         // Not a parameter list, must be grouping
         const expr = this._parseExpression();
@@ -1125,14 +1311,15 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
 
       // Before committing to arrow function parameter parsing,
       // check if the next token is valid for parameters
-      // Valid: ), ,, or : (for type annotation)
+      // Valid: ), ,, : (for type annotation), or = (for default value)
       // Invalid: operators like ||, &&, +, -, etc.
       const peekToken = this._peek(1); // Look ahead to next token after identifier
       if (
         peekToken &&
         peekToken.type !== 'RPAREN' &&
         peekToken.type !== 'COMMA' &&
-        peekToken.type !== 'COLON'
+        peekToken.type !== 'COLON' &&
+        peekToken.type !== 'ASSIGN'
       ) {
         // Not arrow function parameters, parse as grouping expression
         const expr = this._parseExpression();
@@ -1161,23 +1348,14 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
 
       // Skip parameter type annotation if present: param: Type
       if (this._match('COLON')) {
-        let depth = 0;
-        while (!this._isAtEnd()) {
-          const tok = this._getCurrentToken();
+        _skipTypeAnnotation.call(this);
+      }
 
-          if (tok?.type === 'LPAREN' || tok?.type === 'LBRACKET' || tok?.type === 'LT') {
-            depth++;
-          } else if (tok?.type === 'RPAREN' || tok?.type === 'RBRACKET' || tok?.type === 'GT') {
-            if (depth === 0) break; // Stop at closing paren of parameter list
-            depth--;
-          }
-
-          if (depth === 0 && tok?.type === 'COMMA') {
-            break; // Stop at comma between parameters
-          }
-
-          this._advance();
-        }
+      // Handle default value for regular parameter: param = defaultValue
+      if (this._match('ASSIGN')) {
+        // For now, skip the default value expression
+        // TODO: Enhance to properly capture default value in AST
+        _skipDefaultValue.call(this);
       }
 
       // If we see a comma, continue parsing params
@@ -1190,32 +1368,7 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
 
     // Skip return type annotation if present: ): Type
     if (this._match('COLON')) {
-      // Skip return type tokens until we hit =>
-      let depth = 0;
-      while (!this._isAtEnd()) {
-        const tok = this._getCurrentToken();
-
-        // Track depth for nested type structures
-        if (tok?.type === 'LPAREN' || tok?.type === 'LBRACKET' || tok?.type === 'LT') {
-          depth++;
-        } else if (tok?.type === 'RPAREN' || tok?.type === 'RBRACKET' || tok?.type === 'GT') {
-          depth--;
-          // If we go negative, we've exited the return type scope
-          if (depth < 0) break;
-        }
-
-        // At depth 0, check if we hit the arrow
-        if (depth === 0 && tok?.type === 'ARROW') {
-          break;
-        }
-
-        // Also stop at statement boundaries when at depth 0
-        if (depth === 0 && (tok?.type === 'LBRACE' || tok?.type === 'SEMICOLON')) {
-          break;
-        }
-
-        this._advance();
-      }
+      _skipReturnTypeAnnotation.call(this);
     }
 
     // Check for arrow: =>
@@ -1391,6 +1544,257 @@ function _isKeywordAsIdentifier(this: IParserInternal): boolean {
   return allowedKeywords.includes(token.type);
 }
 
+/**
+ * Skip TypeScript type annotation in parameter lists or variable declarations
+ * Stops at: COMMA (next param), RPAREN (end of params), or LBRACE (function body)
+ */
+function _skipTypeAnnotation(this: IParserInternal): void {
+  let depth = 0;
+  while (!this._isAtEnd()) {
+    const tok = this._getCurrentToken();
+
+    if (tok?.type === 'LPAREN' || tok?.type === 'LBRACKET' || tok?.type === 'LT') {
+      depth++;
+    } else if (tok?.type === 'RPAREN' || tok?.type === 'RBRACKET' || tok?.type === 'GT') {
+      if (depth === 0) break; // Stop at closing paren of parameter list
+      depth--;
+    }
+
+    if (depth === 0 && tok?.type === 'COMMA') {
+      break; // Stop at comma between parameters
+    }
+
+    this._advance();
+  }
+}
+
+/**
+ * Skip default value expression in parameter lists
+ * Similar to _skipTypeAnnotation but handles default value expressions
+ * Stops at: COMMA (next param), RPAREN (end of params), or RBRACE (end of object pattern)
+ */
+function _skipDefaultValue(this: IParserInternal): void {
+  let depth = 0;
+  while (!this._isAtEnd()) {
+    const tok = this._getCurrentToken();
+
+    // Track nesting depth for parentheses, brackets, and braces
+    if (tok?.type === 'LPAREN' || tok?.type === 'LBRACKET' || tok?.type === 'LBRACE') {
+      depth++;
+    } else if (tok?.type === 'RPAREN' || tok?.type === 'RBRACKET' || tok?.type === 'RBRACE') {
+      if (depth === 0) {
+        // At depth 0, stop at closing paren or brace (could be end of pattern)
+        break;
+      }
+      depth--;
+    }
+
+    // At depth 0, stop at comma between parameters or properties
+    if (depth === 0 && tok?.type === 'COMMA') {
+      break;
+    }
+
+    this._advance();
+  }
+}
+
+/**
+ * Skip TypeScript return type annotation
+ * Stops at: ARROW (=>) or LBRACE (function body)
+ */
+function _skipReturnTypeAnnotation(this: IParserInternal): void {
+  let depth = 0;
+  while (!this._isAtEnd()) {
+    const tok = this._getCurrentToken();
+
+    // Track depth for nested type structures
+    if (tok?.type === 'LPAREN' || tok?.type === 'LBRACKET' || tok?.type === 'LT') {
+      depth++;
+    } else if (tok?.type === 'RPAREN' || tok?.type === 'RBRACKET' || tok?.type === 'GT') {
+      depth--;
+      // If we go negative, we've exited the return type scope
+      if (depth < 0) break;
+    }
+
+    // At depth 0, check if we hit the arrow
+    if (depth === 0 && tok?.type === 'ARROW') {
+      break;
+    }
+
+    // Also stop at statement boundaries when at depth 0
+    if (depth === 0 && (tok?.type === 'LBRACE' || tok?.type === 'SEMICOLON')) {
+      break;
+    }
+
+    this._advance();
+  }
+}
+
+/**
+ * Parse object destructuring parameter: { a, b, ...rest }
+ * Returns a pattern node representing the destructuring
+ */
+function _parseObjectDestructuringParameter(this: IParserInternal): any {
+  const startToken = this._getCurrentToken()!;
+  this._expect('LBRACE', 'Expected "{"');
+
+  const properties: any[] = [];
+
+  while (!this._check('RBRACE') && !this._isAtEnd()) {
+    // Handle rest element: ...rest
+    if (this._check('SPREAD')) {
+      this._advance(); // consume ...
+      const restId = this._expect('IDENTIFIER', 'Expected identifier after ...');
+      properties.push({
+        type: 'RestElement',
+        argument: {
+          type: ASTNodeType.IDENTIFIER,
+          name: restId!.value,
+        },
+      });
+      break; // rest must be last
+    }
+
+    // Regular property
+    const key = this._expect('IDENTIFIER', 'Expected property name');
+    let value = {
+      type: ASTNodeType.IDENTIFIER,
+      name: key!.value,
+    };
+
+    // Handle renaming: { a: b }
+    if (this._check('COLON')) {
+      this._advance(); // consume :
+      const newName = this._expect('IDENTIFIER', 'Expected identifier after ":"');
+      value = {
+        type: ASTNodeType.IDENTIFIER,
+        name: newName!.value,
+      };
+    }
+
+    // Handle default value: { a = defaultValue } or { a: b = defaultValue }
+    let defaultValue = null;
+    if (this._match('ASSIGN')) {
+      // Parse the default value expression
+      defaultValue = this._parseExpression();
+    }
+
+    properties.push({
+      type: 'Property',
+      key: {
+        type: ASTNodeType.IDENTIFIER,
+        name: key!.value,
+      },
+      value: defaultValue
+        ? {
+            type: 'AssignmentPattern',
+            left: value,
+            right: defaultValue,
+          }
+        : value,
+      shorthand: key!.value === value.name && !defaultValue,
+    });
+
+    if (!this._match('COMMA')) {
+      break;
+    }
+  }
+
+  this._expect('RBRACE', 'Expected "}"');
+
+  return {
+    type: 'ObjectPattern',
+    properties,
+    location: {
+      start: {
+        line: startToken.line,
+        column: startToken.column,
+        offset: startToken.start,
+      },
+      end: {
+        line: this._getCurrentToken()!.line,
+        column: this._getCurrentToken()!.column,
+        offset: this._getCurrentToken()!.end,
+      },
+    },
+  };
+}
+
+/**
+ * Parse array destructuring parameter: [a, b, ...rest]
+ * Returns a pattern node representing the destructuring
+ */
+function _parseArrayDestructuringParameter(this: IParserInternal): any {
+  const startToken = this._getCurrentToken()!;
+  this._expect('LBRACKET', 'Expected "["');
+
+  const elements: any[] = [];
+
+  while (!this._check('RBRACKET') && !this._isAtEnd()) {
+    // Handle rest element: ...rest
+    if (this._check('SPREAD')) {
+      this._advance(); // consume ...
+      const restId = this._expect('IDENTIFIER', 'Expected identifier after ...');
+      elements.push({
+        type: 'RestElement',
+        argument: {
+          type: ASTNodeType.IDENTIFIER,
+          name: restId!.value,
+        },
+      });
+      break; // rest must be last
+    }
+
+    // Regular element
+    const elem = this._expect('IDENTIFIER', 'Expected identifier');
+
+    // Handle default value: [a = defaultValue]
+    let element;
+    if (this._match('ASSIGN')) {
+      // Skip the default value to avoid comma operator confusion
+      _skipDefaultValue.call(this);
+      element = {
+        type: 'AssignmentPattern',
+        left: {
+          type: ASTNodeType.IDENTIFIER,
+          name: elem!.value,
+        },
+        right: null, // We skip the value to avoid parsing issues
+      };
+    } else {
+      element = {
+        type: ASTNodeType.IDENTIFIER,
+        name: elem!.value,
+      };
+    }
+
+    elements.push(element);
+
+    if (!this._match('COMMA')) {
+      break;
+    }
+  }
+
+  this._expect('RBRACKET', 'Expected "]"');
+
+  return {
+    type: 'ArrayPattern',
+    elements,
+    location: {
+      start: {
+        line: startToken.line,
+        column: startToken.column,
+        offset: startToken.start,
+      },
+      end: {
+        line: this._getCurrentToken()!.line,
+        column: this._getCurrentToken()!.column,
+        offset: this._getCurrentToken()!.end,
+      },
+    },
+  };
+}
+
 // Export helper methods for prototype attachment
 export {
   _isKeywordAsIdentifier,
@@ -1400,6 +1804,5 @@ export {
   _parseExpressionStatement,
   _parseLiteral,
   _parseObjectLiteral,
-  _parseTemplateLiteral
-}
-
+  _parseTemplateLiteral,
+};

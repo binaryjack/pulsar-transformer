@@ -21,12 +21,32 @@ export function _emitComponent(this: IEmitterInternal, ir: IComponentIR): void {
   }
 
   // Generate function signature with export and return type
-  const paramList = params.map((p) => p.name).join(', ');
-  this._addLine(`export function ${name}(${paramList}): HTMLElement {`);
+  const paramList = params
+    .map((p) => {
+      if (p.type === IRNodeType.PARAM_PATTERN_IR) {
+        // Object destructuring pattern with default values
+        const props = (p as any).properties
+          .map((prop: any) => {
+            if (prop.hasDefault && prop.defaultValue) {
+              const defaultExpr = this._emitExpression(prop.defaultValue);
+              return `${prop.name} = ${defaultExpr}`;
+            }
+            return prop.name;
+          })
+          .join(', ');
+        return `{ ${props} }`;
+      } else {
+        // Simple identifier
+        return p.name;
+      }
+    })
+    .join(', ');
+  // Browser JavaScript: NO TypeScript return type annotations
+  this._addLine(`export function ${name}(${paramList}) {`);
   this.context.indentLevel++;
 
   // Generate registry wrapper with null parentId
-  this._addLine(`return $REGISTRY.execute('${registryKey}', () => {`);
+  this._addLine(`return $REGISTRY.execute('${registryKey}', null, () => {`);
   this.context.indentLevel++;
 
   // Emit body statements

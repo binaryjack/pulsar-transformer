@@ -53,11 +53,28 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
     this._advance(); // consume 'default'
     exportKind = 'default';
 
-    // For now, just consume the rest until semicolon
-    // TODO: Properly parse the default export expression
-    while (!this._check('SEMICOLON') && !this._isAtEnd()) {
-      this._advance();
+    // Parse the identifier being exported
+    const identifierToken = this._getCurrentToken();
+    if (identifierToken && identifierToken.type === 'IDENTIFIER') {
+      this._advance(); // consume identifier
+      specifiers.push({
+        type: ASTNodeType.IDENTIFIER,
+        name: identifierToken.value,
+        location: {
+          start: {
+            line: identifierToken.line,
+            column: identifierToken.column,
+            offset: identifierToken.start,
+          },
+          end: {
+            line: identifierToken.line,
+            column: identifierToken.column + identifierToken.value.length,
+            offset: identifierToken.end,
+          },
+        },
+      });
     }
+
     this._match('SEMICOLON');
 
     const endToken = this._getCurrentToken() || startToken;
@@ -65,7 +82,7 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
     return {
       type: ASTNodeType.EXPORT_DECLARATION,
       declaration: null,
-      specifiers: [],
+      specifiers,
       source: null,
       exportKind,
       isTypeOnly,

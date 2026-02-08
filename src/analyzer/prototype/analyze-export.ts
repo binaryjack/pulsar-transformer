@@ -44,6 +44,17 @@ export function analyzeExport(this: IAnalyzerInternal, node: IExportDeclarationN
   // Handle default exports
   if (node.exportKind === 'default') {
     this._context.exports.add('default');
+
+    // If there's a specifier (identifier being exported), include it
+    if (node.specifiers && node.specifiers.length > 0) {
+      const defaultIdentifier = node.specifiers[0].name;
+      specifiers.push({
+        type: 'ExportSpecifier' as const,
+        exported: 'default',
+        local: defaultIdentifier,
+        isTypeOnly: false,
+      });
+    }
   }
 
   return {

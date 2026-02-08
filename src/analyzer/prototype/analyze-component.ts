@@ -23,24 +23,71 @@ export function analyzeComponent(
   this._context.currentComponent = componentName;
 
   // Analyze parameters
-  const params: IIdentifierIR[] = node.params.map((param) => ({
-    type: IRNodeType.IDENTIFIER_IR,
-    name: param.name,
-    scope: 'parameter',
-    isSignal: false,
-    metadata: {
-      sourceLocation: param.location?.start,
-    },
-  }));
+  const params: Array<IIdentifierIR | any> = [];
 
-  // Register parameters in scope
-  for (const param of params) {
-    this._context.scopes[0].variables.set(param.name, {
-      name: param.name,
-      kind: 'parameter',
-      isSignal: false,
-      declarationNode: node,
-    });
+  for (const param of node.params) {
+    if ((param as any).type === 'ObjectPattern') {
+      // Object destructuring pattern
+      const properties: Array<{ name: string; hasDefault: boolean; defaultValue?: IIRNode }> = [];
+
+      for (const prop of (param as any).properties) {
+        if (prop.type === 'Property') {
+          // Check if property has default value (AssignmentPattern)
+          const isAssignmentPattern = prop.value.type === 'AssignmentPattern';
+          const propName = isAssignmentPattern ? prop.value.left.name : prop.key.name;
+
+          let defaultValue: IIRNode | undefined;
+          if (isAssignmentPattern && prop.value.right) {
+            // Analyze the default value expression
+            defaultValue = this._analyzeExpression(prop.value.right);
+          }
+
+          properties.push({
+            name: propName,
+            hasDefault: isAssignmentPattern,
+            defaultValue,
+          });
+
+          // Register in scope
+          this._context.scopes[0].variables.set(propName, {
+            name: propName,
+            kind: 'parameter',
+            isSignal: false,
+            declarationNode: node,
+          });
+        }
+      }
+
+      params.push({
+        type: IRNodeType.PARAM_PATTERN_IR,
+        properties,
+        isObjectPattern: true,
+        metadata: {
+          sourceLocation: param.location?.start,
+        },
+      });
+    } else {
+      // Simple identifier parameter
+      const identifierParam: IIdentifierIR = {
+        type: IRNodeType.IDENTIFIER_IR,
+        name: param.name,
+        scope: 'parameter',
+        isSignal: false,
+        metadata: {
+          sourceLocation: param.location?.start,
+        },
+      };
+
+      params.push(identifierParam);
+
+      // Register in scope
+      this._context.scopes[0].variables.set(param.name, {
+        name: param.name,
+        kind: 'parameter',
+        isSignal: false,
+        declarationNode: node,
+      });
+    }
   }
 
   // Analyze body statements

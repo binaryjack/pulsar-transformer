@@ -149,7 +149,13 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
       const memberIR = ir as any;
       const object = this._emitExpression(memberIR.object);
       const property = this._emitExpression(memberIR.property);
-      return `${object}.${property}`;
+
+      // Use bracket notation for computed access, dot notation for non-computed
+      if (memberIR.computed) {
+        return `${object}[${property}]`;
+      } else {
+        return `${object}.${property}`;
+      }
     }
 
     case IRNodeType.CONDITIONAL_EXPRESSION_IR: {
@@ -162,16 +168,31 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
 
     case IRNodeType.COMPONENT_CALL_IR: {
       const componentCallIR = ir as any;
-
-      // Generate component function call: ComponentName()
-      // NOTE: Components in the same file can be called directly.
-      // Imported components are resolved through the import system and can be called the same way.
-      // Proper module resolution is handled by the import tracker.
       const componentName = componentCallIR.componentName;
+      const attributes = componentCallIR.attributes || [];
+      const children = componentCallIR.children || [];
 
-      // Components are directly callable functions that return HTMLElement
-      // Attributes and children will be passed as props later when we implement props system
-      return `${componentName}()`;
+      // Build props object from attributes
+      const propPairs: string[] = attributes.map((attr: any) => {
+        const value =
+          attr.value?.value === undefined
+            ? this._emitExpression(attr.value)
+            : JSON.stringify(attr.value.value);
+        return `${attr.name}: ${value}`;
+      });
+
+      // Add children prop if there are children
+      if (children.length > 0) {
+        const childrenExprs = children.map((child: any) => this._emitExpression(child)).join(', ');
+        propPairs.push(`children: [${childrenExprs}]`);
+      }
+
+      // Emit component call with props object
+      if (propPairs.length > 0) {
+        return `${componentName}({ ${propPairs.join(', ')} })`;
+      } else {
+        return `${componentName}({})`;
+      }
     }
 
     case IRNodeType.ELEMENT_IR: {
@@ -201,8 +222,8 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
       // Create element first
       const elVar = `_el${this.context.elementCounter++}`;
 
-      // Generate: (el => { el.append(...children); return el; })(t_element('tag', {...}))
-      if (children.length > 0) {
+      // Generate: (el => { el.onclick = ...; el.append(...children); return el; })(t_element('tag', {...}))
+      if (children.length > 0 || (elementIR.eventHandlers && elementIR.eventHandlers.length > 0)) {
         const childExprs = children
           .map((c: IIRNode) => {
             const childExpr = this._emitExpression(c);
@@ -216,7 +237,27 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
           .filter((expr: string | null) => expr !== null)
           .join(', ');
 
-        return `((${elVar}) => { ${elVar}.append(${childExprs}); return ${elVar}; })(t_element('${elementIR.tagName}', ${propsStr}))`;
+        // Build IIFE body statements
+        const iifeStatements: string[] = [];
+
+        // Add event handlers
+        if (elementIR.eventHandlers && elementIR.eventHandlers.length > 0) {
+          for (const handler of elementIR.eventHandlers) {
+            const handlerCode = this._emitExpression(handler.handler);
+            // Use .onclick property (simpler than addEventListener for inline handlers)
+            iifeStatements.push(`${elVar}.on${handler.eventName} = ${handlerCode};`);
+          }
+        }
+
+        // Add append if children exist
+        if (childExprs) {
+          iifeStatements.push(`${elVar}.append(${childExprs});`);
+        }
+
+        // Add return
+        iifeStatements.push(`return ${elVar};`);
+
+        return `((${elVar}) => { ${iifeStatements.join(' ')} })(t_element('${elementIR.tagName}', ${propsStr}))`;
       } else {
         return `t_element('${elementIR.tagName}', ${propsStr})`;
       }

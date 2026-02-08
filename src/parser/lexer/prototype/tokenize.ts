@@ -31,7 +31,57 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
   this._inJSXElement = false;
   this._scanMode = ScanMode.JAVASCRIPT;
 
+  // Safety: track iterations to detect infinite loops
+  let iterationCount = 0;
+  let lastPosition = -1;
+  const maxIterations = source.length * 10; // Allow up to 10x source length iterations
+
   while (this._position < source.length) {
+    // Safety check: detect infinite loop
+    iterationCount++;
+    if (iterationCount > maxIterations) {
+      const context = source.substring(
+        Math.max(0, this._position - 50),
+        Math.min(source.length, this._position + 50)
+      );
+      throw new Error(
+        `PSR-E002: Lexer infinite loop detected at position ${this._position}, line ${this._line}. ` +
+          `Context: "${context}". This is likely a bug in the lexer.`
+      );
+    }
+
+    // Safety check: position must advance
+    if (this._position === lastPosition) {
+      const char = source[this._position];
+      throw new Error(
+        `PSR-E003: Lexer stuck at position ${this._position}, line ${this._line}. ` +
+          `Character: '${char}' (U+${char.charCodeAt(0).toString(16).toUpperCase()}). ` +
+          `This indicates _recognizeToken failed to advance position.`
+      );
+    }
+    lastPosition = this._position;
+
+    // TEMPLATE LITERAL CONTINUATION: Check if we should continue scanning a template literal
+    // This handles the case where we just returned RBRACE after a ${...} expression
+    // Pattern from Acorn/TypeScript: check if we're in template context at token start
+    if (this._templateLiteralStack && this._templateLiteralStack.length > 0) {
+      const char = source[this._position];
+      // If we're at a character that could continue the template (not } or EOF)
+      // AND we have a template context on the stack, continue scanning the template
+      if (char && char !== '}') {
+        const lastToken = this._tokens[this._tokens.length - 1];
+        // Only continue if last token was RBRACE (closing an expression)
+        if (lastToken && lastToken.type === TokenType.RBRACE) {
+          // Continue scanning the template literal - pass true for isContinuation
+          const token = this._scanTemplateAndSetTokenValue(false, true);
+          if (token) {
+            this._tokens.push(token);
+            continue;
+          }
+        }
+      }
+    }
+
     // Use proper Unicode iteration to handle surrogate pairs
     const char = source[this._position];
     let currentCodePoint = char.codePointAt(0) ?? 0;
@@ -197,12 +247,27 @@ function _recognizeToken(this: ILexerInternal): IToken | null {
 
   // Template literals
   if (char === '`') {
-    return this._readTemplateLiteral(start, line, column);
+    return this._readTemplateToken(start, line, column);
   }
 
   // Signal binding: $(identifier)
   if (char === '$' && this._source[this._position + 1] === '(') {
     return this._readSignalBinding(start, line, column);
+  }
+
+  // Template literal continuation: handle } after expression in template
+  if (char === '}' && this._templateLiteralStack && this._templateLiteralStack.length > 0) {
+    // Return the } token - parser will call reScanTemplateToken afterwards
+    // CRITICAL: Must advance position to avoid infinite loop!
+    this._position++;
+    return {
+      type: TokenType.RBRACE,
+      value: '}',
+      line,
+      column,
+      start,
+      end: this._position,
+    };
   }
 
   // Comments: // and /* */
@@ -395,46 +460,298 @@ function _readString(this: ILexerInternal, start: number, line: number, column: 
 }
 
 /**
- * Read template literal (simplified - treats entire content as string)
+ * Read template literal - supports embedded expressions
+ * Handles: `simple`, `hello ${name}`, `${a} middle ${b} end`
  */
-function _readTemplateLiteral(
+/**
+ * Read template literal: `text ${expression} text` - TypeScript approach
+ * Supports embedded expressions with ${} using proper state management
+ */
+function _readTemplateToken(
   this: ILexerInternal,
   start: number,
   line: number,
-  column: number
+  column: number,
+  isContinuation: boolean = false
 ): IToken {
-  let value = '';
+  // Use TypeScript's pattern: delegate to scanTemplateAndSetTokenValue
+  return this._scanTemplateAndSetTokenValue(false, isContinuation);
+}
 
-  this._position++; // Skip opening backtick
+/**
+ * TypeScript-style template literal scanner with proper state management
+ * Returns appropriate template token types for parser state management
+ * @param shouldEmitInvalidEscapeError - Whether to emit errors for invalid escape sequences
+ * @param isContinuation - True if continuing after ${} expression, false if starting new template
+ */
+function _scanTemplateAndSetTokenValue(
+  this: ILexerInternal,
+  shouldEmitInvalidEscapeError: boolean,
+  isContinuation: boolean = false
+): IToken {
+  const start = this._position;
+  const line = this._line;
+  const column = this._getCurrentColumn();
+
+  // Use parameter to determine continuation mode, not position
+  const startedWithBacktick = this._source[this._position] === '`';
+  const isTemplateContinuation =
+    isContinuation ||
+    (!startedWithBacktick && this._templateLiteralStack && this._templateLiteralStack.length > 0);
+
+  // Only skip backtick if we're starting a new template (not continuing)
+  if (startedWithBacktick && !isContinuation) {
+    this._position++; // Skip opening backtick
+  }
+  // If continuing after ${}, don't skip anything - just start scanning
+
+  let startPos = this._position;
+  let contents = '';
+  let resultingToken: TokenType = TokenType.TEMPLATE_LITERAL; // Default value
 
   while (this._position < this._source.length) {
-    const char = this._source[this._position];
+    const currChar = this._source[this._position];
 
-    if (char === '`') {
+    // End of template: '`'
+    if (currChar === '`') {
+      contents += this._source.substring(startPos, this._position);
       this._position++; // Skip closing backtick
+
+      // Determine token type based on context
+      if (isTemplateContinuation) {
+        resultingToken = TokenType.TEMPLATE_TAIL;
+        // Pop template context
+        if (this._templateLiteralStack) {
+          this._templateLiteralStack.pop();
+        }
+      } else {
+        resultingToken = TokenType.TEMPLATE_LITERAL;
+      }
       break;
     }
 
-    if (char === '\\') {
-      // Handle escape sequences
+    // Start of expression: '${'
+    if (
+      currChar === '$' &&
+      this._position + 1 < this._source.length &&
+      this._source[this._position + 1] === '{'
+    ) {
+      contents += this._source.substring(startPos, this._position);
+      this._position += 2; // Skip ${
+
+      // Determine token type based on context
+      if (isTemplateContinuation) {
+        resultingToken = TokenType.TEMPLATE_MIDDLE;
+      } else {
+        resultingToken = TokenType.TEMPLATE_HEAD;
+      }
+
+      // Initialize template literal stack if needed
+      if (!this._templateLiteralStack) {
+        this._templateLiteralStack = [];
+      }
+
+      // Push current template state
+      this._templateLiteralStack.push({ head: startedWithBacktick });
+      break;
+    }
+
+    // Handle escape sequences
+    if (currChar === '\\') {
+      contents += this._source.substring(startPos, this._position);
       this._position++;
       if (this._position < this._source.length) {
-        value += this._source[this._position];
+        const escapedChar = this._source[this._position];
+        switch (escapedChar) {
+          case 'n':
+            contents += '\n';
+            break;
+          case 't':
+            contents += '\t';
+            break;
+          case 'r':
+            contents += '\r';
+            break;
+          case '\\':
+            contents += '\\';
+            break;
+          case '`':
+            contents += '`';
+            break;
+          case '$':
+            contents += '$';
+            break;
+          default:
+            contents += '\\' + escapedChar;
+        }
+        this._position++;
+      } else {
+        contents += '\\';
+      }
+      startPos = this._position;
+      continue;
+    }
+
+    // Handle line terminators (normalize CRLF to LF)
+    if (currChar === '\r') {
+      contents += this._source.substring(startPos, this._position);
+      this._position++;
+      if (this._position < this._source.length && this._source[this._position] === '\n') {
         this._position++;
       }
-    } else {
-      value += char;
-      this._position++;
-      if (char === '\n' || char === '\r') {
-        this._line++;
-        this._lineStart = this._position;
-      }
+      contents += '\n';
+      this._line++;
+      this._lineStart = this._position;
+      startPos = this._position;
+      continue;
     }
+
+    if (currChar === '\n') {
+      this._line++;
+      this._lineStart = this._position + 1;
+    }
+
+    this._position++;
+  }
+
+  // Check for unterminated template
+  if (this._position >= this._source.length && resultingToken === undefined) {
+    // Unclosed template literal - return what we have
+    if (isTemplateContinuation) {
+      resultingToken = TokenType.TEMPLATE_TAIL;
+    } else {
+      resultingToken = TokenType.TEMPLATE_LITERAL;
+    }
+    contents += this._source.substring(startPos, this._position);
   }
 
   return {
-    type: TokenType.TEMPLATE_LITERAL,
-    value,
+    type: resultingToken!,
+    value: contents,
+    line,
+    column,
+    start,
+    end: this._position,
+  };
+}
+
+/**
+ * Resume template literal scanning (called by parser after expressions)
+ * TypeScript-style continuation for template literals
+ */
+function reScanTemplateToken(this: ILexerInternal): IToken {
+  // Parser calls this after processing expression inside ${} and consuming }
+  // We need to continue template literal scanning from current position
+
+  if (!this._templateLiteralStack || this._templateLiteralStack.length === 0) {
+    throw new Error('reScanTemplateToken called without template literal context');
+  }
+
+  // Pop the template state - we know we're continuing a template
+  const templateState = this._templateLiteralStack.pop();
+
+  const start = this._position;
+  const line = this._line;
+  const column = this._getCurrentColumn();
+  let startPos = this._position;
+  let contents = '';
+  let resultingToken: TokenType | undefined = undefined;
+
+  while (this._position < this._source.length) {
+    const currChar = this._source[this._position];
+
+    // End of template: '`'
+    if (currChar === '`') {
+      contents += this._source.substring(startPos, this._position);
+      this._position++; // Skip closing backtick
+      resultingToken = TokenType.TEMPLATE_TAIL;
+      break;
+    }
+
+    // Start of another expression: '${'
+    if (
+      currChar === '$' &&
+      this._position + 1 < this._source.length &&
+      this._source[this._position + 1] === '{'
+    ) {
+      contents += this._source.substring(startPos, this._position);
+      this._position += 2; // Skip ${
+      resultingToken = TokenType.TEMPLATE_MIDDLE;
+
+      // Push state back for next continuation
+      if (!this._templateLiteralStack) {
+        this._templateLiteralStack = [];
+      }
+      this._templateLiteralStack.push({ head: false });
+      break;
+    }
+
+    // Handle escape sequences and line terminators (same as in _scanTemplateAndSetTokenValue)
+    if (currChar === '\\') {
+      contents += this._source.substring(startPos, this._position);
+      this._position++;
+      if (this._position < this._source.length) {
+        const escapedChar = this._source[this._position];
+        switch (escapedChar) {
+          case 'n':
+            contents += '\n';
+            break;
+          case 't':
+            contents += '\t';
+            break;
+          case 'r':
+            contents += '\r';
+            break;
+          case '\\':
+            contents += '\\';
+            break;
+          case '`':
+            contents += '`';
+            break;
+          case '$':
+            contents += '$';
+            break;
+          default:
+            contents += '\\' + escapedChar;
+        }
+        this._position++;
+      } else {
+        contents += '\\';
+      }
+      startPos = this._position;
+      continue;
+    }
+
+    if (currChar === '\r') {
+      contents += this._source.substring(startPos, this._position);
+      this._position++;
+      if (this._position < this._source.length && this._source[this._position] === '\n') {
+        this._position++;
+      }
+      contents += '\n';
+      this._line++;
+      this._lineStart = this._position;
+      startPos = this._position;
+      continue;
+    }
+
+    if (currChar === '\n') {
+      this._line++;
+      this._lineStart = this._position + 1;
+    }
+
+    this._position++;
+  }
+
+  // Check for unterminated template
+  if (this._position >= this._source.length && !resultingToken) {
+    contents += this._source.substring(startPos, this._position);
+    resultingToken = TokenType.TEMPLATE_TAIL;
+  }
+
+  return {
+    type: resultingToken!,
+    value: contents,
     line,
     column,
     start,
@@ -851,8 +1168,9 @@ export {
   _readSingleChar,
   _readSingleLineComment,
   _readString,
-  _readTemplateLiteral,
+  _readTemplateToken,
   _recognizeToken,
+  reScanTemplateToken,
 };
 
 // Attach private methods to prototype
@@ -864,7 +1182,9 @@ Object.assign(Lexer.prototype, {
   _readIdentifierOrKeyword,
   _readNumber,
   _readString,
-  _readTemplateLiteral,
+  _readTemplateToken,
+  _scanTemplateAndSetTokenValue,
+  reScanTemplateToken,
   _readSignalBinding,
   _readSingleChar,
   _readSingleLineComment,

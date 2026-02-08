@@ -89,21 +89,81 @@ function _analyzeLiteral(this: IAnalyzerInternal, node: any): ILiteralIR {
 
 /**
  * Analyze template literal
- * For now, treat template literals as string literals (embedded expressions not yet supported)
+ * Supports embedded expressions: `hello ${name}`
  */
-function _analyzeTemplateLiteral(this: IAnalyzerInternal, node: any): ILiteralIR {
-  return {
-    type: IRNodeType.LITERAL_IR,
-    value: node.value,
-    rawValue: node.raw || `\`${node.value}\``,
-    metadata: {
-      sourceLocation: node.location?.start,
-      optimizations: {
-        isStatic: true,
-        isPure: true,
+function _analyzeTemplateLiteral(this: IAnalyzerInternal, node: any): ILiteralIR | any {
+  // Check if this is a simple template literal (no expressions)
+  if (!node.expressions || node.expressions.length === 0) {
+    // Simple template literal - treat as string literal
+    const value = node.quasis && node.quasis[0] ? node.quasis[0].value.cooked : node.value || '';
+    return {
+      type: IRNodeType.LITERAL_IR,
+      value,
+      rawValue: node.raw || `\`${value}\``,
+      metadata: {
+        sourceLocation: node.location?.start,
+        optimizations: {
+          isStatic: true,
+          isPure: true,
+        },
       },
-    },
-  };
+    };
+  }
+
+  // Template literal with embedded expressions
+  // Convert to a series of concatenations
+  const parts: any[] = [];
+
+  for (let i = 0; i < node.quasis.length; i++) {
+    const quasi = node.quasis[i];
+
+    // Add the string part if non-empty
+    if (quasi.value.cooked) {
+      parts.push({
+        type: IRNodeType.LITERAL_IR,
+        value: quasi.value.cooked,
+        rawValue: `"${quasi.value.cooked}"`,
+        metadata: {
+          sourceLocation: quasi.location?.start,
+          optimizations: {
+            isStatic: true,
+            isPure: true,
+          },
+        },
+      });
+    }
+
+    // Add the expression part (if not the last quasi)
+    if (i < node.expressions.length) {
+      const expr = analyzeExpression.call(this, node.expressions[i]);
+      parts.push(expr);
+    }
+  }
+
+  // If only one part, return it directly
+  if (parts.length === 1) {
+    return parts[0];
+  }
+
+  // Build a chain of binary concatenation expressions
+  let result = parts[0];
+  for (let i = 1; i < parts.length; i++) {
+    result = {
+      type: IRNodeType.BINARY_EXPRESSION_IR,
+      operator: '+',
+      left: result,
+      right: parts[i],
+      metadata: {
+        sourceLocation: node.location?.start,
+        optimizations: {
+          isStatic: false,
+          isPure: true,
+        },
+      },
+    };
+  }
+
+  return result;
 }
 
 /**
@@ -236,12 +296,22 @@ function _analyzeUnaryExpression(this: IAnalyzerInternal, node: any): IUnaryExpr
  */
 function _analyzeMemberExpression(this: IAnalyzerInternal, node: any): IMemberExpressionIR {
   const object = this._analyzeNode(node.object);
-  const property = this._analyzeIdentifier(node.property);
+
+  // Handle computed vs non-computed property access
+  let property;
+  if (node.computed) {
+    // Computed access: obj[expr] - analyze property as expression
+    property = this._analyzeNode(node.property);
+  } else {
+    // Non-computed access: obj.prop - analyze property as identifier
+    property = this._analyzeIdentifier(node.property);
+  }
 
   return {
     type: IRNodeType.MEMBER_EXPRESSION_IR,
     object,
     property,
+    computed: node.computed || false,
     metadata: {
       sourceLocation: node.location?.start,
     },

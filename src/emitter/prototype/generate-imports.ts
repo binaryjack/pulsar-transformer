@@ -17,7 +17,12 @@ export function generateImports(this: IImportTrackerInternal): string {
 
   for (const source of sources) {
     const specifiers = this.imports.get(source)!;
-    lines.push(this._formatImport(source, specifiers));
+    const importStatement = this._formatImport(source, specifiers);
+
+    // Skip empty statements (e.g., type-only imports that were stripped)
+    if (importStatement) {
+      lines.push(importStatement);
+    }
   }
 
   return lines.join('\n');

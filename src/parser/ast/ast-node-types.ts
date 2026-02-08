@@ -88,6 +88,7 @@ export enum ASTNodeType {
   IDENTIFIER = 'Identifier',
   LITERAL = 'Literal',
   TEMPLATE_LITERAL = 'TemplateLiteral',
+  TEMPLATE_ELEMENT = 'TemplateElement',
   CALL_EXPRESSION = 'CallExpression',
   ARROW_FUNCTION = 'ArrowFunction',
   BINARY_EXPRESSION = 'BinaryExpression',
@@ -297,12 +298,26 @@ export interface ILiteralNode extends IASTNode {
  * Template literal value
  *
  * @example
- * `Hello ${name}`, `Simple template literal`
+ * `Hello ${name}` - template with expressions
+ * `Simple template literal` - simple template without expressions
  */
 export interface ITemplateLiteralNode extends IASTNode {
   readonly type: ASTNodeType.TEMPLATE_LITERAL;
-  readonly value: string;
-  readonly raw: string;
+  readonly quasis: ITemplateElementNode[]; // String parts
+  readonly expressions: IASTNode[]; // Embedded expressions
+  readonly raw?: string; // Raw string for backward compatibility
+}
+
+/**
+ * Template element (string part between expressions)
+ */
+export interface ITemplateElementNode extends IASTNode {
+  readonly type: ASTNodeType.TEMPLATE_ELEMENT;
+  readonly value: {
+    readonly cooked: string; // Processed value
+    readonly raw: string; // Raw value with escapes
+  };
+  readonly tail: boolean; // True if this is the last element
 }
 
 /**
