@@ -5,6 +5,7 @@
  * Converts tokens into Abstract Syntax Tree (AST).
  */
 
+import { createLexer } from './lexer/index.js';
 import type { IParserConfig, IParserInternal } from './parser.types.js';
 
 /**
@@ -13,32 +14,10 @@ import type { IParserConfig, IParserInternal } from './parser.types.js';
  * @param config - Parser configuration
  */
 export const Parser = function (this: IParserInternal, config: IParserConfig = {}) {
-  // Private properties using Object.defineProperty for encapsulation
-  Object.defineProperty(this, '_tokens', {
-    value: [],
-    writable: true,
-    enumerable: false,
-    configurable: false,
-  });
-
-  Object.defineProperty(this, '_current', {
-    value: 0,
-    writable: true,
-    enumerable: false,
-    configurable: false,
-  });
-
-  Object.defineProperty(this, '_errors', {
-    value: [],
-    writable: true,
-    enumerable: false,
-    configurable: false,
-  });
-
-  Object.defineProperty(this, '_source', {
-    value: '',
-    writable: true,
-    enumerable: false,
-    configurable: false,
-  });
+  // Initialize internal state
+  this._tokens = [];
+  this._current = 0;
+  this._errors = [];
+  this._source = '';
+  this._lexer = createLexer();
 } as unknown as { new (config?: IParserConfig): IParserInternal };

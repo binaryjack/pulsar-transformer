@@ -4,18 +4,21 @@
  * Attaches all prototype methods to Lexer constructor.
  */
 
-import { Lexer } from '../lexer.js'
-import { enterJSXElement } from './enter-jsx-element.js'
-import { enterJSXExpression } from './enter-jsx-expression.js'
-import { enterTypeContext } from './enter-type-context.js'
-import { exitJSXElement } from './exit-jsx-element.js'
-import { exitJSXExpression } from './exit-jsx-expression.js'
-import { exitTypeContext } from './exit-type-context.js'
-import { _getCurrentColumn } from './get-current-column.js'
-import { getPosition } from './get-position.js'
-import { isInTypeContext } from './is-in-type-context.js'
-import { peek } from './peek.js'
-import { _scanJSXText } from './scan-jsx-text.js'
+import { Lexer } from '../lexer.js';
+import { enterJSXElement } from './enter-jsx-element.js';
+import { enterJSXExpression } from './enter-jsx-expression.js';
+import { enterTypeContext } from './enter-type-context.js';
+import { exitJSXElement } from './exit-jsx-element.js';
+import { exitJSXExpression } from './exit-jsx-expression.js';
+import { exitTypeContext } from './exit-type-context.js';
+import { _getCurrentColumn } from './get-current-column.js';
+import { getPosition } from './get-position.js';
+import { _isGenericAngleBracket } from './is-generic-angle-bracket.js';
+import { isInTypeContext } from './is-in-type-context.js';
+import { peek } from './peek.js';
+import { canFollowTypeArguments, reScanGreaterThanToken } from './rescan-greater-than.js';
+import { reScanLessThanToken } from './rescan-less-than.js';
+import { _scanJSXText } from './scan-jsx-text.js';
 import {
   _isAlpha,
   _isAlphaNumeric,
@@ -27,7 +30,7 @@ import {
   _readString,
   _recognizeToken,
   tokenize,
-} from './tokenize.js'
+} from './tokenize.js';
 
 // Attach public methods to prototype
 Lexer.prototype.tokenize = tokenize;
@@ -40,6 +43,9 @@ Lexer.prototype.exitJSXExpression = exitJSXExpression;
 Lexer.prototype.enterTypeContext = enterTypeContext;
 Lexer.prototype.exitTypeContext = exitTypeContext;
 Lexer.prototype.isInTypeContext = isInTypeContext;
+Lexer.prototype.reScanLessThanToken = reScanLessThanToken;
+Lexer.prototype.reScanGreaterThanToken = reScanGreaterThanToken;
+Lexer.prototype.canFollowTypeArguments = canFollowTypeArguments;
 
 // Attach private helper methods (non-enumerable)
 Object.defineProperty(Lexer.prototype, '_recognizeToken', {
@@ -114,6 +120,13 @@ Object.defineProperty(Lexer.prototype, '_scanJSXText', {
 
 Object.defineProperty(Lexer.prototype, '_getCurrentColumn', {
   value: _getCurrentColumn,
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
+
+Object.defineProperty(Lexer.prototype, '_isGenericAngleBracket', {
+  value: _isGenericAngleBracket,
   writable: true,
   enumerable: false,
   configurable: false,

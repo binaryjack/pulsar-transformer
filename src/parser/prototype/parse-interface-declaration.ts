@@ -14,9 +14,9 @@
  * }
  */
 
-import type { IIdentifierNode, IInterfaceDeclarationNode } from '../ast/index.js'
-import { ASTNodeType } from '../ast/index.js'
-import type { IParserInternal } from '../parser.types.js'
+import type { IIdentifierNode, IInterfaceDeclarationNode } from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Parse interface declaration
@@ -59,7 +59,7 @@ export function parseInterfaceDeclaration(this: IParserInternal): IInterfaceDecl
 
   // Skip generic type parameters if present: <T>, <T, U>
   if (this._check('LT')) {
-    this._lexer.enterTypeContext(); // PHASE 3: Enable type-aware tokenization
+    this._lexer.enterTypeContext(); // Enable type-aware tokenization
     this._advance(); // consume <
     let angleDepth = 1;
 
@@ -71,14 +71,17 @@ export function parseInterfaceDeclaration(this: IParserInternal): IInterfaceDecl
         angleDepth++;
       } else if (token.type === 'GT') {
         angleDepth--;
+        if (angleDepth === 0) {
+          this._advance(); // consume final >
+          this._lexer.exitTypeContext(); // Restore normal tokenization
+          break;
+        }
       } else if (token.type === 'JSX_TEXT') {
         // Skip JSX_TEXT tokens that might be generated for generic content
       }
 
       this._advance();
     }
-
-    this._lexer.exitTypeContext(); // PHASE 3: Restore normal tokenization
 
     // Skip any JSX_TEXT or whitespace tokens after generic parameters
     while (this._check('JSX_TEXT') && !this._isAtEnd()) {

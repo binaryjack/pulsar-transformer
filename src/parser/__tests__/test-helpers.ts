@@ -5,7 +5,6 @@
  */
 
 import { createParser } from '../create-parser.js';
-import { createLexer } from '../lexer/index.js';
 import type { IParser } from '../parser.types.js';
 
 /**
@@ -29,9 +28,8 @@ export function createTestParser(source: string): IParser & Record<string, any> 
   parser._current = 0;
   parser._errors = [];
 
-  // Tokenize source
-  const lexer = createLexer();
-  parser._tokens = lexer.tokenize(source);
+  // Tokenize source using instance lexer
+  parser._tokens = parser._lexer.tokenize(source);
 
   return parser as IParser & Record<string, any>;
 }

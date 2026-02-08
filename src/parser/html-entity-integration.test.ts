@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { ASTNodeType } from '../ast/index.js';
-import { Lexer } from '../lexer/lexer.js';
+import { createLexer } from '../lexer/index.js';
 import { Parser } from '../parser.js';
 
 describe('HTML Entity Decoding in JSX', () => {
@@ -15,8 +15,8 @@ describe('HTML Entity Decoding in JSX', () => {
    * Helper to parse PSR code
    */
   function parsePSR(code: string) {
-    const lexer = new Lexer(code);
-    const tokens = lexer.tokenize();
+    const lexer = createLexer();
+    const tokens = lexer.tokenize(code);
     const parser = new Parser(tokens, code);
     return parser.parse();
   }

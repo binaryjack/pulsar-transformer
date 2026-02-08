@@ -4,7 +4,6 @@
  * Creates a Parser instance for parsing PSR source code.
  */
 
-import { createLexer } from './lexer/index.js';
 import { Parser } from './parser.js';
 import type { IParser, IParserConfig } from './parser.types.js';
 import './prototype/index.js'; // Ensure prototype methods are attached
@@ -35,9 +34,8 @@ export function createParser(config?: IParserConfig | string): IParser {
     parser._current = 0;
     parser._errors = [];
 
-    // Tokenize source
-    const lexer = createLexer();
-    parser._tokens = lexer.tokenize(source);
+    // Tokenize source using instance lexer
+    parser._tokens = parser._lexer.tokenize(source);
   }
 
   return parser as IParser;

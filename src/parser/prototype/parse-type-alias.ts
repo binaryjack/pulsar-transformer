@@ -52,28 +52,29 @@ export function parseTypeAlias(this: IParserInternal): ITypeAliasNode | null {
     },
   };
 
-  // NOTE: For now, we don't parse generic type parameters in the type name
-  // (e.g., the <T> in "type Nullable<T> = ..."). We just skip to the = sign.
-  // This is a simplification because properly parsing generics requires
-  // preventing the lexer from entering JSX mode when it sees <.
-  // We skip all tokens until we find ASSIGN (=)
-  if (this._getCurrentToken() && this._getCurrentToken()!.type !== 'ASSIGN') {
-    // Skip tokens until we find = (handle JSX tokens that might be generated)
-    let angleDepth = 0;
-    while (!this._isAtEnd()) {
+  // Parse generic type parameters if present: type Nullable<T> = ...
+  let hasTypeParameters = false;
+  if (this._getCurrentToken() && this._getCurrentToken()!.type === 'LT') {
+    hasTypeParameters = true;
+    this._lexer.enterTypeContext();
+
+    // Skip tokens until we find matching GT
+    let angleDepth = 1;
+    this._advance(); // consume <
+
+    while (!this._isAtEnd() && angleDepth > 0) {
       const token = this._getCurrentToken();
       if (!token) break;
 
-      // Check if this is the = sign
-      if (token.type === 'ASSIGN' && angleDepth === 0) break;
-
-      // Track angle bracket depth to handle nested generics
       if (token.type === 'LT') {
         angleDepth++;
       } else if (token.type === 'GT') {
         angleDepth--;
-      } else if (token.type === 'JSX_TEXT' || token.type === 'IDENTIFIER') {
-        // Skip JSX_TEXT and identifiers that might be inside generic parameters
+        if (angleDepth === 0) {
+          this._advance(); // consume final >
+          this._lexer.exitTypeContext();
+          break;
+        }
       }
 
       this._advance();

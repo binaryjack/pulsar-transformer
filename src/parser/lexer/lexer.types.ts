@@ -5,7 +5,7 @@
  * Prototype-based pattern, following Pulsar standards.
  */
 
-import type { IToken } from './token-types.js'
+import type { IToken, TokenType } from './token-types.js';
 
 /**
  * Scanning modes for lexer context switching
@@ -69,6 +69,21 @@ export interface ILexer {
    * Check if currently in type context
    */
   isInTypeContext(): boolean;
+
+  /**
+   * Re-scan less than token for generic type parameter detection
+   */
+  reScanLessThanToken(): TokenType | undefined;
+
+  /**
+   * Re-scan greater than token for generic type parameter detection
+   */
+  reScanGreaterThanToken(): TokenType | undefined;
+
+  /**
+   * Check if what follows can be a type argument in expression
+   */
+  canFollowTypeArguments(): boolean;
 }
 
 /**
@@ -91,8 +106,14 @@ export interface ILexerInternal extends ILexer {
   // Type context tracking (for generic types)
   _inTypeLevel: number;
 
+  // Re-scan methods for angle bracket disambiguation
+  reScanLessThanToken(): TokenType | undefined;
+  reScanGreaterThanToken(): TokenType | undefined;
+  canFollowTypeArguments(): boolean;
+
   // Private helper methods
   _getCurrentColumn(): number;
+  _isGenericAngleBracket(): boolean;
   _recognizeToken(start: number, line: number, column: number): IToken | null;
   _isAlpha(char: string): boolean;
   _isDigit(char: string): boolean;

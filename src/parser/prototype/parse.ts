@@ -6,7 +6,6 @@
 
 import type { IASTNode, IProgramNode } from '../ast/index.js';
 import { ASTNodeType } from '../ast/index.js';
-import { createLexer } from '../lexer/index.js';
 import { TokenType } from '../lexer/token-types.js';
 import type { IParserInternal } from '../parser.types.js';
 
@@ -22,9 +21,8 @@ export function parse(this: IParserInternal, source: string): IASTNode {
   this._current = 0;
   this._errors = [];
 
-  // Tokenize source
-  const lexer = createLexer();
-  this._tokens = lexer.tokenize(source);
+  // Tokenize source using instance lexer
+  this._tokens = this._lexer.tokenize(source);
 
   // Parse program (root node)
   const body: IASTNode[] = [];

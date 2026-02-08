@@ -12,10 +12,10 @@ import type {
   IFunctionDeclarationNode,
   IIdentifierNode,
   ITypeAnnotationNode,
-} from '../ast/index.js'
-import { ASTNodeType } from '../ast/index.js'
-import { TokenType } from '../lexer/token-types.js'
-import type { IParserInternal } from '../parser.types.js'
+} from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import { TokenType } from '../lexer/token-types.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Parse function declaration
@@ -91,6 +91,21 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
       let typeAnnotation: ITypeAnnotationNode | undefined;
       if (this._check('COLON')) {
         this._advance(); // consume :
+
+        // DEBUG: Check lexer instance
+        if (!this._lexer) {
+          throw new Error(
+            '[DEBUG] this._lexer is undefined! this keys: ' + Object.keys(this).join(', ')
+          );
+        }
+        if (!this._lexer.enterTypeContext) {
+          throw new Error(
+            '[DEBUG] this._lexer.enterTypeContext is undefined! lexer type: ' +
+              typeof this._lexer +
+              ', lexer keys: ' +
+              Object.keys(this._lexer)
+          );
+        }
 
         this._lexer.enterTypeContext(); // PHASE 3: Enable type-aware tokenization
 

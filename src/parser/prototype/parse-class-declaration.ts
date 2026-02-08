@@ -68,6 +68,9 @@ export function _parseClassDeclaration(this: IParserInternal): IClassDeclaration
   // Parse optional type parameters: <T, U>
   let typeParameters: string | null = null;
   if (this._check('LT')) {
+    // Enter type context for proper angle bracket handling
+    this._lexer.enterTypeContext();
+
     const typeParamTokens: string[] = [];
     this._advance(); // consume <
     let angleDepth = 1;
@@ -83,6 +86,7 @@ export function _parseClassDeclaration(this: IParserInternal): IClassDeclaration
         angleDepth--;
         if (angleDepth === 0) {
           this._advance(); // consume final >
+          this._lexer.exitTypeContext(); // Exit type context
           break;
         }
       }
@@ -117,6 +121,8 @@ export function _parseClassDeclaration(this: IParserInternal): IClassDeclaration
 
     // Skip generic type arguments if present: extends Array<string>
     if (this._check('LT')) {
+      this._lexer.enterTypeContext();
+
       this._advance(); // consume <
       let angleDepth = 1;
 
@@ -130,6 +136,7 @@ export function _parseClassDeclaration(this: IParserInternal): IClassDeclaration
           angleDepth--;
           if (angleDepth === 0) {
             this._advance(); // consume final >
+            this._lexer.exitTypeContext();
             break;
           }
         } else if (token.type === 'JSX_TEXT') {

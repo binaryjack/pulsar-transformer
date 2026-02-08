@@ -6,7 +6,7 @@
  */
 
 import type { IASTNode } from './ast/index.js';
-import type { IToken } from './lexer/index.js';
+import type { ILexer, IToken } from './lexer/index.js';
 
 /**
  * Public Parser interface
@@ -41,6 +41,7 @@ export interface IParserInternal extends IParser {
   _current: number;
   _errors: IParserError[];
   _source: string;
+  _lexer: ILexer; // Lexer instance for type context control
 
   // Private parsing methods
   _parseStatement(): any;

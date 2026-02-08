@@ -4,11 +4,11 @@
  * Main tokenization logic - converts source string into token array.
  */
 
-import { Lexer } from '../lexer.js'
-import type { ILexerInternal } from '../lexer.types.js'
-import { ScanMode } from '../lexer.types.js'
-import type { IToken } from '../token-types.js'
-import { TokenType } from '../token-types.js'
+import { Lexer } from '../lexer.js';
+import type { ILexerInternal } from '../lexer.types.js';
+import { ScanMode } from '../lexer.types.js';
+import type { IToken } from '../token-types.js';
+import { TokenType } from '../token-types.js';
 
 /**
  * Tokenize source code into tokens
@@ -568,9 +568,16 @@ function _readSingleChar(
     if (char === '<') {
       // Check if this is likely JSX (< followed by letter or /)
       const nextChar = this._source[this._position];
+
       if (nextChar && (this._isAlpha(nextChar) || nextChar === '/')) {
-        this._inJSXElement = true;
-        // Don't switch to JSX_TEXT yet - wait for > to close the opening tag
+        // Use heuristic to determine if this is a generic or JSX
+        // Only enter JSX mode if NOT in type context and NOT a generic
+        const isGeneric = this._isGenericAngleBracket();
+
+        if (this._inTypeLevel === 0 && !isGeneric) {
+          this._inJSXElement = true;
+          // Don't switch to JSX_TEXT yet - wait for > to close the opening tag
+        }
       }
     } else if (char === '>') {
       // Just closed an opening tag, enter JSX text mode for children
@@ -845,8 +852,8 @@ export {
   _readSingleLineComment,
   _readString,
   _readTemplateLiteral,
-  _recognizeToken
-}
+  _recognizeToken,
+};
 
 // Attach private methods to prototype
 Object.assign(Lexer.prototype, {
