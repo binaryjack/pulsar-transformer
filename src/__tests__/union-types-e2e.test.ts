@@ -4,10 +4,10 @@
  * Validates that union types (|) work throughout the entire pipeline.
  */
 
-import { describe, expect, it } from 'vitest';
-import { createAnalyzer } from '../analyzer/create-analyzer.js';
-import { createEmitter } from '../emitter/create-emitter.js';
-import { createParser } from '../parser/create-parser.js';
+import { describe, expect, it } from 'vitest'
+import { createAnalyzer } from '../analyzer/create-analyzer.js'
+import { createEmitter } from '../emitter/create-emitter.js'
+import { createParser } from '../parser/create-parser.js'
 
 describe('Union Types E2E', () => {
   it('should preserve simple union type through pipeline', () => {
@@ -76,7 +76,7 @@ describe('Union Types E2E', () => {
 
   it('should handle union types in component signals', () => {
     const source = `
-      import { createSignal } from '@pulsar/core';
+      import { createSignal } from '@pulsar-framework/pulsar.dev';
       
       const [user, setUser] = createSignal<IUser | null>(null);
     `;

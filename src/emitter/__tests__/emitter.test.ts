@@ -4,7 +4,7 @@
  * Tests for code generation from optimized IR.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest'
 import type {
   IComponentIR,
   IElementIR,
@@ -12,11 +12,11 @@ import type {
   ILiteralIR,
   ISignalBindingIR,
   IVariableDeclarationIR,
-} from '../../analyzer/ir/ir-node-types.js';
-import { IRNodeType } from '../../analyzer/ir/ir-node-types.js';
-import { createEmitter } from '../create-emitter.js';
-import { createImportTracker } from '../create-import-tracker.js';
-import type { IEmitter, IImportTracker } from '../emitter.types.js';
+} from '../../analyzer/ir/ir-node-types.js'
+import { IRNodeType } from '../../analyzer/ir/ir-node-types.js'
+import { createEmitter } from '../create-emitter.js'
+import { createImportTracker } from '../create-import-tracker.js'
+import type { IEmitter, IImportTracker } from '../emitter.types.js'
 
 describe('Import Tracker', () => {
   let tracker: IImportTracker;
@@ -222,7 +222,7 @@ describe('Emitter', () => {
       const code = emitter.emit(varIR);
 
       expect(code).toContain('const [count, setCount] = createSignal(');
-      expect(code).toContain("import { createSignal } from '@pulsar/runtime'");
+      expect(code).toContain("import { createSignal } from '@pulsar-framework/pulsar.dev'");
     });
   });
 
@@ -246,7 +246,7 @@ describe('Emitter', () => {
       expect(code).toContain('export function Counter(): HTMLElement {');
       expect(code).toContain("return $REGISTRY.execute('component:Counter', () => {");
       expect(code).toContain('});');
-      expect(code).toContain("import { $REGISTRY } from '@pulsar/runtime/registry'");
+      expect(code).toContain("import { $REGISTRY } from '@pulsar-framework/pulsar.dev/registry'");
     });
 
     it('should emit component with parameters', () => {
@@ -292,8 +292,8 @@ describe('Emitter', () => {
 
       const code = emitter.emit(componentIR);
 
-      expect(code).toContain("import { createSignal } from '@pulsar/runtime'");
-      expect(code).toContain("import { $REGISTRY } from '@pulsar/runtime/registry'");
+      expect(code).toContain("import { createSignal } from '@pulsar-framework/pulsar.dev'");
+      expect(code).toContain("import { $REGISTRY } from '@pulsar-framework/pulsar.dev/registry'");
     });
   });
 
@@ -314,7 +314,7 @@ describe('Emitter', () => {
       const code = emitter.emit(elementIR);
 
       expect(code).toContain("t_element('div'");
-      expect(code).toContain("import { t_element } from '@pulsar/runtime/jsx-runtime'");
+      expect(code).toContain("import { t_element } from '@pulsar-framework/pulsar.dev/jsx-runtime'");
     });
 
     it('should emit element with attributes', () => {
@@ -406,7 +406,7 @@ describe('Emitter', () => {
       const code = emitter.emit(bindingIR);
 
       expect(code).toContain('wire count');
-      expect(code).toContain("import { $REGISTRY } from '@pulsar/runtime/registry'");
+      expect(code).toContain("import { $REGISTRY } from '@pulsar-framework/pulsar.dev/registry'");
     });
   });
 
