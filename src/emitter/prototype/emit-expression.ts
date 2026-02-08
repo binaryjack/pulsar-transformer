@@ -280,7 +280,7 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
       // Generate IIFE that creates a text node and wires it to the signal
       // Pattern: (() => { const _t = document.createTextNode(''); $REGISTRY.wire(_t, 'textContent', () => signalName()); return _t; })()
       const textNodeVar = `_t${this.context.elementCounter++}`;
-      
+
       return `(() => { const ${textNodeVar} = document.createTextNode(''); $REGISTRY.wire(${textNodeVar}, 'textContent', () => ${signalName}()); return ${textNodeVar}; })()`;
     }
 

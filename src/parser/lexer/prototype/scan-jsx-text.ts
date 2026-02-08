@@ -5,10 +5,10 @@
  * This is the JSX text scanning mode that distinguishes JSX text from operators.
  */
 
-import { Lexer } from '../lexer.js';
-import type { ILexerInternal } from '../lexer.types.js';
-import type { IToken } from '../token-types.js';
-import { TokenType } from '../token-types.js';
+import { Lexer } from '../lexer.js'
+import type { ILexerInternal } from '../lexer.types.js'
+import type { IToken } from '../token-types.js'
+import { TokenType } from '../token-types.js'
 
 /**
  * Scan JSX text content

@@ -4,7 +4,7 @@
  * Defines interfaces for code generation from optimized IR.
  */
 
-import type { IIRNode } from '../analyzer/ir/ir-node-types.js'
+import type { IIRNode } from '../analyzer/ir/ir-node-types.js';
 
 /**
  * Emitter configuration options
@@ -47,12 +47,12 @@ export interface IEmitterConfig {
      * Log signal binding emissions
      */
     logSignalBindings?: boolean;
-    
+
     /**
      * Log element emissions
      */
     logElements?: boolean;
-    
+
     /**
      * Log event handler emissions
      */

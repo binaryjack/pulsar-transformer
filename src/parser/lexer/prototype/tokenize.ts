@@ -4,11 +4,11 @@
  * Main tokenization logic - converts source string into token array.
  */
 
-import { Lexer } from '../lexer.js';
-import type { ILexerInternal } from '../lexer.types.js';
-import { ScanMode } from '../lexer.types.js';
-import type { IToken } from '../token-types.js';
-import { TokenType } from '../token-types.js';
+import { Lexer } from '../lexer.js'
+import type { ILexerInternal } from '../lexer.types.js'
+import { ScanMode } from '../lexer.types.js'
+import type { IToken } from '../token-types.js'
+import { TokenType } from '../token-types.js'
 
 /**
  * Tokenize source code into tokens
@@ -1177,8 +1177,8 @@ export {
   _readString,
   _readTemplateToken,
   _recognizeToken,
-  reScanTemplateToken,
-};
+  reScanTemplateToken
+}
 
 // Attach private methods to prototype
 Object.assign(Lexer.prototype, {
