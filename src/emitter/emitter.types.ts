@@ -5,6 +5,7 @@
  */
 
 import type { IIRNode } from '../analyzer/ir/ir-node-types.js';
+import type { IDebugLogger } from '../debug/debug-logger.types.js';
 
 /**
  * Emitter configuration options
@@ -103,6 +104,11 @@ export interface IEmitContext {
    * Max iterations before throwing error (safety check)
    */
   _maxIterations?: number;
+
+  /**
+   * Optional debug logger for transformation visibility
+   */
+  logger?: IDebugLogger;
 }
 
 /**
