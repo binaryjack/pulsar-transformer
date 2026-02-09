@@ -31,8 +31,9 @@ export function _parseAwaitExpression(this: IParserInternal): IAwaitExpressionNo
   this._advance(); // consume await
 
   // Parse argument (required)
-  const argument = _parseSimpleExpression.call(this);
+  const argument = this._parseExpression();
 
+  const endPosition = argument?.location?.end;
   const endToken = this._getCurrentToken() || startToken;
 
   return {
@@ -44,130 +45,17 @@ export function _parseAwaitExpression(this: IParserInternal): IAwaitExpressionNo
         column: startToken.column,
         offset: startToken.start,
       },
-      end: {
-        line: endToken.line || startToken.line,
-        column: endToken.column || startToken.column,
-        offset: endToken.start || startToken.start,
-      },
-    },
-  };
-}
-
-/**
- * Parse simple expression (identifier, call, or literal)
- */
-function _parseSimpleExpression(this: IParserInternal): any {
-  const token = this._getCurrentToken();
-  
-  if (!token) {
-    return null;
-  }
-
-  if (token.type === TokenType.IDENTIFIER) {
-    const identifierNode = {
-      type: ASTNodeType.IDENTIFIER,
-      name: token.value,
-      location: {
-        start: {
-          line: token.line,
-          column: token.column,
-          offset: token.start,
-        },
-        end: {
-          line: token.line,
-          column: token.column + token.value.length,
-          offset: token.end,
-        },
-      },
-    };
-    this._advance();
-
-    // Check for call expression
-    const next = this._getCurrentToken();
-    if (next && next.type === TokenType.LPAREN) {
-      return _parseCallExpression.call(this, identifierNode);
-    }
-
-    return identifierNode;
-  }
-
-  if (token.type === TokenType.NUMBER || token.type === TokenType.STRING) {
-    const node = {
-      type: ASTNodeType.LITERAL,
-      value: token.value,
-      location: {
-        start: {
-          line: token.line,
-          column: token.column,
-          offset: token.start,
-        },
-        end: {
-          line: token.line,
-          column: token.column + token.value.length,
-          offset: token.end,
-        },
-      },
-    };
-    this._advance();
-    return node;
-  }
-
-  this._addError({
-    code: 'PSR-E001',
-    message: `Expected expression at line ${token.line}`,
-    location: { line: token.line, column: token.column },
-    token,
-  });
-  return null;
-}
-
-/**
- * Parse call expression
- */
-function _parseCallExpression(this: IParserInternal, callee: any): any {
-  const startToken = callee.location.start;
-
-  this._advance(); // consume (
-
-  // Parse arguments properly
-  const args: any[] = [];
-
-  // Check if there are arguments
-  if (!this._check('RPAREN')) {
-    do {
-      // Parse each argument as an expression
-      const argument = this._parseExpression();
-      if (argument) {
-        args.push(argument);
-      } else {
-        // If we can't parse the argument, report error and break
-        this._addError({
-          code: 'PSR-E003',
-          message: 'Expected argument expression',
-          location: {
-            line: this._getCurrentToken()?.line || 0,
-            column: this._getCurrentToken()?.column || 0,
+      end: endPosition
+        ? {
+            line: endPosition.line,
+            column: endPosition.column,
+            offset: endPosition.offset,
+          }
+        : {
+            line: endToken.line || startToken.line,
+            column: endToken.column || startToken.column,
+            offset: endToken.start || startToken.start,
           },
-          token: this._getCurrentToken(),
-        });
-        break;
-      }
-    } while (this._match('COMMA'));
-  }
-
-  const endToken = this._expect('RPAREN', 'Expected ")" after function arguments');
-
-  return {
-    type: ASTNodeType.CALL_EXPRESSION,
-    callee,
-    arguments: args,
-    location: {
-      start: startToken,
-      end: {
-        line: endToken!.line,
-        column: endToken!.column + 1,
-        offset: endToken!.end,
-      },
     },
   };
 }

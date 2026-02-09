@@ -1,7 +1,7 @@
-import type { IYieldExpressionNode } from '../ast/ast-node-types.js';
-import { ASTNodeType } from '../ast/ast-node-types.js';
-import { TokenType } from '../lexer/token-types.js';
-import type { IParserInternal } from '../parser.types.js';
+import type { IYieldExpressionNode } from '../ast/ast-node-types.js'
+import { ASTNodeType } from '../ast/ast-node-types.js'
+import { TokenType } from '../lexer/token-types.js'
+import type { IParserInternal } from '../parser.types.js'
 
 /**
  * Parse yield expression
@@ -30,20 +30,14 @@ export function _parseYieldExpression(this: IParserInternal): IYieldExpressionNo
 
   // Parse argument (optional)
   let argument: any = null;
-  let lastToken = startToken!; // Track last consumed token
   const current = this._getCurrentToken();
 
-  // If next token is not semicolon or newline, parse expression
+  // If next token is not semicolon or newline, parse a full expression
   if (current && current.type !== TokenType.SEMICOLON && current.type !== TokenType.NEWLINE) {
-    // Simple expression parsing (just get the identifier/literal)
-    argument = _parseSimpleExpression.call(this);
-    lastToken = this._getCurrentToken()!; // Update after parsing
-  } else if (delegate) {
-    // For yield*, last token is the * token
-    lastToken = this._getCurrentToken()!;
+    argument = this._parseExpression();
   }
 
-  const endToken = lastToken!;
+  const endToken = argument?.location?.end || startToken;
 
   return {
     type: ASTNodeType.YIELD_EXPRESSION,
@@ -58,60 +52,8 @@ export function _parseYieldExpression(this: IParserInternal): IYieldExpressionNo
       end: {
         line: endToken.line,
         column: endToken.column,
-        offset: endToken.end,
+        offset: endToken.offset ?? endToken.end,
       },
     },
   };
-}
-
-/**
- * Parse simple expression (identifier or literal)
- */
-function _parseSimpleExpression(this: IParserInternal): any {
-  const token = this._getCurrentToken()!;
-
-  if (token.type === TokenType.IDENTIFIER) {
-    const node = {
-      type: ASTNodeType.IDENTIFIER,
-      name: token.value,
-      location: {
-        start: {
-          line: token.line,
-          column: token.column,
-          offset: token.start,
-        },
-        end: {
-          line: token.line,
-          column: token.column + token.value.length,
-          offset: token.end,
-        },
-      },
-    };
-    this._advance();
-    return node;
-  }
-
-  if (token.type === TokenType.NUMBER || token.type === TokenType.STRING) {
-    const node = {
-      type: ASTNodeType.LITERAL,
-      value: token.value,
-      location: {
-        start: {
-          line: token.line,
-          column: token.column,
-          offset: token.start,
-        },
-        end: {
-          line: token.line,
-          column: token.column + token.value.length,
-          offset: token.end,
-        },
-      },
-    };
-    this._advance();
-    return node;
-  }
-
-  this._advance();
-  return null;
 }
