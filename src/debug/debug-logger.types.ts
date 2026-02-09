@@ -19,7 +19,12 @@ export type DebugChannel =
   | 'transform'
   | 'emitter'
   | 'validator'
-  | 'pipeline';
+  | 'pipeline'
+  | 'signal-binding'
+  | 'wire'
+  | 'reactivity'
+  | 'effect'
+  | 'signal-creation';
 
 /**
  * Public Debug Logger interface

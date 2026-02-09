@@ -270,10 +270,13 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
       // Add required imports
       this.context.imports.addImport(this.context.config.runtimePaths.registry!, '$REGISTRY');
 
-      // Debug logging if enabled
-      if (this.context.config.debug?.logSignalBindings) {
-        console.log(
-          `[EMITTER] Emitting signal binding for: ${signalName} (canOptimize: ${signalIR.canOptimize})`
+      // Debug logging
+      if (this.context.logger) {
+        this.context.logger.log(
+          'signal-binding',
+          'debug',
+          `Emitting signal binding: ${signalName}`,
+          { signalName, canOptimize: signalIR.canOptimize }
         );
       }
 
