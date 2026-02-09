@@ -2,10 +2,10 @@ import type {
   ICallExpressionNode,
   IDecoratorNode,
   IIdentifierNode,
-} from '../ast/ast-node-types.js';
-import { ASTNodeType } from '../ast/ast-node-types.js';
-import { TokenType } from '../lexer/token-types.js';
-import type { IParserInternal } from '../parser.types.js';
+} from '../ast/ast-node-types.js'
+import { ASTNodeType } from '../ast/ast-node-types.js'
+import { TokenType } from '../lexer/token-types.js'
+import type { IParserInternal } from '../parser.types.js'
 
 /**
  * Parse decorator
@@ -15,20 +15,34 @@ import type { IParserInternal } from '../parser.types.js';
  * @Injectable()
  * @Custom
  */
-export function _parseDecorator(this: IParserInternal): IDecoratorNode {
-  const startToken = this._getCurrentToken()!;
+export function _parseDecorator(this: IParserInternal): IDecoratorNode | null {
+  const startToken = this._getCurrentToken();
+  
+  if (!startToken) {
+    return null;
+  }
 
   // Expect @
   if (startToken.type !== TokenType.AT) {
-    throw new Error(`Expected @ for decorator at line ${startToken.line}`);
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected @ for decorator at line ${startToken.line}`,
+      location: { line: startToken.line, column: startToken.column },
+      token: startToken,
+    });
+    return null;
   }
 
   this._advance(); // consume @
 
   // Parse decorator expression (identifier or call expression)
   const expression = _parseDecoratorExpression.call(this);
+  
+  if (!expression) {
+    return null;
+  }
 
-  const endToken = this._getCurrentToken()!;
+  const endToken = this._getCurrentToken() || startToken;
 
   return {
     type: ASTNodeType.DECORATOR,
@@ -40,22 +54,32 @@ export function _parseDecorator(this: IParserInternal): IDecoratorNode {
         offset: startToken.start,
       },
       end: {
-        line: endToken!.line,
-        column: endToken!.column,
-        offset: endToken!.start,
+        line: endToken.line || startToken.line,
+        column: endToken.column || startToken.column,
+        offset: endToken.start || startToken.start,
       },
     },
   };
 }
 
 /**
- * Parse decorator expression (identifier or call)
+ * Parse decorator  expression (identifier or call)
  */
-function _parseDecoratorExpression(this: IParserInternal): IIdentifierNode | ICallExpressionNode {
-  const token = this._getCurrentToken()!;
+function _parseDecoratorExpression(this: IParserInternal): IIdentifierNode | ICallExpressionNode | null {
+  const token = this._getCurrentToken();
+  
+  if (!token) {
+    return null;
+  }
 
   if (token.type !== TokenType.IDENTIFIER) {
-    throw new Error(`Expected identifier in decorator at line ${token.line}`);
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected identifier in decorator at line ${token.line}`,
+      location: { line: token.line, column: token.column },
+      token,
+    });
+    return null;
   }
 
   const identifier: IIdentifierNode = {
@@ -96,15 +120,53 @@ function _parseDecoratorCall(this: IParserInternal, callee: IIdentifierNode): IC
 
   // Parse arguments (simplified - just parse until closing paren)
   const args: any[] = [];
+  
+  // SAFETY: Add position tracking to prevent infinite loops
+  let safetyCounter = 0;
+  const maxIterations = 10000;
 
-  while (this._getCurrentToken()!.type !== TokenType.RPAREN) {
+  while (!this._isAtEnd()) {
+    const currentToken = this._getCurrentToken();
+    if (!currentToken || currentToken.type === TokenType.RPAREN) {
+      break;
+    }
+    
+    if (++safetyCounter > maxIterations) {
+      this._addError({
+        code: 'PSR-E010',
+        message: `Infinite loop detected while parsing decorator arguments (${maxIterations} iterations exceeded)`,
+        location: {
+          line: currentToken.line,
+          column: currentToken.column,
+        },
+      });
+      break;
+    }
+    
+    const beforePos = this._current;
     // Skip everything until we find the closing paren
     // In a real implementation, we'd parse the argument expressions
     this._advance();
+    
+    // SAFETY: Ensure we're making progress
+    if (this._current === beforePos) {
+      this._addError({
+        code: 'PSR-E011',
+        message: 'Parser stuck in decorator arguments - forcing advance',
+        location: {
+          line: currentToken.line,
+          column: currentToken.column,
+        },
+      });
+      this._advance(); // Force progress
+      break;
+    }
   }
 
-  const endToken = this._getCurrentToken()!;
-  this._advance(); // consume )
+  const endToken = this._getCurrentToken();
+  if (endToken?.type === TokenType.RPAREN) {
+    this._advance(); // consume )
+  }
 
   return {
     type: ASTNodeType.CALL_EXPRESSION,
@@ -112,10 +174,14 @@ function _parseDecoratorCall(this: IParserInternal, callee: IIdentifierNode): IC
     arguments: args,
     location: {
       start: startToken,
-      end: {
+      end: endToken ? {
         line: endToken.line,
         column: endToken.column + 1,
         offset: endToken.end,
+      } : {
+        line: startToken.line,
+        column: startToken.column,
+        offset: startToken.offset,
       },
     },
   };

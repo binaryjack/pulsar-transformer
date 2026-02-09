@@ -1,7 +1,7 @@
-import type { IAwaitExpressionNode } from '../ast/ast-node-types.js';
-import { ASTNodeType } from '../ast/ast-node-types.js';
-import { TokenType } from '../lexer/token-types.js';
-import type { IParserInternal } from '../parser.types.js';
+import type { IAwaitExpressionNode } from '../ast/ast-node-types.js'
+import { ASTNodeType } from '../ast/ast-node-types.js'
+import { TokenType } from '../lexer/token-types.js'
+import type { IParserInternal } from '../parser.types.js'
 
 /**
  * Parse await expression
@@ -10,12 +10,22 @@ import type { IParserInternal } from '../parser.types.js';
  * await promise;
  * await fetch('/api/data');
  */
-export function _parseAwaitExpression(this: IParserInternal): IAwaitExpressionNode {
-  const startToken = this._getCurrentToken()!;
+export function _parseAwaitExpression(this: IParserInternal): IAwaitExpressionNode | null {
+  const startToken = this._getCurrentToken();
+  
+  if (!startToken) {
+    return null;
+  }
 
   // Expect await
   if (startToken.type !== TokenType.AWAIT) {
-    throw new Error(`Expected await at line ${startToken.line}`);
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected await at line ${startToken.line}`,
+      location: { line: startToken.line, column: startToken.column },
+      token: startToken,
+    });
+    return null;
   }
 
   this._advance(); // consume await
@@ -23,7 +33,7 @@ export function _parseAwaitExpression(this: IParserInternal): IAwaitExpressionNo
   // Parse argument (required)
   const argument = _parseSimpleExpression.call(this);
 
-  const endToken = this._getCurrentToken()!;
+  const endToken = this._getCurrentToken() || startToken;
 
   return {
     type: ASTNodeType.AWAIT_EXPRESSION,
@@ -35,9 +45,9 @@ export function _parseAwaitExpression(this: IParserInternal): IAwaitExpressionNo
         offset: startToken.start,
       },
       end: {
-        line: endToken!.line,
-        column: endToken!.column,
-        offset: endToken!.start,
+        line: endToken.line || startToken.line,
+        column: endToken.column || startToken.column,
+        offset: endToken.start || startToken.start,
       },
     },
   };
@@ -47,7 +57,11 @@ export function _parseAwaitExpression(this: IParserInternal): IAwaitExpressionNo
  * Parse simple expression (identifier, call, or literal)
  */
 function _parseSimpleExpression(this: IParserInternal): any {
-  const token = this._getCurrentToken()!;
+  const token = this._getCurrentToken();
+  
+  if (!token) {
+    return null;
+  }
 
   if (token.type === TokenType.IDENTIFIER) {
     const identifierNode = {
@@ -98,7 +112,13 @@ function _parseSimpleExpression(this: IParserInternal): any {
     return node;
   }
 
-  throw new Error(`Expected expression at line ${token.line}`);
+  this._addError({
+    code: 'PSR-E001',
+    message: `Expected expression at line ${token.line}`,
+    location: { line: token.line, column: token.column },
+    token,
+  });
+  return null;
 }
 
 /**

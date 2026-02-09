@@ -4,10 +4,10 @@
  * Main entry point - converts PSR source code into AST.
  */
 
-import type { IASTNode, IProgramNode } from '../ast/index.js';
-import { ASTNodeType } from '../ast/index.js';
-import { TokenType } from '../lexer/token-types.js';
-import type { IParserInternal } from '../parser.types.js';
+import type { IASTNode, IProgramNode } from '../ast/index.js'
+import { ASTNodeType } from '../ast/index.js'
+import { TokenType } from '../lexer/token-types.js'
+import type { IParserInternal } from '../parser.types.js'
 
 /**
  * Parse PSR source code into AST
@@ -66,18 +66,29 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
   if (token.type === TokenType.AT) {
     const decorators: any[] = [];
     while (this._getCurrentToken()?.type === TokenType.AT) {
-      decorators.push(this._parseDecorator());
+      const decorator = this._parseDecorator();
+      if (decorator) {
+        decorators.push(decorator);
+      }
     }
 
     // After decorators, parse the decorated item (class or method)
     const nextToken = this._getCurrentToken();
     if (nextToken?.type === TokenType.CLASS) {
       const classNode = this._parseClassDeclaration() as any;
-      classNode.decorators = decorators;
+      if (classNode) {
+        classNode.decorators = decorators;
+      }
       return classNode;
     }
     // Note: Method decorators are handled in class body parsing
-    throw new Error(`Decorators can only be applied to classes or methods at line ${token.line}`);
+    this._addError({
+      code: 'PSR-E001',
+      message: `Decorators can only be applied to classes or methods at line ${token.line}`,
+      location: { line: token.line, column: token.column },
+      token,
+    });
+    return null;
   }
 
   // Component declaration
@@ -281,7 +292,10 @@ function _expect(this: IParserInternal, type: string, message: string) {
       location: token ? { line: token.line, column: token.column } : { line: 0, column: 0 },
       token: token || undefined,
     });
-    throw new Error(enhancedMessage);
+    
+    // CRITICAL FIX: Don't throw! Just advance and return the token we got
+    // This prevents infinite loops - we ALWAYS make progress
+    return this._advance();
   }
 
   return this._advance();
@@ -312,5 +326,6 @@ export {
   _isAtEnd,
   _match,
   _parseStatement,
-  _peek,
-};
+  _peek
+}
+

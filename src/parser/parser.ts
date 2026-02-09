@@ -20,4 +20,5 @@ export const Parser = function (this: IParserInternal, config: IParserConfig = {
   this._errors = [];
   this._source = '';
   this._lexer = createLexer();
+  this._expressionDepth = 0;
 } as unknown as { new (config?: IParserConfig): IParserInternal };

@@ -17,6 +17,23 @@ export enum ScanMode {
 }
 
 /**
+ * Template literal state tracking
+ * Preserves context across JSX expression boundaries
+ */
+export interface ITemplateLiteralState {
+  /**
+   * Whether this template started with backtick (head) or is a continuation
+   */
+  head: boolean;
+
+  /**
+   * JSX brace depth when template was entered
+   * Enables proper state restoration across JSX boundaries
+   */
+  jsxBraceDepth: number;
+}
+
+/**
  * Public Lexer interface
  */
 export interface ILexer {
@@ -109,7 +126,7 @@ export interface ILexerInternal extends ILexer {
   _scanMode: ScanMode;
 
   // Template literal state tracking
-  _templateLiteralStack: Array<{ head: boolean }> | undefined;
+  _templateLiteralStack: ITemplateLiteralState[] | undefined;
 
   // Type context tracking (for generic types)
   _inTypeLevel: number;

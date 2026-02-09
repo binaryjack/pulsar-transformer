@@ -10,16 +10,40 @@
  * "hello"
  */
 
-import { ASTNodeType } from '../ast/index.js';
-import { TokenType } from '../lexer/token-types.js';
-import type { IParserInternal } from '../parser.types.js';
-import { parseExportDeclaration } from './parse-export-declaration.js';
+import { ASTNodeType } from '../ast/index.js'
+import { TokenType } from '../lexer/token-types.js'
+import type { IParserInternal } from '../parser.types.js'
+import { parseExportDeclaration } from './parse-export-declaration.js'
 
 /**
  * Parse expression
+ *
+ * SAFETY: Tracks recursion depth to prevent infinite loops
+ * Maximum depth of 100 allows deeply nested expressions while preventing hangs
  */
 export function parseExpression(this: IParserInternal): any {
-  return _parseConditionalExpression.call(this);
+  const MAX_EXPRESSION_DEPTH = 100;
+
+  // Track recursion depth to prevent infinite loops
+  this._expressionDepth = (this._expressionDepth || 0) + 1;
+
+  if (this._expressionDepth > MAX_EXPRESSION_DEPTH) {
+    this._addError({
+      code: 'PSR-E009',
+      message: `Maximum expression nesting depth exceeded (${MAX_EXPRESSION_DEPTH}). Possible infinite recursion or extremely deeply nested expression.`,
+      location: {
+        line: this._getCurrentToken()?.line || 0,
+        column: this._getCurrentToken()?.column || 0,
+      },
+    });
+    this._expressionDepth--;
+    return null;
+  }
+
+  const result = _parseConditionalExpression.call(this);
+
+  this._expressionDepth--;
+  return result;
 }
 
 /**
@@ -661,8 +685,32 @@ function _parseObjectLiteral(this: IParserInternal): any {
 
   const properties: any[] = [];
 
+  // SAFETY: Prevent infinite loops in object literal parsing
+  let propertyIterationCount = 0;
+  const maxPropertyIterations = 1000;
+
   if (!this._check('RBRACE')) {
     do {
+      // Safety check to prevent infinite loops
+      if (++propertyIterationCount > maxPropertyIterations) {
+        this._addError({
+          code: 'PSR-E008',
+          message: `Infinite loop detected while parsing object literal properties (${maxPropertyIterations} iterations exceeded)`,
+          location: {
+            line: this._getCurrentToken()?.line || 0,
+            column: this._getCurrentToken()?.column || 0,
+          },
+        });
+        // Try to recover by skipping to end of object
+        while (!this._isAtEnd() && !this._check('RBRACE')) {
+          this._advance();
+        }
+        if (this._check('RBRACE')) {
+          this._advance();
+        }
+        return null;
+      }
+
       // Check for trailing comma before RBRACE
       if (this._check('RBRACE')) {
         break;
@@ -999,12 +1047,20 @@ function _parseMemberAccess(this: IParserInternal, object: any): any {
           start: object.location.start,
           end: property.location.end,
         },
-      };
-    } else if (this._match('LBRACKET')) {
+      };  } else if (this._match('LBRACKET')) {
       // Handle bracket notation: obj[key]
       const property = this._parseExpression();
       if (!property) {
-        throw new Error('Expected expression inside brackets');
+        this._addError({
+          code: 'PSR-E001',
+          message: 'Expected expression inside brackets',
+          location: {
+            line: this._getCurrentToken()?.line || 0,
+            column: this._getCurrentToken()?.column || 0,
+          },
+          token: this._getCurrentToken(),
+        });
+        break; // Exit the member access loop
       }
 
       const endToken = this._expect('RBRACKET', 'Expected "]" after bracket expression');
@@ -1225,7 +1281,16 @@ function _parseArrowFunctionOrGrouping(this: IParserInternal): any {
 
         const identToken = this._getCurrentToken();
         if (identToken?.type !== 'IDENTIFIER') {
-          throw new Error('Expected identifier after rest operator');
+          this._addError({
+            code: 'PSR-E001',
+            message: 'Expected identifier after rest operator',
+            location: {
+              line: identToken?.line || 0,
+              column: identToken?.column || 0,
+            },
+            token: identToken,
+          });
+          break; // Exit parameter parsing
         }
 
         this._advance(); // consume identifier
@@ -1804,5 +1869,6 @@ export {
   _parseExpressionStatement,
   _parseLiteral,
   _parseObjectLiteral,
-  _parseTemplateLiteral,
-};
+  _parseTemplateLiteral
+}
+

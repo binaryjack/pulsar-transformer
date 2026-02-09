@@ -9,9 +9,9 @@
  * import './styles.css';
  */
 
-import type { IIdentifierNode, IImportDeclarationNode, ILiteralNode } from '../ast/index.js';
-import { ASTNodeType } from '../ast/index.js';
-import type { IParserInternal } from '../parser.types.js';
+import type { IIdentifierNode, IImportDeclarationNode, ILiteralNode } from '../ast/index.js'
+import { ASTNodeType } from '../ast/index.js'
+import type { IParserInternal } from '../parser.types.js'
 
 /**
  * Parse import declaration
@@ -157,6 +157,8 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
 
       // Parse named imports
       while (!this._check('RBRACE') && !this._isAtEnd()) {
+        const beforePos = this._current; // Safety: track position
+        
         const namedToken = this._expect('IDENTIFIER', 'Expected import specifier');
 
         // Check for alias: import { foo as bar }
@@ -188,6 +190,12 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
         if (!this._match('COMMA')) {
           break;
         }
+        
+        // Safety: if position hasn't advanced, force it
+        if (this._current === beforePos) {
+          this._advance();
+          break;
+        }
       }
 
       this._expect('RBRACE', 'Expected } after named import specifiers');
@@ -202,6 +210,8 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
 
     // Parse specifiers (handle empty case and trailing comma)
     while (!this._check('RBRACE') && !this._isAtEnd()) {
+      const beforePos = this._current; // Safety: track position
+      
       // Check for inline type: import { type Foo, Bar }
       let isSpecifierTypeOnly = false;
       if (this._check('TYPE')) {
@@ -242,6 +252,12 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
 
       // If no comma, we're done
       if (!this._match('COMMA')) {
+        break;
+      }
+      
+      // Safety: if position hasn't advanced, force it
+      if (this._current === beforePos) {
+        this._advance();
         break;
       }
     }

@@ -91,6 +91,7 @@ export enum TokenType {
   OR_OR = 'OR_OR', // ||
   PLUS_PLUS = 'PLUS_PLUS', // ++ (increment)
   MINUS_MINUS = 'MINUS_MINUS', // -- (decrement)
+  DOLLAR = 'DOLLAR', // $ (for template expressions ${...}, not signal binding)
 
   // Delimiters
   LPAREN = 'LPAREN', // (
