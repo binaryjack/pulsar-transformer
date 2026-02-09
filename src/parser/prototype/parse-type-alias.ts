@@ -169,6 +169,7 @@ function _joinTypeTokens(tokens: Array<{ value: string; type: string }>): string
   const spaceAfter = new Set([',', ':']);
 
   const result: string[] = [];
+  let pendingConditional = false;
 
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i].value;
@@ -179,8 +180,16 @@ function _joinTypeTokens(tokens: Array<{ value: string; type: string }>): string
     let needsSpace = false;
 
     if (result.length > 0 && prevToken) {
+      const isConditionalQuestion = token === '?' && nextToken !== ':';
+      const isConditionalResult = prevToken === '?' && token !== ':';
+      const isConditionalColon = token === ':' && pendingConditional;
+      const isArrowAfterParen = token === '=>' && prevToken === ')';
+
+      if (isConditionalQuestion || isConditionalResult || isConditionalColon || isArrowAfterParen) {
+        needsSpace = true;
+      }
       // NEVER add space if current token is no-space punctuation
-      if (noSpacePunctuation.has(token)) {
+      else if (noSpacePunctuation.has(token)) {
         needsSpace = false;
       }
       // NEVER add space if previous token is no-space punctuation
@@ -206,6 +215,12 @@ function _joinTypeTokens(tokens: Array<{ value: string; type: string }>): string
     }
 
     result.push(token);
+
+    if (token === '?' && nextToken !== ':') {
+      pendingConditional = true;
+    } else if (token === ':' && pendingConditional) {
+      pendingConditional = false;
+    }
   }
 
   return result.join('');

@@ -33,7 +33,7 @@ export function _formatImport(
 ): string {
   // Handle side-effect imports (no specifiers)
   if (specifiers.has(null) && specifiers.size === 1) {
-    return `import '${transformImportPath(source)}'`;
+    return `import '${transformImportPath(source)}';`;
   }
 
   // Filter out null and sort
@@ -74,7 +74,7 @@ export function _formatImport(
   if (namespaceImports.length > 0 && defaultImports.length === 0 && namedImports.length === 0) {
     // Pure namespace import: import * as Name from 'source'
     const namespaceName = namespaceImports[0].substring(10); // Remove 'namespace:' prefix
-    return `import * as ${namespaceName} from '${transformImportPath(source)}'`;
+    return `import * as ${namespaceName} from '${transformImportPath(source)}';`;
   } else if (
     defaultImports.length > 0 &&
     namedImports.length === 0 &&
@@ -82,7 +82,7 @@ export function _formatImport(
   ) {
     // Pure default import: import Name from 'source'
     const defaultName = defaultImports[0].substring(8); // Remove 'default:' prefix
-    return `import ${defaultName} from '${transformImportPath(source)}'`;
+    return `import ${defaultName} from '${transformImportPath(source)}';`;
   } else if (defaultImports.length > 0 && namedImports.length > 0) {
     // Mixed import: import Default, { named } from 'source'
     const defaultName = defaultImports[0].substring(8);
@@ -96,7 +96,7 @@ export function _formatImport(
       }
     });
     const named = formattedImports.join(', ');
-    return `import ${defaultName}, { ${named} } from '${transformImportPath(source)}'`;
+    return `import ${defaultName}, { ${named} } from '${transformImportPath(source)}';`;
   } else {
     // Named imports: import { a, b } from 'source'
     // Handle aliases: import { foo as bar }
@@ -110,6 +110,6 @@ export function _formatImport(
       }
     });
     const imports = formattedImports.join(', ');
-    return `import { ${imports} } from '${transformImportPath(source)}'`;
+    return `import { ${imports} } from '${transformImportPath(source)}';`;
   }
 }

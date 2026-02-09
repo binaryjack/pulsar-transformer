@@ -113,7 +113,15 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
     // Skip Unicode whitespace ONLY if NOT in JSX text mode
     // In JSX text mode, whitespace is significant and should be included in JSX_TEXT tokens
     const currentScanMode = this._scanMode as ScanMode;
-    if (currentScanMode !== ScanMode.JSX_TEXT && /\p{White_Space}/u.test(currentChar)) {
+    const isLineTerminator =
+      /\p{Line_Separator}|\p{Paragraph_Separator}/u.test(currentChar) ||
+      currentChar === '\n' ||
+      currentChar === '\r';
+    if (
+      currentScanMode !== ScanMode.JSX_TEXT &&
+      /\p{White_Space}/u.test(currentChar) &&
+      !isLineTerminator
+    ) {
       this._position += currentChar.length;
       // Column is calculated, not incremented
       continue;
@@ -121,13 +129,17 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
 
     // Handle Unicode line terminators and newlines
     // In JSX text mode, newlines are significant and handled by _scanJSXText
-    if (
-      currentScanMode !== ScanMode.JSX_TEXT &&
-      (/\p{Line_Separator}|\p{Paragraph_Separator}/u.test(currentChar) ||
-        currentChar === '\n' ||
-        currentChar === '\r')
-    ) {
-      this._position += currentChar.length;
+    if (currentScanMode !== ScanMode.JSX_TEXT && isLineTerminator) {
+      // Handle \r\n as a single line terminator (Windows CRLF)
+      if (
+        currentChar === '\r' &&
+        this._position + 1 < source.length &&
+        source[this._position + 1] === '\n'
+      ) {
+        this._position += 2; // Skip both \r and \n
+      } else {
+        this._position += currentChar.length;
+      }
       this._line++;
       this._lineStart = this._position; // Babel pattern: track line start position
       continue;
@@ -217,13 +229,18 @@ export function tokenize(this: ILexerInternal, source: string): IToken[] {
 /**
  * Internal token recognition
  *
+ * @param start - Start position of the token
+ * @param line - Line number of the token
+ * @param column - Column number of the token
  * @returns Recognized token or null
  */
-function _recognizeToken(this: ILexerInternal): IToken | null {
+function _recognizeToken(
+  this: ILexerInternal,
+  start: number,
+  line: number,
+  column: number
+): IToken | null {
   const char = this._source[this._position];
-  const start = this._position;
-  const line = this._line;
-  const column = this._getCurrentColumn();
 
   // JSX TEXT MODE: Scan text content until < or { or $(
   if (this._scanMode === ScanMode.JSX_TEXT) {

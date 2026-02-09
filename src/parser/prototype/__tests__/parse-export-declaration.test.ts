@@ -133,7 +133,8 @@ describe('parseExportDeclaration', () => {
 
       const exportNode = ast.body[0];
       expect(exportNode.exportKind).toBe('default');
-      expect(exportNode.specifiers).toHaveLength(0);
+      expect(exportNode.specifiers).toHaveLength(1);
+      expect(exportNode.specifiers[0].name).toBe('Component');
       expect(exportNode.source).toBeNull();
     });
   });
@@ -141,10 +142,12 @@ describe('parseExportDeclaration', () => {
   describe('error handling', () => {
     it('should handle missing closing brace', () => {
       const parser = createParser();
+      const ast = parser.parse('export { foo');
 
-      expect(() => {
-        parser.parse('export { foo');
-      }).toThrow('Expected } after export specifiers');
+      // Parser now uses error recovery instead of throwing
+      expect(parser.hasErrors()).toBe(true);
+      const errors = parser.getErrors();
+      expect(errors.some((e) => e.message.includes('Expected }'))).toBe(true);
     });
 
     it('should handle missing from in export *', () => {
@@ -158,10 +161,12 @@ describe('parseExportDeclaration', () => {
 
     it('should handle invalid export specifier', () => {
       const parser = createParser();
+      const ast = parser.parse('export { 123 };');
 
-      expect(() => {
-        parser.parse('export { 123 };');
-      }).toThrow('Expected export specifier');
+      // Parser now uses error recovery instead of throwing
+      expect(parser.hasErrors()).toBe(true);
+      const errors = parser.getErrors();
+      expect(errors.some((e) => e.message.includes('Expected export specifier'))).toBe(true);
     });
   });
 });
