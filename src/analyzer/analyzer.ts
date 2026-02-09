@@ -27,6 +27,7 @@ export const Analyzer = function (this: IAnalyzerInternal, config: IAnalyzerConf
       imports: new Map(),
       exports: new Set(),
       registryKeys: new Map(),
+      inJSXChildren: false,
     } as IAnalyzerContext,
     writable: true,
     enumerable: false,

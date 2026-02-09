@@ -16,6 +16,7 @@ import type {
   IIRNode,
   ILiteralIR,
   IMemberExpressionIR,
+  ISignalBindingIR,
   IUnaryExpressionIR,
 } from '../ir/index.js';
 import { IRNodeType } from '../ir/index.js';
@@ -201,7 +202,10 @@ function _analyzeIdentifier(this: IAnalyzerInternal, node: any): IIdentifierIR {
 /**
  * Analyze call expression
  */
-function _analyzeCallExpression(this: IAnalyzerInternal, node: any): ICallExpressionIR {
+function _analyzeCallExpression(
+  this: IAnalyzerInternal,
+  node: any
+): ICallExpressionIR | ISignalBindingIR {
   const callee = this._analyzeNode(node.callee) as IIRNode;
   const args = node.arguments
     .map((arg: any) => this._analyzeNode(arg))
@@ -214,6 +218,31 @@ function _analyzeCallExpression(this: IAnalyzerInternal, node: any): ICallExpres
     calleeName === 'createSignal' ||
     calleeName === 'createMemo' ||
     calleeName === 'createEffect';
+
+  // CRITICAL FIX: Detect signal GETTER calls (e.g., count())
+  // When {count()} is used in JSX children, convert to SIGNAL_BINDING_IR for reactive wiring
+  // ONLY apply this transformation when we're inside JSX element children context
+  if (
+    calleeName &&
+    args.length === 0 &&
+    this._isSignal(calleeName) &&
+    this._context.inJSXChildren
+  ) {
+    // This is a signal getter call in JSX - convert to SignalBindingIR
+    return {
+      type: IRNodeType.SIGNAL_BINDING_IR,
+      signalName: calleeName,
+      canOptimize: true,
+      isExternal: false,
+      metadata: {
+        sourceLocation: node.location?.start,
+        optimizations: {
+          canInline: true,
+        },
+        dependencies: [calleeName],
+      },
+    };
+  }
 
   // Detect Pulsar primitives
   const isPulsarPrimitive =

@@ -147,6 +147,12 @@ export interface IAnalyzerContext {
    * Registry keys generated
    */
   registryKeys: Map<string, string>;
+
+  /**
+   * Track if currently analyzing JSX element children
+   * Used to determine if signal getter calls should be converted to SIGNAL_BINDING_IR
+   */
+  inJSXChildren: boolean;
 }
 
 /**

@@ -75,6 +75,10 @@ export function analyzeElement(this: IAnalyzerInternal, node: IPSRElementNode): 
   const children: IIRNode[] = [];
   const signalBindings: ISignalBindingIR[] = [];
 
+  // Mark that we're analyzing JSX children - signal getters should be reactive
+  const wasInJSXChildren = this._context.inJSXChildren;
+  this._context.inJSXChildren = true;
+
   for (const child of node.children) {
     const childIR = this._analyzeNode(child);
     if (childIR) {
@@ -86,6 +90,9 @@ export function analyzeElement(this: IAnalyzerInternal, node: IPSRElementNode): 
       }
     }
   }
+
+  // Restore previous context
+  this._context.inJSXChildren = wasInJSXChildren;
 
   // Determine if element is static (no dynamic content)
   const isStatic =
