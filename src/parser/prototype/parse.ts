@@ -129,7 +129,7 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
   }
 
   // Class declaration (including abstract classes)
-  if (token.type === TokenType.CLASS) {
+  if (token.type === TokenType.CLASS || token.type === TokenType.ABSTRACT) {
     return this._parseClassDeclaration();
   }
 
