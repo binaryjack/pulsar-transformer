@@ -27,11 +27,15 @@ export const Analyzer = function (this: IAnalyzerInternal, config: IAnalyzerConf
       imports: new Map(),
       exports: new Set(),
       registryKeys: new Map(),
+<<<<<<< HEAD
       _recursionDepth: 0,
       _iterationCount: 0,
       _maxIterations: 10000,
       _currentNode: 'root',
       logger: config.logger,
+=======
+      inJSXChildren: false,
+>>>>>>> 35c9f2b349e0cba67b8785a5e666c2a86450ad27
     } as IAnalyzerContext,
     writable: true,
     enumerable: false,

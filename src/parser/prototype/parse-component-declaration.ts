@@ -184,7 +184,21 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
           if (this._match('COLON')) {
             // Track nesting depth for braces, brackets, and parentheses in type annotations
             let depth = 0;
+            let safetyCounter = 0;
+            const maxIterations = 10000;
             while (true) {
+              if (++safetyCounter > maxIterations) {
+                this._addError({
+                  code: 'PSR-E010',
+                  message: `Infinite loop detected while parsing type annotation (${maxIterations} iterations exceeded)`,
+                  location: {
+                    line: this._getCurrentToken()?.line || 0,
+                    column: this._getCurrentToken()?.column || 0,
+                  },
+                });
+                break;
+              }
+
               const tok = this._peek(0);
               if (!tok || this._isAtEnd()) break;
 
@@ -225,7 +239,21 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
         if (this._match('COLON')) {
           // Track nesting depth for complex types
           let depth = 0;
+          let safetyCounter = 0;
+          const maxIterations = 10000;
           while (true) {
+            if (++safetyCounter > maxIterations) {
+              this._addError({
+                code: 'PSR-E010',
+                message: `Infinite loop detected while parsing type annotation (${maxIterations} iterations exceeded)`,
+                location: {
+                  line: this._getCurrentToken()?.line || 0,
+                  column: this._getCurrentToken()?.column || 0,
+                },
+              });
+              break;
+            }
+
             const tok = this._peek(0);
             if (!tok || this._isAtEnd()) break;
 
@@ -292,6 +320,7 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
       );
     }
     // Skip type tokens until we hit LBRACE (component body start)
+<<<<<<< HEAD
     let typeSkipCount = 0;
     while (!this._check('LBRACE') && !this._isAtEnd()) {
       typeSkipCount++;
@@ -310,6 +339,21 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
         throw new Error(
           `Infinite loop while skipping type annotation at position ${this._current}`
         );
+=======
+    let safetyCounter = 0;
+    const maxIterations = 10000;
+    while (!this._check('LBRACE') && !this._isAtEnd()) {
+      if (++safetyCounter > maxIterations) {
+        this._addError({
+          code: 'PSR-E010',
+          message: `Infinite loop detected while parsing return type annotation (${maxIterations} iterations exceeded)`,
+          location: {
+            line: this._getCurrentToken()?.line || 0,
+            column: this._getCurrentToken()?.column || 0,
+          },
+        });
+        break;
+>>>>>>> 35c9f2b349e0cba67b8785a5e666c2a86450ad27
       }
       this._advance();
     }

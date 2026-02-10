@@ -4,29 +4,46 @@ import type {
   IDoWhileStatementNode,
   IForStatementNode,
   IWhileStatementNode,
-} from '../ast/ast-node-types.js';
-import { ASTNodeType } from '../ast/ast-node-types.js';
-import { TokenType } from '../lexer/token-types.js';
-import type { IParserInternal } from '../parser.types.js';
-import { parseExpression } from './parse-expression.js';
+} from '../ast/ast-node-types.js'
+import { ASTNodeType } from '../ast/ast-node-types.js'
+import { TokenType } from '../lexer/token-types.js'
+import type { IParserInternal } from '../parser.types.js'
+import { parseExpression } from './parse-expression.js'
 
 /**
  * Parses for loop statements
  * Supports: for (init; test; update) { }
  */
-export function _parseForStatement(this: IParserInternal): IForStatementNode {
+export function _parseForStatement(this: IParserInternal): IForStatementNode | null {
   const startToken = this._getCurrentToken();
+  
+  if (!startToken) {
+    return null;
+  }
 
   // Expect 'for' keyword
   if (!this._check('FOR')) {
-    throw new Error(`Expected 'for', got ${this._getCurrentToken()!.value}`);
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected 'for', got ${this._getCurrentToken()?.value || 'EOF'}`,
+      location: { line: startToken.line, column: startToken.column },
+      token: this._getCurrentToken(),
+    });
+    return null;
   }
 
   this._advance(); // Consume 'for'
 
   // Expect opening paren
-  if (this._getCurrentToken()!.type !== TokenType.LPAREN) {
-    throw new Error(`Expected '(' after 'for', got ${this._getCurrentToken()!.value}`);
+  const currentToken = this._getCurrentToken();
+  if (!currentToken || currentToken.type !== TokenType.LPAREN) {
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected '(' after 'for', got ${currentToken?.value || 'EOF'}`,
+      location: { line: startToken.line, column: startToken.column },
+      token: currentToken,
+    });
+    return null;
   }
 
   this._advance(); // Consume '('
@@ -101,10 +118,19 @@ export function _parseForStatement(this: IParserInternal): IForStatementNode {
   }
 
   // Expect semicolon
-  if (this._getCurrentToken()!.type !== TokenType.SEMICOLON) {
-    throw new Error(`Expected ';' after for init, got ${this._getCurrentToken()!.value}`);
+  const semicolon1 = this._getCurrentToken();
+  if (!semicolon1 || semicolon1.type !== TokenType.SEMICOLON) {
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected ';' after for init, got ${semicolon1?.value || 'EOF'}`,
+      location: { line: startToken!.line, column: startToken!.column },
+      token: semicolon1,
+    });
+    // Try to recover by advancing
+    if (semicolon1) this._advance();
+  } else {
+    this._advance(); // Consume ';'
   }
-  this._advance(); // Consume ';'
 
   // Parse test (optional)
   let test: IASTNode | null = null;
@@ -113,10 +139,18 @@ export function _parseForStatement(this: IParserInternal): IForStatementNode {
   }
 
   // Expect semicolon
-  if (this._getCurrentToken()!.type !== TokenType.SEMICOLON) {
-    throw new Error(`Expected ';' after for test, got ${this._getCurrentToken()!.value}`);
+  const semicolon2 = this._getCurrentToken();
+  if (!semicolon2 || semicolon2.type !== TokenType.SEMICOLON) {
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected ';' after for test, got ${semicolon2?.value || 'EOF'}`,
+      location: { line: startToken!.line, column: startToken!.column },
+      token: semicolon2,
+    });
+    if (semicolon2) this._advance();
+  } else {
+    this._advance(); // Consume ';'
   }
-  this._advance(); // Consume ';'
 
   // Parse update (optional)
   let update: IASTNode | null = null;
@@ -125,10 +159,18 @@ export function _parseForStatement(this: IParserInternal): IForStatementNode {
   }
 
   // Expect closing paren
-  if (this._getCurrentToken()!.type !== TokenType.RPAREN) {
-    throw new Error(`Expected ')' after for header, got ${this._getCurrentToken()!.value}`);
+  const closeParen = this._getCurrentToken();
+  if (!closeParen || closeParen.type !== TokenType.RPAREN) {
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected ')' after for header, got ${closeParen?.value || 'EOF'}`,
+      location: { line: startToken!.line, column: startToken!.column },
+      token: closeParen,
+    });
+    if (closeParen) this._advance();
+  } else {
+    this._advance(); // Consume ')'
   }
-  this._advance(); // Consume ')'
 
   // Parse body
   const body = _parseLoopBody.call(this);
@@ -160,19 +202,36 @@ export function _parseForStatement(this: IParserInternal): IForStatementNode {
  * Parses while loop statements
  * Supports: while (test) { }
  */
-export function _parseWhileStatement(this: IParserInternal): IWhileStatementNode {
+export function _parseWhileStatement(this: IParserInternal): IWhileStatementNode | null {
   const startToken = this._getCurrentToken();
+  
+  if (!startToken) {
+    return null;
+  }
 
   // Expect 'while' keyword
   if (!this._check('WHILE')) {
-    throw new Error(`Expected 'while', got ${this._getCurrentToken()!.value}`);
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected 'while', got ${this._getCurrentToken()?.value || 'EOF'}`,
+      location: { line: startToken.line, column: startToken.column },
+      token: this._getCurrentToken(),
+    });
+    return null;
   }
 
   this._advance(); // Consume 'while'
 
   // Expect opening paren
-  if (this._getCurrentToken()!.type !== TokenType.LPAREN) {
-    throw new Error(`Expected '(' after 'while', got ${this._getCurrentToken()!.value}`);
+  const lparen = this._getCurrentToken();
+  if (!lparen || lparen.type !== TokenType.LPAREN) {
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected '(' after 'while', got ${lparen?.value || 'EOF'}`,
+      location: { line: startToken.line, column: startToken.column },
+      token: lparen,
+    });
+    return null;
   }
 
   this._advance(); // Consume '('
@@ -215,12 +274,22 @@ export function _parseWhileStatement(this: IParserInternal): IWhileStatementNode
  * Parses do-while loop statements
  * Supports: do { } while (test);
  */
-export function _parseDoWhileStatement(this: IParserInternal): IDoWhileStatementNode {
+export function _parseDoWhileStatement(this: IParserInternal): IDoWhileStatementNode | null {
   const startToken = this._getCurrentToken();
+  
+  if (!startToken) {
+    return null;
+  }
 
   // Expect 'do' keyword
   if (!this._check('DO')) {
-    throw new Error(`Expected 'do', got ${this._getCurrentToken()!.value}`);
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected 'do', got ${this._getCurrentToken()?.value || 'EOF'}`,
+      location: { line: startToken.line, column: startToken.column },
+      token: this._getCurrentToken(),
+    });
+    return null;
   }
 
   this._advance(); // Consume 'do'
@@ -229,15 +298,29 @@ export function _parseDoWhileStatement(this: IParserInternal): IDoWhileStatement
   const body = _parseLoopBody.call(this) as IBlockStatementNode;
 
   // Expect 'while' keyword
-  if (!this._check('WHILE')) {
-    throw new Error(`Expected 'while' after do body, got ${this._getCurrentToken()!.value}`);
+  const whileToken = this._getCurrentToken();
+  if (!whileToken || !this._check('WHILE')) {
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected 'while' after do body, got ${whileToken?.value || 'EOF'}`,
+      location: { line: startToken!.line, column: startToken!.column },
+      token: whileToken,
+    });
+    return null;
   }
 
   this._advance(); // Consume 'while'
 
   // Expect opening paren
-  if (this._getCurrentToken()!.type !== TokenType.LPAREN) {
-    throw new Error(`Expected '(' after 'while', got ${this._getCurrentToken()!.value}`);
+  const lparen = this._getCurrentToken();
+  if (!lparen || lparen.type !== TokenType.LPAREN) {
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected '(' after 'while', got ${lparen?.value || 'EOF'}`,
+      location: { line: startToken!.line, column: startToken!.column },
+      token: lparen,
+    });
+    return null;
   }
 
   this._advance(); // Consume '('
@@ -246,14 +329,21 @@ export function _parseDoWhileStatement(this: IParserInternal): IDoWhileStatement
   const test = parseExpression.call(this);
 
   // Expect closing paren
-  if (this._getCurrentToken()!.type !== TokenType.RPAREN) {
-    throw new Error(`Expected ')' after while test, got ${this._getCurrentToken()!.value}`);
+  const rparenWhile = this._getCurrentToken();
+  if (!rparenWhile || rparenWhile.type !== TokenType.RPAREN) {
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected ')' after while test, got ${rparenWhile?.value || 'EOF'}`,
+      location: { line: startToken!.line, column: startToken!.column },
+      token: rparenWhile,
+    });
+    if (rparenWhile) this._advance();
+  } else {
+    this._advance(); // Consume ')'
   }
 
-  this._advance(); // Consume ')'
-
   // Expect semicolon
-  if (this._getCurrentToken()!.type === TokenType.SEMICOLON) {
+  if (this._getCurrentToken()?.type === TokenType.SEMICOLON) {
     this._advance(); // Consume ';'
   }
 
@@ -292,32 +382,87 @@ function _parseLoopBody(this: IParserInternal): IBlockStatementNode | IASTNode {
 /**
  * Helper: Parse block statement
  */
-export function _parseBlockStatement(this: IParserInternal): IBlockStatementNode {
+export function _parseBlockStatement(this: IParserInternal): IBlockStatementNode | null {
   const startToken = this._getCurrentToken();
+  
+  if (!startToken) {
+    return null;
+  }
 
   // Expect opening brace
-  if (this._getCurrentToken()!.type !== TokenType.LBRACE) {
-    throw new Error(`Expected '{', got ${this._getCurrentToken()!.value}`);
+  if (startToken.type !== TokenType.LBRACE) {
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected '{', got ${startToken.value || 'EOF'}`,
+      location: { line: startToken.line, column: startToken.column },
+      token: startToken,
+    });
+    return null;
   }
 
   this._advance(); // Consume '{'
 
   const body: IASTNode[] = [];
+  
+  // SAFETY: Add position tracking
+  let safetyCounter = 0;
+  const maxIterations = 50000;
 
-  while (
-    this._getCurrentToken()!.type !== TokenType.RBRACE &&
-    this._getCurrentToken()!.type !== TokenType.EOF
-  ) {
-    body.push(this._parseStatement());
+  while (!this._isAtEnd()) {
+    const currentToken = this._getCurrentToken();
+    if (!currentToken || currentToken.type === TokenType.RBRACE || currentToken.type === TokenType.EOF) {
+      break;
+    }
+    
+    if (++safetyCounter > maxIterations) {
+      this._addError({
+        code: 'PSR-E010',
+        message: `Infinite loop detected while parsing block statement (${maxIterations} iterations exceeded)`,
+        location: {
+          line: currentToken.line,
+          column: currentToken.column,
+        },
+      });
+      break;
+    }
+    
+    const beforePos = this._current;
+    const statement = this._parseStatement();
+    if (statement) {
+      body.push(statement);
+    }
+    
+    // SAFETY: Ensure progress
+    if (this._current === beforePos) {
+      this._addError({
+        code: 'PSR-E011',
+        message: 'Parser stuck in block statement - forcing advance',
+        location: {
+          line: currentToken.line,
+          column: currentToken.column,
+        },
+      });
+      this._advance();
+      break;
+    }
   }
 
   // Expect closing brace
-  if (this._getCurrentToken()!.type !== TokenType.RBRACE) {
-    throw new Error(`Expected '}', got ${this._getCurrentToken()!.value}`);
+  const closeBrace = this._getCurrentToken();
+  if (!closeBrace || closeBrace.type !== TokenType.RBRACE) {
+    this._addError({
+      code: 'PSR-E001',
+      message: `Expected '}', got ${closeBrace?.value || 'EOF'}`,
+      location: { line: startToken.line, column: startToken.column },
+      token: closeBrace,
+    });
+    // Return what we have so far
   }
 
-  const endToken = this._getCurrentToken();
-  this._advance(); // Consume '}'
+  const endToken = this._getCurrentToken() || startToken;
+  if (endToken?.type === TokenType.RBRACE) {
+    this._advance(); // Consume '}'
+  }
 
   return {
     type: ASTNodeType.BLOCK_STATEMENT,

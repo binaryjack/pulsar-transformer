@@ -43,6 +43,7 @@ export interface IParserInternal extends IParser {
   _errors: IParserError[];
   _source: string;
   _lexer: ILexer; // Lexer instance for type context control
+  _expressionDepth: number; // Track expression parsing recursion depth
 
   // Debug tracking
   _iterationCount?: number;

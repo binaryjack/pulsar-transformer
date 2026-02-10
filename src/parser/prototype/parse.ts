@@ -4,10 +4,10 @@
  * Main entry point - converts PSR source code into AST.
  */
 
-import type { IASTNode, IProgramNode } from '../ast/index.js';
-import { ASTNodeType } from '../ast/index.js';
-import { TokenType } from '../lexer/token-types.js';
-import type { IParserInternal } from '../parser.types.js';
+import type { IASTNode, IProgramNode } from '../ast/index.js'
+import { ASTNodeType } from '../ast/index.js'
+import { TokenType } from '../lexer/token-types.js'
+import type { IParserInternal } from '../parser.types.js'
 
 /**
  * Parse PSR source code into AST
@@ -182,6 +182,7 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
     return null;
   }
 
+<<<<<<< HEAD
   // Track recursion depth
   if (this._recursionDepth !== undefined) {
     this._recursionDepth++;
@@ -215,6 +216,35 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
       }
       throw error;
     }
+=======
+  // Decorator (@) - parse decorators and continue to decorated item
+  if (token.type === TokenType.AT) {
+    const decorators: any[] = [];
+    while (this._getCurrentToken()?.type === TokenType.AT) {
+      const decorator = this._parseDecorator();
+      if (decorator) {
+        decorators.push(decorator);
+      }
+    }
+
+    // After decorators, parse the decorated item (class or method)
+    const nextToken = this._getCurrentToken();
+    if (nextToken?.type === TokenType.CLASS) {
+      const classNode = this._parseClassDeclaration() as any;
+      if (classNode) {
+        classNode.decorators = decorators;
+      }
+      return classNode;
+    }
+    // Note: Method decorators are handled in class body parsing
+    this._addError({
+      code: 'PSR-E001',
+      message: `Decorators can only be applied to classes or methods at line ${token.line}`,
+      location: { line: token.line, column: token.column },
+      token,
+    });
+    return null;
+>>>>>>> 35c9f2b349e0cba67b8785a5e666c2a86450ad27
   }
 
   // Store current node type for debugging
@@ -282,10 +312,17 @@ function _parseStatement(this: IParserInternal): IASTNode | null {
       return this._parseFunctionDeclaration();
     }
 
+<<<<<<< HEAD
     // Class declaration (including abstract classes)
     if (token.type === TokenType.CLASS || token.type === TokenType.ABSTRACT) {
       return this._parseClassDeclaration();
     }
+=======
+  // Class declaration (including abstract classes)
+  if (token.type === TokenType.CLASS || token.type === TokenType.ABSTRACT) {
+    return this._parseClassDeclaration();
+  }
+>>>>>>> 35c9f2b349e0cba67b8785a5e666c2a86450ad27
 
     // Interface declaration
     if (token.type === TokenType.INTERFACE) {
@@ -458,7 +495,10 @@ function _expect(this: IParserInternal, type: string, message: string) {
       location: token ? { line: token.line, column: token.column } : { line: 0, column: 0 },
       token: token || undefined,
     });
-    throw new Error(enhancedMessage);
+    
+    // CRITICAL FIX: Don't throw! Just advance and return the token we got
+    // This prevents infinite loops - we ALWAYS make progress
+    return this._advance();
   }
 
   return this._advance();
@@ -489,5 +529,6 @@ export {
   _isAtEnd,
   _match,
   _parseStatement,
-  _peek,
-};
+  _peek
+}
+

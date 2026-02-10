@@ -5,6 +5,7 @@
  */
 
 import type { IIRNode } from '../analyzer/ir/ir-node-types.js';
+import type { IDebugLogger } from '../debug/debug-logger.types.js';
 
 /**
  * Emitter configuration options
@@ -105,6 +106,7 @@ export interface IEmitContext {
   _maxIterations?: number;
 
   /**
+<<<<<<< HEAD
    * Debug: Current recursion depth
    */
   _recursionDepth?: number;
@@ -123,6 +125,11 @@ export interface IEmitContext {
    * Debug logger
    */
   logger?: any;
+=======
+   * Optional debug logger for transformation visibility
+   */
+  logger?: IDebugLogger;
+>>>>>>> 35c9f2b349e0cba67b8785a5e666c2a86450ad27
 }
 
 /**

@@ -160,6 +160,7 @@ export interface IAnalyzerContext {
   registryKeys: Map<string, string>;
 
   /**
+<<<<<<< HEAD
    * Debug: Current recursion depth
    */
   _recursionDepth?: number;
@@ -183,6 +184,12 @@ export interface IAnalyzerContext {
    * Debug logger
    */
   logger?: IDebugLogger;
+=======
+   * Track if currently analyzing JSX element children
+   * Used to determine if signal getter calls should be converted to SIGNAL_BINDING_IR
+   */
+  inJSXChildren: boolean;
+>>>>>>> 35c9f2b349e0cba67b8785a5e666c2a86450ad27
 }
 
 /**

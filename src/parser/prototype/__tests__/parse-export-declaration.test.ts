@@ -133,7 +133,8 @@ describe('parseExportDeclaration', () => {
 
       const exportNode = ast.body[0];
       expect(exportNode.exportKind).toBe('default');
-      expect(exportNode.specifiers).toHaveLength(0);
+      expect(exportNode.specifiers).toHaveLength(1);
+      expect(exportNode.specifiers[0].name).toBe('Component');
       expect(exportNode.source).toBeNull();
     });
   });
@@ -143,6 +144,10 @@ describe('parseExportDeclaration', () => {
       const parser = createParser();
       const ast = parser.parse('export { foo');
 
+<<<<<<< HEAD
+=======
+      // Parser now uses error recovery instead of throwing
+>>>>>>> 35c9f2b349e0cba67b8785a5e666c2a86450ad27
       expect(parser.hasErrors()).toBe(true);
       const errors = parser.getErrors();
       expect(errors.some((e) => e.message.includes('Expected }'))).toBe(true);
@@ -161,6 +166,7 @@ describe('parseExportDeclaration', () => {
       const parser = createParser();
       const ast = parser.parse('export { 123 };');
 
+<<<<<<< HEAD
       expect(parser.hasErrors()).toBe(true);
       const errors = parser.getErrors();
       expect(
@@ -170,6 +176,12 @@ describe('parseExportDeclaration', () => {
             e.message.includes('Expected identifier')
         )
       ).toBe(true);
+=======
+      // Parser now uses error recovery instead of throwing
+      expect(parser.hasErrors()).toBe(true);
+      const errors = parser.getErrors();
+      expect(errors.some((e) => e.message.includes('Expected export specifier'))).toBe(true);
+>>>>>>> 35c9f2b349e0cba67b8785a5e666c2a86450ad27
     });
   });
 });

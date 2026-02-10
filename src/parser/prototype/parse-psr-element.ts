@@ -13,10 +13,10 @@ import type {
   IPSRElementNode,
   IPSRFragmentNode,
   IPSRSpreadAttributeNode,
-} from '../ast/index.js';
-import { ASTNodeType } from '../ast/index.js';
-import type { IParserInternal } from '../parser.types.js';
-import { decodeHTMLEntities } from '../utils/decode-html-entities.js';
+} from '../ast/index.js'
+import { ASTNodeType } from '../ast/index.js'
+import type { IParserInternal } from '../parser.types.js'
+import { decodeHTMLEntities } from '../utils/decode-html-entities.js'
 
 /**
  * Helper to check if tag name starts with uppercase (component reference)
@@ -547,8 +547,30 @@ function _parseJSXExpression(this: IParserInternal): any {
 
     // Reconstruct object literal parsing from this point
     const properties: any[] = [];
+    
+    // SAFETY: Prevent infinite loops
+    let iterationCount = 0;
+    const maxIterations = 1000;
 
     do {
+      // Safety check
+      if (++iterationCount > maxIterations) {
+        this._addError({
+          code: 'PSR-E007',
+          message: 'Infinite loop detected while parsing object literal in JSX',
+          location: {
+            line: this._getCurrentToken()?.line || 0,
+            column: this._getCurrentToken()?.column || 0,
+          },
+        });
+        return null;
+      }
+      
+      // Handle end of object before comma
+      if (this._check('RBRACE')) {
+        break;
+      }
+      
       // Handle spread properties
       if (this._check('SPREAD')) {
         this._advance();
@@ -581,6 +603,19 @@ function _parseJSXExpression(this: IParserInternal): any {
 
       this._expect('COLON', 'Expected ":" after property name');
       const value = this._parseExpression();
+      
+      // CRITICAL: Check if expression parsing failed or we're at unexpected token
+      if (!value || this._isAtEnd()) {
+        this._addError({
+          code: 'PSR-E010',
+          message: 'Failed to parse property value in object literal',
+          location: {
+            line: this._getCurrentToken()?.line || 0,
+            column: this._getCurrentToken()?.column || 0,
+          },
+        });
+        break;
+      }
 
       properties.push({
         type: 'Property',
@@ -590,7 +625,18 @@ function _parseJSXExpression(this: IParserInternal): any {
         },
         value,
       });
-    } while (this._match('COMMA'));
+      
+      // CRITICAL FIX: Break if no comma found (this prevents infinite loop)
+      // Original: while (this._match('COMMA') && !this._check('RBRACE'))
+      // Problem: If neither COMMA nor RBRACE, loops forever
+      if (!this._match('COMMA')) {
+        break;
+      }
+    } while (!this._check('RBRACE'));
+
+    // CRITICAL FIX: Consume the closing RBRACE of the object literal
+    // The caller will consume the outer RBRACE of the JSX expression
+    this._expect('RBRACE', 'Expected "}" to close object literal');
 
     return {
       type: 'ObjectExpression',
@@ -646,5 +692,6 @@ export {
   _parseJSXExpression,
   _parseNonObjectExpression,
   _parsePSRAttribute,
-  _parsePSRChild,
-};
+  _parsePSRChild
+}
+
