@@ -124,9 +124,15 @@ export function createPipeline(options: IPipelineOptions = {}) {
           const transformResult = transformer.transform();
           transformedAst = transformResult.ast;
           logger.timeEnd('Transformer');
-          logger.info('transform', `✅ Transformed AST with ${transformedAst.body.length} statements`);
+          logger.info(
+            'transform',
+            `✅ Transformed AST with ${transformedAst.body.length} statements`
+          );
           if (transformResult.context.errors.length > 0) {
-            logger.warn('transform', `⚠️ ${transformResult.context.errors.length} errors during transformation`);
+            logger.warn(
+              'transform',
+              `⚠️ ${transformResult.context.errors.length} errors during transformation`
+            );
             transformResult.context.errors.forEach((err: any) => {
               logger.error('transform', err.message);
             });

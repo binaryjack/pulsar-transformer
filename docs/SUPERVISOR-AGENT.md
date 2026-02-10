@@ -11,15 +11,15 @@
 
 ### 🔴 IMMEDIATE REJECTION TRIGGERS (AUTO-JAIL)
 
-| Violation | Detection | Penalty |
-|-----------|-----------|---------|
-| Uses `any` type | Grep for `: any` | ❌ REJECTED |
-| ES6 class keyword | Grep for `class ` | ❌ REJECTED |
-| TODO/placeholder | Grep for `TODO\|FIXME\|XXX` | ❌ REJECTED |
-| Stub implementation | Empty function bodies | ❌ REJECTED |
-| "should work" language | `should\|probably\|might\|seems` | ❌ REJECTED |
-| Multiple items per file | >1 export | ❌ REJECTED |
-| No tests for new code | Missing `.test.ts` | ❌ REJECTED |
+| Violation               | Detection                        | Penalty     |
+| ----------------------- | -------------------------------- | ----------- |
+| Uses `any` type         | Grep for `: any`                 | ❌ REJECTED |
+| ES6 class keyword       | Grep for `class `                | ❌ REJECTED |
+| TODO/placeholder        | Grep for `TODO\|FIXME\|XXX`      | ❌ REJECTED |
+| Stub implementation     | Empty function bodies            | ❌ REJECTED |
+| "should work" language  | `should\|probably\|might\|seems` | ❌ REJECTED |
+| Multiple items per file | >1 export                        | ❌ REJECTED |
+| No tests for new code   | Missing `.test.ts`               | ❌ REJECTED |
 
 ---
 
@@ -85,6 +85,7 @@ pnpm test
 ### Task 1: Integrate Transformer Into Pipeline ⏳
 
 **AI Must Deliver:**
+
 - [ ] Modified `src/index.ts` with transformer integration
 - [ ] Added `useTransformer` option to `IPipelineOptions`
 - [ ] Feature flag defaults to `false` (backward compatible)
@@ -94,6 +95,7 @@ pnpm test
 - [ ] NEW test added for transformer pipeline
 
 **Jail Triggers:**
+
 - Stubs like `// TODO: wire transformer`
 - Changes existing behavior without flag
 - Uses `any` for transformer types
@@ -104,6 +106,7 @@ pnpm test
 ### Task 2: Golden Fixture Tests (Badge, Drawer) ⏳
 
 **AI Must Deliver:**
+
 - [ ] `golden-badge.test.ts` created
 - [ ] `golden-drawer.test.ts` created
 - [ ] Both tests follow EXACT pattern from `golden-counter.test.ts`
@@ -112,6 +115,7 @@ pnpm test
 - [ ] Both tests PASS (not skipped, not pending)
 
 **Jail Triggers:**
+
 - Copy-paste without adapting to Badge/Drawer
 - Tests marked as `.skip` or `.todo`
 - Fake assertions that always pass
@@ -122,6 +126,7 @@ pnpm test
 ### Task 3: Fix Semantic Analyzer Compilation Error ⏳
 
 **AI Must Deliver:**
+
 - [ ] File `symbol-management.ts` line 55 fixed
 - [ ] Type error resolved WITHOUT using `any`
 - [ ] Type guard OR proper null check used
@@ -130,6 +135,7 @@ pnpm test
 - [ ] NO changes to semantic analyzer behavior
 
 **Jail Triggers:**
+
 - Using `as any` to silence error
 - Breaking existing semantic analyzer tests
 - Changing behavior instead of fixing types
@@ -139,6 +145,7 @@ pnpm test
 ### Task 4: CodeGenerator Handles Transformed AST ⏳
 
 **AI Must Deliver:**
+
 - [ ] CodeGenerator generates valid TypeScript from transformed AST
 - [ ] Handles `ExportNamedDeclaration` with `VariableDeclaration`
 - [ ] Handles `CallExpression` for `$REGISTRY.execute`
@@ -147,6 +154,7 @@ pnpm test
 - [ ] Backward compatible (handles old AST too)
 
 **Jail Triggers:**
+
 - Only handling new AST format (breaking old code)
 - Generated output doesn't compile
 - Not tested with actual transformed AST
@@ -156,6 +164,7 @@ pnpm test
 ## 📊 FINAL VALIDATION (Before Claiming Done)
 
 ### Compilation Check
+
 ```powershell
 cd packages/pulsar-transformer
 pnpm run build
@@ -163,12 +172,14 @@ pnpm run build
 ```
 
 ### Test Suite Check
+
 ```powershell
 pnpm test
 # ALL tests must PASS, NO skipped tests
 ```
 
 ### Integration Check
+
 ```powershell
 # Test transformer in pipeline
 pnpm test src/__tests__/transformer/
@@ -176,6 +187,7 @@ pnpm test src/__tests__/transformer/
 ```
 
 ### Rule Compliance Check
+
 ```powershell
 # NO any types
 Get-ChildItem src -Recurse -Filter *.ts | Select-String ": any" | Where-Object { $_.Line -notmatch "\/\/" }

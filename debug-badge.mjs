@@ -1,8 +1,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { createLexer } from './src/lexer/index.js';
-import { createParser } from './src/parser/index.js';
-import { createTransformer } from './src/transformer/index.js';
+import { createLexer } from './dist/lexer/index.js';
+import { createParser } from './dist/parser/index.js';
+import { createTransformer } from './dist/transformer/index.js';
 
 const fixturePath = join(process.cwd(), 'tests/fixtures/real-psr/02-badge.psr');
 const source = readFileSync(fixturePath, 'utf-8');
@@ -15,8 +15,10 @@ const ast = parser.parse();
 
 console.log('\n=== Original AST ===');
 ast.body.forEach((node, i) => {
-  console.log(`${i}: ${node.type}`, node.type === 'ExportNamedDeclaration' ? 
-    `-> ${node.declaration?.type}` : '');
+  console.log(
+    `${i}: ${node.type}`,
+    node.type === 'ExportNamedDeclaration' ? `-> ${node.declaration?.type}` : ''
+  );
 });
 
 const transformer = createTransformer(ast, { sourceFile: 'badge.psr' });
@@ -24,8 +26,10 @@ const result = transformer.transform();
 
 console.log('\n=== Transformed AST ===');
 result.ast.body.forEach((node, i) => {
-  console.log(`${i}: ${node.type}`, node.type === 'ExportNamedDeclaration' ? 
-    `-> ${node.declaration?.type}` : '');
+  console.log(
+    `${i}: ${node.type}`,
+    node.type === 'ExportNamedDeclaration' ? `-> ${node.declaration?.type}` : ''
+  );
   if (node.type === 'ExportNamedDeclaration' && node.declaration?.type === 'VariableDeclaration') {
     const varDecl = node.declaration;
     const init = varDecl.declarations[0].init;
