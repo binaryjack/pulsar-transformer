@@ -9,9 +9,9 @@
  * import './styles.css';
  */
 
-import type { IIdentifierNode, IImportDeclarationNode, ILiteralNode } from '../ast/index.js'
-import { ASTNodeType } from '../ast/index.js'
-import type { IParserInternal } from '../parser.types.js'
+import type { IIdentifierNode, IImportDeclarationNode, ILiteralNode } from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Parse import declaration
@@ -213,8 +213,6 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     // Named imports: { name1, name2 }
     this._advance(); // consume {
     importKind = 'named';
-
-
 
     // Parse specifiers (handle empty case and trailing comma)
     let loopCount = 0;

@@ -526,7 +526,11 @@ function _parseMethod(
       const typeEndToken = this._getCurrentToken();
       returnType = {
         type: ASTNodeType.TYPE_ANNOTATION,
-        typeString: typeTokens.join(' ').replace(/\s*:\s*/g, ': ').replace(/\s*;\s*/g, '; ').replace(/\s*=>\s*/g, ' => '),
+        typeString: typeTokens
+          .join(' ')
+          .replace(/\s*:\s*/g, ': ')
+          .replace(/\s*;\s*/g, '; ')
+          .replace(/\s*=>\s*/g, ' => '),
         location: {
           start: {
             line: typeStartToken!.line,
@@ -674,7 +678,11 @@ function _parseGetter(
       const typeEndToken = this._getCurrentToken();
       returnType = {
         type: ASTNodeType.TYPE_ANNOTATION,
-        typeString: typeTokens.join(' ').replace(/\s*:\s*/g, ': ').replace(/\s*;\s*/g, '; ').replace(/\s*=>\s*/g, ' => '),
+        typeString: typeTokens
+          .join(' ')
+          .replace(/\s*:\s*/g, ': ')
+          .replace(/\s*;\s*/g, '; ')
+          .replace(/\s*=>\s*/g, ' => '),
         location: {
           start: startLocation,
           end: {

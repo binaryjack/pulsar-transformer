@@ -224,13 +224,18 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
         this._addError({
           code: 'EXPECTED_IDENTIFIER',
           message: 'Expected export specifier',
-          location: currentToken ? {
-            start: { line: currentToken.line, column: currentToken.column },
-            end: { line: currentToken.line, column: currentToken.column + currentToken.value.length }
-          } as any : {
-            start: { line: startToken!.line, column: startToken!.column },
-            end: { line: startToken!.line, column: startToken!.column }
-          } as any
+          location: currentToken
+            ? ({
+                start: { line: currentToken.line, column: currentToken.column },
+                end: {
+                  line: currentToken.line,
+                  column: currentToken.column + currentToken.value.length,
+                },
+              } as any)
+            : ({
+                start: { line: startToken!.line, column: startToken!.column },
+                end: { line: startToken!.line, column: startToken!.column },
+              } as any),
         });
         break;
       }
@@ -246,13 +251,18 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
           this._addError({
             code: 'EXPECTED_IDENTIFIER',
             message: 'Expected identifier after as',
-            location: aliasTokenCheck ? {
-              start: { line: aliasTokenCheck.line, column: aliasTokenCheck.column },
-              end: { line: aliasTokenCheck.line, column: aliasTokenCheck.column + aliasTokenCheck.value.length }
-            } as any : {
-              start: { line: specToken!.line, column: specToken!.column },
-              end: { line: specToken!.line, column: specToken!.column }
-            } as any
+            location: aliasTokenCheck
+              ? ({
+                  start: { line: aliasTokenCheck.line, column: aliasTokenCheck.column },
+                  end: {
+                    line: aliasTokenCheck.line,
+                    column: aliasTokenCheck.column + aliasTokenCheck.value.length,
+                  },
+                } as any)
+              : ({
+                  start: { line: specToken!.line, column: specToken!.column },
+                  end: { line: specToken!.line, column: specToken!.column },
+                } as any),
           });
         } else {
           alias = aliasTokenCheck.value;
@@ -290,8 +300,8 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
         message: 'Expected } after export specifiers',
         location: {
           start: { line: this._getCurrentToken()!.line, column: this._getCurrentToken()!.column },
-          end: { line: this._getCurrentToken()!.line, column: this._getCurrentToken()!.column }
-        } as any
+          end: { line: this._getCurrentToken()!.line, column: this._getCurrentToken()!.column },
+        } as any,
       });
     } else {
       this._advance(); // consume }

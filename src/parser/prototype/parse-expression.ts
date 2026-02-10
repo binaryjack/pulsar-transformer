@@ -383,10 +383,15 @@ function _parsePrimaryExpression(this: IParserInternal): any {
   // PSR element: <tag>
   if (token.type === 'LT') {
     if (this._logger) {
-      this._logger.log('parser', 'debug', '_parsePrimaryExpression: Detected PSR element (LT token)', {
-        position: this._current,
-        tokenValue: token?.value,
-      });
+      this._logger.log(
+        'parser',
+        'debug',
+        '_parsePrimaryExpression: Detected PSR element (LT token)',
+        {
+          position: this._current,
+          tokenValue: token?.value,
+        }
+      );
     }
     const result = this._parsePSRElement();
     if (this._logger) {
