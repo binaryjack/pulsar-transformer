@@ -4,19 +4,19 @@
  */
 
 // Import all prototype methods to register them
-import './prototypes/add-token';
-import './prototypes/advance';
-import './prototypes/is-at-end';
-import './prototypes/is-keyword';
-import './prototypes/match';
-import './prototypes/peek';
-import './prototypes/scan-comment';
-import './prototypes/scan-identifier';
-import './prototypes/scan-number';
-import './prototypes/scan-string';
-import './prototypes/scan-token';
-import './prototypes/scan-tokens';
-import './prototypes/skip-whitespace';
+import './prototypes/add-token.js';
+import './prototypes/advance.js';
+import './prototypes/is-at-end.js';
+import './prototypes/is-keyword.js';
+import './prototypes/match.js';
+import './prototypes/peek.js';
+import './prototypes/scan-comment.js';
+import './prototypes/scan-identifier.js';
+import './prototypes/scan-number.js';
+import './prototypes/scan-string.js';
+import './prototypes/scan-token.js';
+import './prototypes/scan-tokens.js';
+import './prototypes/skip-whitespace.js';
 
 // Export lexer constructor and types
 export { Lexer, createLexer } from './lexer.js';
