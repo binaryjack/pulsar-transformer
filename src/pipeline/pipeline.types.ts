@@ -4,6 +4,7 @@
  * Types for the PSR → TypeScript transformation pipeline.
  */
 
+import type { IAnalyzerConfig } from '../analyzer/analyzer.types.js';
 import type { IDebugLoggerConfig } from '../debug/debug-logger.types.js';
 import type { IEmitterConfig } from '../emitter/emitter.types.js';
 import type { IValidationResult, IValidatorConfig } from '../validator/validator.types.js';
@@ -16,6 +17,10 @@ export interface IPipelineConfig {
    * Emitter configuration
    */
   emitter?: IEmitterConfig;
+
+  /**\n   * Analyzer configuration
+   */
+  analyzer?: Partial<IAnalyzerConfig>;
 
   /**
    * Enable debug output

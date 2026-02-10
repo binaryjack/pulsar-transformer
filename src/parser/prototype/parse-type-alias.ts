@@ -163,10 +163,21 @@ function _joinTypeTokens(tokens: Array<{ value: string; type: string }>): string
   const noSpacePunctuation = new Set(['[', ']', '<', '>', '(', ')', '.', '?', '!']);
 
   // Operators that need spaces around them
-  const spacedOperators = new Set(['|', '&', '=>', 'extends', 'keyof', 'typeof', 'in', 'is']);
+  const spacedOperators = new Set([
+    '|',
+    '&',
+    '=>',
+    'extends',
+    'keyof',
+    'typeof',
+    'in',
+    'is',
+    ':',
+    '=',
+  ]);
 
   // Punctuation that needs space AFTER but not before
-  const spaceAfter = new Set([',', ':']);
+  const spaceAfter = new Set([',']);
 
   const result: string[] = [];
 

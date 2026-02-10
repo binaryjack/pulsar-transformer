@@ -9,9 +9,9 @@
  * import './styles.css';
  */
 
-import type { IIdentifierNode, IImportDeclarationNode, ILiteralNode } from '../ast/index.js';
-import { ASTNodeType } from '../ast/index.js';
-import type { IParserInternal } from '../parser.types.js';
+import type { IIdentifierNode, IImportDeclarationNode, ILiteralNode } from '../ast/index.js'
+import { ASTNodeType } from '../ast/index.js'
+import type { IParserInternal } from '../parser.types.js'
 
 /**
  * Parse import declaration
@@ -24,8 +24,22 @@ import type { IParserInternal } from '../parser.types.js';
 export function parseImportDeclaration(this: IParserInternal): IImportDeclarationNode {
   const startToken = this._getCurrentToken()!;
 
+  if (this._logger) {
+    this._logger.log('parser', 'debug', 'parseImportDeclaration: START', {
+      currentToken: startToken.type,
+      position: this._current,
+    });
+  }
+
   // Consume 'import' keyword
   this._advance();
+
+  if (this._logger) {
+    this._logger.log('parser', 'debug', 'parseImportDeclaration: After advance', {
+      currentToken: this._getCurrentToken()?.type,
+      position: this._current,
+    });
+  }
 
   const specifiers: IIdentifierNode[] = [];
   let source: ILiteralNode | null = null;
@@ -200,8 +214,38 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     this._advance(); // consume {
     importKind = 'named';
 
+
+
     // Parse specifiers (handle empty case and trailing comma)
+    let loopCount = 0;
     while (!this._check('RBRACE') && !this._isAtEnd()) {
+      loopCount++;
+      if (this._logger && loopCount % 10 === 0) {
+        this._logger.log('parser', 'warn', `parseImportDeclaration: Loop iteration ${loopCount}`, {
+          currentToken: this._getCurrentToken()?.type,
+          position: this._current,
+        });
+      }
+
+      if (loopCount > 100) {
+        throw new Error(
+          `parseImportDeclaration: Exceeded 100 iterations in named import loop at position ${this._current}`
+        );
+      }
+
+      if (this._logger && loopCount <= 5) {
+        this._logger.log(
+          'parser',
+          'debug',
+          `parseImportDeclaration: Loop ${loopCount}, about to parse specifier`,
+          {
+            currentToken: this._getCurrentToken()?.type,
+            tokenValue: this._getCurrentToken()?.value,
+            position: this._current,
+          }
+        );
+      }
+
       // Check for inline type: import { type Foo, Bar }
       let isSpecifierTypeOnly = false;
       if (this._check('TYPE')) {
@@ -210,6 +254,13 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
           isSpecifierTypeOnly = true;
           this._advance(); // consume 'type'
         }
+      }
+
+      if (this._logger && loopCount <= 5) {
+        this._logger.log('parser', 'debug', `parseImportDeclaration: About to expect IDENTIFIER`, {
+          currentToken: this._getCurrentToken()?.type,
+          position: this._current,
+        });
       }
 
       const specToken = this._expect('IDENTIFIER', 'Expected import specifier');
@@ -241,12 +292,72 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
       });
 
       // If no comma, we're done
+      if (this._logger && loopCount <= 5) {
+        this._logger.log(
+          'parser',
+          'debug',
+          `parseImportDeclaration: After adding specifier, checking for comma`,
+          {
+            currentToken: this._getCurrentToken()?.type,
+            tokenValue: this._getCurrentToken()?.value,
+            position: this._current,
+          }
+        );
+      }
+
       if (!this._match('COMMA')) {
+        if (this._logger && loopCount <= 5) {
+          this._logger.log(
+            'parser',
+            'debug',
+            `parseImportDeclaration: No comma found, breaking loop`,
+            {
+              currentToken: this._getCurrentToken()?.type,
+              position: this._current,
+            }
+          );
+        }
         break;
+      }
+
+      if (this._logger && loopCount <= 5) {
+        this._logger.log(
+          'parser',
+          'debug',
+          `parseImportDeclaration: Comma found, continuing loop`,
+          {
+            currentToken: this._getCurrentToken()?.type,
+            position: this._current,
+          }
+        );
       }
     }
 
+    if (this._logger) {
+      this._logger.log('parser', 'debug', `parseImportDeclaration: After loop, expecting RBRACE`, {
+        currentToken: this._getCurrentToken()?.type,
+        tokenValue: this._getCurrentToken()?.value,
+        position: this._current,
+      });
+    }
+
     this._expect('RBRACE', 'Expected } after import specifiers');
+
+    if (this._logger) {
+      this._logger.log('parser', 'debug', `parseImportDeclaration: After RBRACE consume`, {
+        currentToken: this._getCurrentToken()?.type,
+        tokenValue: this._getCurrentToken()?.value,
+        position: this._current,
+      });
+    }
+
+    if (this._logger) {
+      this._logger.log('parser', 'debug', `parseImportDeclaration: EXITING named imports block`, {
+        currentToken: this._getCurrentToken()?.type,
+        tokenValue: this._getCurrentToken()?.value,
+        position: this._current,
+      });
+    }
   } else if (this._check('IDENTIFIER')) {
     // This branch is now unreachable as IDENTIFIER is handled first above
     // Keeping for safety but default imports are handled earlier
@@ -271,65 +382,137 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
   }
 
   // Expect 'from' keyword
-  const fromToken = this._getCurrentToken();
-  if (fromToken?.value !== 'from') {
-    this._addError({
-      code: 'MISSING_FROM',
-      message: "Expected 'from' after import specifiers",
-      location: (fromToken
-        ? {
-            start: {
-              line: fromToken.line,
-              column: fromToken.column,
-            },
-            end: {
-              line: fromToken.line,
-              column: fromToken!.column + fromToken!.value.length,
-            },
-          }
-        : {
-            start: { line: startToken!.line, column: startToken!.column },
-            end: { line: startToken!.line, column: startToken!.column },
-          }) as any,
-    });
+  if (this._logger) {
+    this._logger.log(
+      'parser',
+      'debug',
+      `parseImportDeclaration: About to check for 'from' keyword`,
+      {
+        currentToken: this._getCurrentToken()?.type,
+        tokenValue: this._getCurrentToken()?.value,
+        position: this._current,
+      }
+    );
+  }
 
-    // Try to recover - skip to semicolon
-    while (!this._check('SEMICOLON') && !this._isAtEnd()) {
-      this._advance();
+  if (this._logger) {
+    this._logger.log('parser', 'debug', `parseImportDeclaration: RIGHT BEFORE try block`);
+  }
+
+  try {
+    const fromToken = this._getCurrentToken();
+
+    if (this._logger) {
+      this._logger.log('parser', 'debug', `parseImportDeclaration: Got fromToken, checking value`, {
+        tokenType: fromToken?.type,
+        tokenValue: fromToken?.value,
+        condition: fromToken?.value !== 'from',
+      });
     }
-    this._match('SEMICOLON');
 
-    return {
-      type: ASTNodeType.IMPORT_DECLARATION,
-      specifiers,
-      source: {
-        type: ASTNodeType.LITERAL,
-        value: '',
-        raw: '""',
+    if (fromToken?.value !== 'from') {
+      this._addError({
+        code: 'MISSING_FROM',
+        message: "Expected 'from' after import specifiers",
+        location: (fromToken
+          ? {
+              start: {
+                line: fromToken.line,
+                column: fromToken.column,
+              },
+              end: {
+                line: fromToken.line,
+                column: fromToken!.column + fromToken!.value.length,
+              },
+            }
+          : {
+              start: { line: startToken!.line, column: startToken!.column },
+              end: { line: startToken!.line, column: startToken!.column },
+            }) as any,
+      });
+
+      // Try to recover - skip to semicolon
+      while (!this._check('SEMICOLON') && !this._isAtEnd()) {
+        this._advance();
+      }
+      this._match('SEMICOLON');
+
+      return {
+        type: ASTNodeType.IMPORT_DECLARATION,
+        specifiers,
+        source: {
+          type: ASTNodeType.LITERAL,
+          value: '',
+          raw: '""',
+          location: {
+            start: {
+              line: startToken!.line,
+              column: startToken!.column,
+              offset: startToken!.start,
+            },
+            end: { line: startToken!.line, column: startToken!.column, offset: startToken!.end },
+          },
+        },
         location: {
-          start: { line: startToken!.line, column: startToken!.column, offset: startToken!.start },
-          end: { line: startToken!.line, column: startToken!.column, offset: startToken!.end },
+          start: {
+            line: startToken!.line,
+            column: startToken!.column,
+            offset: startToken!.start,
+          },
+          end: {
+            line: startToken!.line,
+            column: startToken!.column,
+            offset: startToken!.end,
+          },
         },
-      },
-      location: {
-        start: {
-          line: startToken!.line,
-          column: startToken!.column,
-          offset: startToken!.start,
-        },
-        end: {
-          line: startToken!.line,
-          column: startToken!.column,
-          offset: startToken!.end,
-        },
-      },
-    };
+      };
+    }
+  } catch (error) {
+    if (this._logger) {
+      this._logger.error('parser', 'Exception in FROM check', error as Error);
+    }
+    throw error;
+  }
+
+  if (this._logger) {
+    this._logger.log(
+      'parser',
+      'debug',
+      `parseImportDeclaration: FROM check passed, about to consume`,
+      {
+        currentToken: this._getCurrentToken()?.type,
+        position: this._current,
+      }
+    );
   }
 
   this._advance(); // consume 'from'
 
+  if (this._logger) {
+    this._logger.log('parser', 'debug', `parseImportDeclaration: After consuming FROM`, {
+      currentToken: this._getCurrentToken()?.type,
+      position: this._current,
+    });
+  }
+
+  if (this._logger) {
+    this._logger.log('parser', 'debug', `parseImportDeclaration: About to call _expect('STRING')`, {
+      currentToken: this._getCurrentToken()?.type,
+      tokenValue: this._getCurrentToken()?.value,
+      position: this._current,
+    });
+  }
+
   // Parse module source (string literal)
   const sourceToken = this._expect('STRING', 'Expected module path after from');
+
+  if (this._logger) {
+    this._logger.log('parser', 'debug', `parseImportDeclaration: After _expect('STRING')`, {
+      sourceTokenValue: sourceToken?.value,
+      position: this._current,
+    });
+  }
+
   source = {
     type: ASTNodeType.LITERAL,
     value: sourceToken!.value,

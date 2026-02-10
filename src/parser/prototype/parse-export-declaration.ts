@@ -219,13 +219,45 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
         }
       }
 
-      const specToken = this._expect('IDENTIFIER', 'Expected export specifier');
+      const currentToken = this._getCurrentToken();
+      if (!currentToken || currentToken.type !== 'IDENTIFIER') {
+        this._addError({
+          code: 'EXPECTED_IDENTIFIER',
+          message: 'Expected export specifier',
+          location: currentToken ? {
+            start: { line: currentToken.line, column: currentToken.column },
+            end: { line: currentToken.line, column: currentToken.column + currentToken.value.length }
+          } as any : {
+            start: { line: startToken!.line, column: startToken!.column },
+            end: { line: startToken!.line, column: startToken!.column }
+          } as any
+        });
+        break;
+      }
+
+      const specToken = currentToken;
+      this._advance();
 
       // Check for alias: export { foo as bar }
       let alias: string | undefined;
       if (this._match('AS')) {
-        const aliasToken = this._expect('IDENTIFIER', 'Expected identifier after as');
-        alias = aliasToken!.value;
+        const aliasTokenCheck = this._getCurrentToken();
+        if (!aliasTokenCheck || aliasTokenCheck.type !== 'IDENTIFIER') {
+          this._addError({
+            code: 'EXPECTED_IDENTIFIER',
+            message: 'Expected identifier after as',
+            location: aliasTokenCheck ? {
+              start: { line: aliasTokenCheck.line, column: aliasTokenCheck.column },
+              end: { line: aliasTokenCheck.line, column: aliasTokenCheck.column + aliasTokenCheck.value.length }
+            } as any : {
+              start: { line: specToken!.line, column: specToken!.column },
+              end: { line: specToken!.line, column: specToken!.column }
+            } as any
+          });
+        } else {
+          alias = aliasTokenCheck.value;
+          this._advance();
+        }
       }
 
       specifiers.push({
@@ -252,7 +284,18 @@ export function parseExportDeclaration(this: IParserInternal): IExportDeclaratio
       }
     }
 
-    this._expect('RBRACE', 'Expected } after export specifiers');
+    if (!this._check('RBRACE')) {
+      this._addError({
+        code: 'EXPECTED_CLOSING_BRACE',
+        message: 'Expected } after export specifiers',
+        location: {
+          start: { line: this._getCurrentToken()!.line, column: this._getCurrentToken()!.column },
+          end: { line: this._getCurrentToken()!.line, column: this._getCurrentToken()!.column }
+        } as any
+      });
+    } else {
+      this._advance(); // consume }
+    }
 
     // Check for 'from' (re-export)
     const fromToken = this._getCurrentToken();

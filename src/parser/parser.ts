@@ -20,4 +20,11 @@ export const Parser = function (this: IParserInternal, config: IParserConfig = {
   this._errors = [];
   this._source = '';
   this._lexer = createLexer();
+
+  // Initialize debug tracking
+  this._iterationCount = 0;
+  this._maxIterations = 50000;
+  this._recursionDepth = 0;
+  this._currentNodeType = 'none';
+  this._logger = config.logger;
 } as unknown as { new (config?: IParserConfig): IParserInternal };

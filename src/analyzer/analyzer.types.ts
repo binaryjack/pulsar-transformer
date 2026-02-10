@@ -2,6 +2,7 @@
  * Analyzer Type Definitions
  */
 
+import type { IDebugLogger } from '../debug/debug-logger.types.js';
 import type { IASTNode } from '../parser/ast/index.js';
 import type {
   IBinaryExpressionIR,
@@ -112,6 +113,16 @@ export interface IAnalyzerConfig {
    * Track dependencies
    */
   trackDependencies?: boolean;
+
+  /**
+   * Debug logger instance
+   */
+  logger?: IDebugLogger;
+
+  /**
+   * Enable debug mode
+   */
+  debug?: boolean;
 }
 
 /**
@@ -147,6 +158,31 @@ export interface IAnalyzerContext {
    * Registry keys generated
    */
   registryKeys: Map<string, string>;
+
+  /**
+   * Debug: Current recursion depth
+   */
+  _recursionDepth?: number;
+
+  /**
+   * Debug: Iteration counter
+   */
+  _iterationCount?: number;
+
+  /**
+   * Debug: Max iterations before error
+   */
+  _maxIterations?: number;
+
+  /**
+   * Debug: Current node being processed
+   */
+  _currentNode?: string;
+
+  /**
+   * Debug logger
+   */
+  logger?: IDebugLogger;
 }
 
 /**

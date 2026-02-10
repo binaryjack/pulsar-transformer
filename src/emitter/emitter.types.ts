@@ -103,6 +103,26 @@ export interface IEmitContext {
    * Max iterations before throwing error (safety check)
    */
   _maxIterations?: number;
+
+  /**
+   * Debug: Current recursion depth
+   */
+  _recursionDepth?: number;
+
+  /**
+   * Debug: Current component being emitted
+   */
+  _currentComponent?: string;
+
+  /**
+   * Debug: Current node type being emitted
+   */
+  _currentNodeType?: string;
+
+  /**
+   * Debug logger
+   */
+  logger?: any;
 }
 
 /**
@@ -174,6 +194,7 @@ export interface IEmitterInternal extends IEmitter {
 
   // Expression generation (returns string without side effects)
   _emitExpression(ir: IIRNode): string;
+  _emitExpressionInternal(ir: IIRNode): string;
 
   // Statement generation (emits without resetting state)
   _emitStatement(ir: IIRNode): void;

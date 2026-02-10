@@ -14,6 +14,18 @@ import type { IEmitterInternal } from '../emitter.types.js';
 export function _emitComponent(this: IEmitterInternal, ir: IComponentIR): void {
   const { name, params, body, registryKey, usesSignals } = ir;
 
+  // Store current component for debugging
+  this.context._currentComponent = name;
+
+  if (this.context.logger) {
+    this.context.logger.log('emitter', 'info', `Emitting component: ${name}`, {
+      componentName: name,
+      paramCount: params.length,
+      bodyStatementCount: body.length,
+      usesSignals,
+    });
+  }
+
   // Add required imports
   this.context.imports.addImport(this.context.config.runtimePaths.registry!, '$REGISTRY');
   if (usesSignals) {
@@ -50,7 +62,20 @@ export function _emitComponent(this: IEmitterInternal, ir: IComponentIR): void {
   this.context.indentLevel++;
 
   // Emit body statements
-  for (const stmt of body) {
+  for (let i = 0; i < body.length; i++) {
+    const stmt = body[i];
+    if (this.context.logger) {
+      this.context.logger.log(
+        'emitter',
+        'trace',
+        `Emitting statement ${i + 1}/${body.length} in component ${name}`,
+        {
+          statementType: stmt.type,
+          index: i,
+          component: name,
+        }
+      );
+    }
     this._emitStatement(stmt);
   }
 

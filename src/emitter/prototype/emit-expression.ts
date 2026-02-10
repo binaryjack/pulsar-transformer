@@ -15,29 +15,93 @@ import type { IEmitterInternal } from '../emitter.types.js';
  * Does NOT modify context (no _addLine, no indent changes)
  */
 export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
-  // Increment iteration counter with safety check
-  if (
-    this.context._debugIterationCount !== undefined &&
-    this.context._maxIterations !== undefined
-  ) {
+  // Increment iteration counter and depth
+  if (this.context._debugIterationCount !== undefined) {
     this.context._debugIterationCount++;
-
-    // Log every 1000 iterations
-    if (this.context._debugIterationCount % 1000 === 0) {
-      console.log(
-        `[EMITTER DEBUG] Iteration ${this.context._debugIterationCount} - Node type: ${ir.type}`
-      );
-    }
-
-    // Safety check - prevent infinite loops
-    if (this.context._debugIterationCount > this.context._maxIterations) {
-      throw new Error(
-        `[EMITTER] Exceeded maximum iterations (${this.context._maxIterations}). ` +
-          `Last node type: ${ir.type}. Possible infinite loop detected.`
-      );
-    }
+  }
+  if (this.context._recursionDepth !== undefined) {
+    this.context._recursionDepth++;
   }
 
+  // Store current node type
+  this.context._currentNodeType = ir.type;
+
+  // Use try-finally to ENSURE depth is always decremented
+  try {
+    // Safety check with enhanced context
+    if (
+      this.context._debugIterationCount !== undefined &&
+      this.context._maxIterations !== undefined &&
+      this.context._debugIterationCount > this.context._maxIterations
+    ) {
+      const error = new Error(
+        `[EMITTER] Exceeded maximum iterations (${this.context._maxIterations}). ` +
+          `Node type: ${ir.type}. ` +
+          `Depth: ${this.context._recursionDepth}. ` +
+          `Component: ${this.context._currentComponent}. ` +
+          `Possible infinite loop detected.`
+      );
+      if (this.context.logger) {
+        this.context.logger.error('emitter', 'Iteration limit exceeded in expression', error, {
+          iterationCount: this.context._debugIterationCount,
+          depth: this.context._recursionDepth,
+          nodeType: ir.type,
+          component: this.context._currentComponent,
+        });
+      }
+      throw error;
+    }
+
+    // Log progress at intervals
+    if (
+      this.context.logger &&
+      this.context._debugIterationCount !== undefined &&
+      this.context._debugIterationCount % 1000 === 0
+    ) {
+      this.context.logger.log(
+        'emitter',
+        'debug',
+        `Expression emission progress: ${this.context._debugIterationCount} iterations`,
+        {
+          iterationCount: this.context._debugIterationCount,
+          depth: this.context._recursionDepth,
+          nodeType: ir.type,
+          component: this.context._currentComponent,
+        }
+      );
+    }
+
+    // Log deep recursion
+    if (
+      this.context.logger &&
+      this.context._recursionDepth !== undefined &&
+      this.context._recursionDepth > 30
+    ) {
+      this.context.logger.log(
+        'emitter',
+        'warn',
+        `Deep expression recursion: depth ${this.context._recursionDepth}`,
+        {
+          depth: this.context._recursionDepth,
+          nodeType: ir.type,
+          component: this.context._currentComponent,
+        }
+      );
+    }
+
+    return this._emitExpressionInternal(ir);
+  } finally {
+    // ALWAYS decrement recursion depth, even if an error is thrown
+    if (this.context._recursionDepth !== undefined) {
+      this.context._recursionDepth--;
+    }
+  }
+}
+
+/**
+ * Internal expression emitter - wrapped by _emitExpression for depth tracking
+ */
+function _emitExpressionInternal(this: IEmitterInternal, ir: IIRNode): string {
   switch (ir.type) {
     case IRNodeType.LITERAL_IR: {
       const literalIR = ir as any;
@@ -342,6 +406,18 @@ export function _emitExpression(this: IEmitterInternal, ir: IIRNode): string {
     }
 
     default:
-      throw new Error(`Unsupported expression IR type: ${ir.type}`);
+      const error = new Error(`Unsupported expression IR type: ${ir.type}`);
+      if (this.context.logger) {
+        this.context.logger.error('emitter', 'Unsupported expression type', error, {
+          nodeType: ir.type,
+          depth: this.context._recursionDepth,
+          component: this.context._currentComponent,
+        });
+      }
+      // Ensure depth is decremented before throwing
+      if (this.context._recursionDepth !== undefined) {
+        this.context._recursionDepth--;
+      }
+      throw error;
   }
 }

@@ -9,6 +9,7 @@
  */
 
 import type {
+  IBlockStatementNode,
   IFunctionDeclarationNode,
   IIdentifierNode,
   ITypeAnnotationNode,
@@ -148,7 +149,12 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
         if (typeTokens.length > 0) {
           typeAnnotation = {
             type: ASTNodeType.TYPE_ANNOTATION,
-            typeString: typeTokens.join(' ').trim(),
+            typeString: typeTokens
+              .join(' ')
+              .trim()
+              .replace(/\s*:\s*/g, ': ')
+              .replace(/\s*=>\s*/g, ' => ')
+              .replace(/\s*;\s*/g, '; '),
             location: {
               start: {
                 line: paramToken!.line,
@@ -218,7 +224,12 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
     if (typeTokens.length > 0) {
       returnType = {
         type: ASTNodeType.TYPE_ANNOTATION,
-        typeString: typeTokens.join(' ').trim(),
+        typeString: typeTokens
+          .join(' ')
+          .trim()
+          .replace(/\s*:\s*/g, ': ')
+          .replace(/\s*=>\s*/g, ' => ')
+          .replace(/\s*;\s*/g, '; '),
         location: {
           start: { line: nameToken!.line, column: nameToken!.column, offset: nameToken!.start },
           end: { line: nameToken!.line, column: nameToken!.column, offset: nameToken!.end },
@@ -228,6 +239,7 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
   }
 
   // Function body: { ... }
+  const bodyStartToken = this._getCurrentToken()!;
   this._expect('LBRACE', 'Expected { before function body');
 
   const bodyStatements: any[] = [];
@@ -238,23 +250,31 @@ export function parseFunctionDeclaration(this: IParserInternal): IFunctionDeclar
     }
   }
 
+  const bodyEndToken = this._getCurrentToken()!;
   this._expect('RBRACE', 'Expected } after function body');
 
   const endToken = this._getCurrentToken() || startToken;
+
+  // CRITICAL: Ensure body is NEVER undefined
+  const functionBody: IBlockStatementNode = {
+    type: ASTNodeType.BLOCK_STATEMENT,
+    body: bodyStatements || [],
+    location: {
+      start: {
+        line: bodyStartToken!.line,
+        column: bodyStartToken!.column,
+        offset: bodyStartToken!.start,
+      },
+      end: { line: bodyEndToken!.line, column: bodyEndToken!.column, offset: bodyEndToken!.end },
+    },
+  };
 
   return {
     type: ASTNodeType.FUNCTION_DECLARATION,
     name,
     params,
     returnType,
-    body: {
-      type: ASTNodeType.BLOCK_STATEMENT,
-      body: bodyStatements,
-      location: {
-        start: { line: startToken!.line, column: startToken!.column, offset: startToken!.start },
-        end: { line: endToken!.line, column: endToken!.column, offset: endToken!.end },
-      },
-    },
+    body: functionBody,
     async: isAsync ? true : undefined,
     generator: isGenerator ? true : undefined,
     location: {

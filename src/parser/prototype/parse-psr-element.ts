@@ -75,7 +75,46 @@ export function parsePSRElement(
   const children: any[] = [];
 
   if (!selfClosing) {
+    let childIterations = 0;
+    const MAX_CHILD_ITERATIONS = 10000;
+
     while (!this._isClosingTag(tagName) && !this._isAtEnd()) {
+      childIterations++;
+
+      // Safety check for infinite loop in child parsing
+      if (childIterations > MAX_CHILD_ITERATIONS) {
+        const error = new Error(
+          `[PARSER] Exceeded maximum child iterations (${MAX_CHILD_ITERATIONS}) for <${tagName}>. ` +
+            `Position: ${this._current}/${this._tokens.length}. ` +
+            `Current token: ${this._getCurrentToken()?.type}. ` +
+            `Possible infinite loop in child parsing.`
+        );
+        if (this._logger) {
+          this._logger.error('parser', 'Child iteration limit exceeded', error, {
+            tagName,
+            childIterations,
+            position: this._current,
+            currentToken: this._getCurrentToken(),
+          });
+        }
+        throw error;
+      }
+
+      // Log progress for debugging
+      if (childIterations % 100 === 0 && this._logger) {
+        this._logger.log(
+          'parser',
+          'debug',
+          `Parsing children of <${tagName}>: ${childIterations} iterations`,
+          {
+            tagName,
+            childIterations,
+            childrenCount: children.length,
+            position: `${this._current}/${this._tokens.length}`,
+          }
+        );
+      }
+
       const beforePosition = this._current;
       const child = this._parsePSRChild(tagName);
 
@@ -83,8 +122,20 @@ export function parsePSRElement(
       // If _parsePSRChild returns null and didn't advance, we're stuck
       if (!child && this._current === beforePosition) {
         // Skip this token to avoid infinite loop
+        if (this._logger) {
+          this._logger.log(
+            'parser',
+            'error',
+            `Stuck parsing child in <${tagName}>, forcing advance`,
+            {
+              tagName,
+              position: this._current,
+              token: this._getCurrentToken(),
+            }
+          );
+        }
         console.error(
-          `[PARSER ERROR] Stuck parsing child in <${tagName}>, skipping token:`,
+          `[PARSER ERROR] Stuck parsing child in <${tagName}> at position ${this._current}, skipping token:`,
           this._getCurrentToken()
         );
         this._advance();
@@ -93,6 +144,14 @@ export function parsePSRElement(
       if (child) {
         children.push(child);
       }
+    }
+
+    if (this._logger && childIterations > 50) {
+      this._logger.log('parser', 'debug', `Completed parsing <${tagName}> children`, {
+        tagName,
+        childrenCount: children.length,
+        iterations: childIterations,
+      });
     }
 
     // Parse closing tag: </TagName>

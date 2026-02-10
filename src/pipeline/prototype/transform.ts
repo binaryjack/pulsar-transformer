@@ -47,6 +47,7 @@ export async function transform(
     collectLogs: finalConfig.debug ?? false,
     timestamps: true,
     performance: true,
+    minLevel: finalConfig.debug ? 'trace' : 'info',
     ...finalConfig.debugLogger,
   });
 
@@ -86,7 +87,10 @@ export async function transform(
     // Phase 2: Parser - Build AST
     logger.log('parser', 'info', 'Building AST');
     const parserStart = performance.now();
-    const parser = createParser();
+    const parser = createParser({
+      logger,
+      debug: finalConfig.debug,
+    });
     const ast = parser.parse(source);
     metrics.parserTime = performance.now() - parserStart;
 
@@ -157,7 +161,11 @@ export async function transform(
     // Phase 3: Analyzer - Build IR
     logger.log('analyzer', 'info', 'Building IR');
     const analyzerStart = performance.now();
-    const analyzer = createAnalyzer();
+    const analyzer = createAnalyzer({
+      logger,
+      debug: finalConfig.debug,
+      ...finalConfig.analyzer,
+    });
     const ir = analyzer.analyze(ast);
     metrics.analyzerTime = performance.now() - analyzerStart;
 
@@ -202,6 +210,9 @@ export async function transform(
     logger.log('emitter', 'info', 'Generating TypeScript');
     const emitterStart = performance.now();
     const emitter = createEmitter(finalConfig.emitter);
+
+    // Inject logger into emitter context
+    (emitter as any).context.logger = logger;
 
     if (!optimizedIR) {
       throw new Error('Analyzer returned undefined IR');

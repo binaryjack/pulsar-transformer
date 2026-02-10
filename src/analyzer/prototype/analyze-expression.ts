@@ -24,6 +24,20 @@ import { IRNodeType } from '../ir/index.js';
  * Analyze expression node
  */
 export function analyzeExpression(this: IAnalyzerInternal, node: IASTNode): IIRNode {
+  // Log expression analysis
+  if (this._context.logger && this._context._recursionDepth && this._context._recursionDepth > 10) {
+    this._context.logger.log(
+      'analyzer',
+      'trace',
+      `Analyzing expression at depth ${this._context._recursionDepth}`,
+      {
+        nodeType: node.type,
+        depth: this._context._recursionDepth,
+        component: this._context.currentComponent,
+      }
+    );
+  }
+
   switch (node.type) {
     case ASTNodeType.LITERAL:
       return this._analyzeLiteral(node as any);

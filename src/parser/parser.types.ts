@@ -5,6 +5,7 @@
  * Prototype-based pattern, following Pulsar standards.
  */
 
+import type { IDebugLogger } from '../debug/debug-logger.types.js';
 import type { IASTNode } from './ast/index.js';
 import type { ILexer, IToken } from './lexer/index.js';
 
@@ -42,6 +43,13 @@ export interface IParserInternal extends IParser {
   _errors: IParserError[];
   _source: string;
   _lexer: ILexer; // Lexer instance for type context control
+
+  // Debug tracking
+  _iterationCount?: number;
+  _maxIterations?: number;
+  _recursionDepth?: number;
+  _currentNodeType?: string;
+  _logger?: IDebugLogger;
 
   // Private parsing methods
   _parseStatement(): any;
@@ -113,6 +121,16 @@ export interface IParserConfig {
    * Maximum number of errors before stopping (default: 10)
    */
   maxErrors?: number;
+
+  /**
+   * Debug logger instance
+   */
+  logger?: IDebugLogger;
+
+  /**
+   * Enable debug mode
+   */
+  debug?: boolean;
 }
 
 /**

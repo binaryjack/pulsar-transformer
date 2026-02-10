@@ -17,6 +17,15 @@ export function emit(this: IEmitterInternal, ir: IIRNode): string {
   this.context.usedNames.clear();
   this.context.indentLevel = 0;
   this.context._debugIterationCount = 0;
+  this.context._recursionDepth = 0;
+  this.context._currentNodeType = ir.type;
+
+  if (this.context.logger) {
+    this.context.logger.log('emitter', 'info', 'Starting code emission', {
+      irType: ir.type,
+      maxIterations: this.context._maxIterations,
+    });
+  }
 
   // Emit based on IR type
   switch (ir.type) {
@@ -86,7 +95,21 @@ export function emit(this: IEmitterInternal, ir: IIRNode): string {
       }
       break;
     default:
-      throw new Error(`Unsupported IR node type: ${(ir as any).type}`);
+      const error = new Error(`Unsupported IR node type: ${(ir as any).type}`);
+      if (this.context.logger) {
+        this.context.logger.error('emitter', 'Unsupported IR node type', error, {
+          nodeType: (ir as any).type,
+          component: this.context._currentComponent,
+        });
+      }
+      throw error;
+  }
+
+  if (this.context.logger) {
+    this.context.logger.log('emitter', 'info', 'Code emission complete', {
+      linesGenerated: this.context.code.length,
+      totalIterations: this.context._debugIterationCount,
+    });
   }
 
   // Format and return code

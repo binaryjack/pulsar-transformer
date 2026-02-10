@@ -19,7 +19,21 @@ import { parseExportDeclaration } from './parse-export-declaration.js';
  * Parse expression
  */
 export function parseExpression(this: IParserInternal): any {
-  return _parseConditionalExpression.call(this);
+  if (this._logger) {
+    this._logger.log('parser', 'debug', 'parseExpression: START', {
+      currentToken: this._getCurrentToken()?.type,
+      tokenValue: this._getCurrentToken()?.value,
+      position: this._current,
+    });
+  }
+  const result = _parseConditionalExpression.call(this);
+  if (this._logger) {
+    this._logger.log('parser', 'debug', 'parseExpression: DONE', {
+      resultType: result?.type,
+      position: this._current,
+    });
+  }
+  return result;
 }
 
 /**
@@ -280,6 +294,14 @@ function _parseAsExpression(this: IParserInternal): any {
 function _parsePrimaryExpression(this: IParserInternal): any {
   const token = this._getCurrentToken();
 
+  if (this._logger) {
+    this._logger.log('parser', 'debug', '_parsePrimaryExpression: START', {
+      currentToken: token?.type,
+      tokenValue: token?.value,
+      position: this._current,
+    });
+  }
+
   if (!token) {
     return null;
   }
@@ -360,7 +382,20 @@ function _parsePrimaryExpression(this: IParserInternal): any {
 
   // PSR element: <tag>
   if (token.type === 'LT') {
-    return this._parsePSRElement();
+    if (this._logger) {
+      this._logger.log('parser', 'debug', '_parsePrimaryExpression: Detected PSR element (LT token)', {
+        position: this._current,
+        tokenValue: token?.value,
+      });
+    }
+    const result = this._parsePSRElement();
+    if (this._logger) {
+      this._logger.log('parser', 'debug', '_parsePrimaryExpression: PSR element parsed', {
+        resultType: result?.type,
+        position: this._current,
+      });
+    }
+    return result;
   }
 
   // Signal binding: $(signal)

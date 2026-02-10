@@ -14,6 +14,43 @@ import type { IEmitterInternal } from '../emitter.types.js';
  * (no state reset, preserves indentLevel)
  */
 export function _emitStatement(this: IEmitterInternal, ir: IIRNode): void {
+  // Track recursion depth
+  if (this.context._recursionDepth !== undefined) {
+    this.context._recursionDepth++;
+
+    // Log deep recursion
+    if (this.context.logger && this.context._recursionDepth > 20) {
+      this.context.logger.log(
+        'emitter',
+        'warn',
+        `Deep recursion detected: depth ${this.context._recursionDepth}`,
+        {
+          depth: this.context._recursionDepth,
+          nodeType: ir.type,
+          component: this.context._currentComponent,
+        }
+      );
+    }
+  }
+
+  // Safety check
+  if (this.context._recursionDepth !== undefined && this.context._recursionDepth > 100) {
+    const error = new Error(
+      `[EMITTER] Maximum recursion depth exceeded (100). ` +
+        `Node type: ${ir.type}. ` +
+        `Component: ${this.context._currentComponent}. ` +
+        `Possible infinite recursion detected.`
+    );
+    if (this.context.logger) {
+      this.context.logger.error('emitter', 'Recursion depth exceeded', error, {
+        depth: this.context._recursionDepth,
+        nodeType: ir.type,
+        component: this.context._currentComponent,
+      });
+    }
+    throw error;
+  }
+
   switch (ir.type) {
     // Top-level statement types
     case IRNodeType.COMPONENT_IR:
@@ -102,6 +139,19 @@ export function _emitStatement(this: IEmitterInternal, ir: IIRNode): void {
       break;
 
     default:
-      throw new Error(`Unsupported statement IR type: ${ir.type}`);
+      const error = new Error(`Unsupported statement IR type: ${ir.type}`);
+      if (this.context.logger) {
+        this.context.logger.error('emitter', 'Unsupported statement type', error, {
+          nodeType: ir.type,
+          depth: this.context._recursionDepth,
+          component: this.context._currentComponent,
+        });
+      }
+      throw error;
+  }
+
+  // Decrement recursion depth
+  if (this.context._recursionDepth !== undefined) {
+    this.context._recursionDepth--;
   }
 }

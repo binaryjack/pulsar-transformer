@@ -42,7 +42,11 @@ export const Emitter = function (this: IEmitterInternal, config?: IEmitterConfig
     usedNames: new Set(),
     elementCounter: 0,
     _debugIterationCount: 0,
-    _maxIterations: 5000, // Reduced from 100000 to trigger error faster
+    _maxIterations: 10000,
+    _recursionDepth: 0,
+    _currentComponent: 'none',
+    _currentNodeType: 'none',
+    logger: config?.debug ? null : undefined, // Will be set by pipeline
   };
 
   Object.defineProperty(this, 'context', {

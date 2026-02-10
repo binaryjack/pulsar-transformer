@@ -21,6 +21,16 @@ export function analyze(this: IAnalyzerInternal, ast: IASTNode): IIRNode {
   this._context.imports.clear();
   this._context.exports.clear();
   this._errors = [];
+  this._context._recursionDepth = 0;
+  this._context._iterationCount = 0;
+  this._context._currentNode = 'root';
+
+  if (this._context.logger) {
+    this._context.logger.log('analyzer', 'info', 'Starting analysis', {
+      astType: ast.type,
+      maxIterations: this._context._maxIterations,
+    });
+  }
 
   // Analyze root program node
   if (ast.type !== ASTNodeType.PROGRAM) {
@@ -35,12 +45,38 @@ export function analyze(this: IAnalyzerInternal, ast: IASTNode): IIRNode {
   const program = ast as IProgramNode;
   const irNodes: IIRNode[] = [];
 
+  if (this._context.logger) {
+    this._context.logger.log('analyzer', 'debug', `Analyzing ${program.body.length} statements`, {
+      statementCount: program.body.length,
+    });
+  }
+
   // Analyze each statement and build IR nodes
-  for (const statement of program.body) {
+  for (let i = 0; i < program.body.length; i++) {
+    const statement = program.body[i];
+    if (this._context.logger) {
+      this._context.logger.log(
+        'analyzer',
+        'trace',
+        `Analyzing statement ${i + 1}/${program.body.length}`,
+        {
+          statementType: statement?.type,
+          index: i,
+        }
+      );
+    }
+
     const irNode = this._analyzeNode(statement);
     if (irNode) {
       irNodes.push(irNode);
     }
+  }
+
+  if (this._context.logger) {
+    this._context.logger.log('analyzer', 'info', 'Analysis complete', {
+      irNodeCount: irNodes.length,
+      totalIterations: this._context._iterationCount,
+    });
   }
 
   // Return single node, multiple nodes as ProgramIR, or empty ProgramIR
@@ -69,6 +105,60 @@ function _analyzeNode(this: IAnalyzerInternal, node: IASTNode): IIRNode | null {
   if (!node || !node.type) {
     return null;
   }
+
+  // Increment iteration counter and depth
+  if (this._context._iterationCount !== undefined) {
+    this._context._iterationCount++;
+  }
+  if (this._context._recursionDepth !== undefined) {
+    this._context._recursionDepth++;
+  }
+
+  // Safety check for infinite loops
+  if (
+    this._context._iterationCount !== undefined &&
+    this._context._maxIterations !== undefined &&
+    this._context._iterationCount > this._context._maxIterations
+  ) {
+    const error = new Error(
+      `[ANALYZER] Exceeded maximum iterations (${this._context._maxIterations}). ` +
+        `Last node: ${this._context._currentNode} (${node.type}). ` +
+        `Depth: ${this._context._recursionDepth}. ` +
+        `Component: ${this._context.currentComponent || 'none'}. ` +
+        `Possible infinite loop detected.`
+    );
+    if (this._context.logger) {
+      this._context.logger.error('analyzer', 'Iteration limit exceeded', error as Error, {
+        iterationCount: this._context._iterationCount,
+        depth: this._context._recursionDepth,
+        nodeType: node.type,
+        currentNode: this._context._currentNode,
+        component: this._context.currentComponent,
+      });
+    }
+    throw error;
+  }
+
+  // Log every 100 iterations
+  if (
+    this._context.logger &&
+    this._context._iterationCount !== undefined &&
+    this._context._iterationCount % 100 === 0
+  ) {
+    this._context.logger.log(
+      'analyzer',
+      'debug',
+      `Progress: ${this._context._iterationCount} iterations`,
+      {
+        depth: this._context._recursionDepth,
+        nodeType: node.type,
+        component: this._context.currentComponent,
+      }
+    );
+  }
+
+  // Store current node for debugging
+  this._context._currentNode = `${node.type}${(node as any).name ? `:${(node as any).name}` : ''}`;
 
   switch (node.type) {
     case ASTNodeType.COMPONENT_DECLARATION:
@@ -130,6 +220,12 @@ function _analyzeNode(this: IAnalyzerInternal, node: IASTNode): IIRNode | null {
 
     default:
       // Unknown node type - skip
+      if (this._context.logger) {
+        this._context.logger.log('analyzer', 'warn', `Unknown node type: ${node.type}`, {
+          nodeType: node.type,
+          depth: this._context._recursionDepth,
+        });
+      }
       return null;
   }
 }

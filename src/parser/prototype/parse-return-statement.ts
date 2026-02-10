@@ -20,14 +20,40 @@ import type { IParserInternal } from '../parser.types.js';
 export function parseReturnStatement(this: IParserInternal): IReturnStatementNode {
   const startToken = this._getCurrentToken()!;
 
+  if (this._logger) {
+    this._logger.log('parser', 'debug', 'parseReturnStatement: START', {
+      currentToken: this._getCurrentToken()?.type,
+      position: this._current,
+    });
+  }
+
   // Consume 'return' keyword
   this._expect('RETURN', 'Expected "return" keyword');
+
+  if (this._logger) {
+    this._logger.log('parser', 'debug', 'parseReturnStatement: After RETURN', {
+      currentToken: this._getCurrentToken()?.type,
+      position: this._current,
+    });
+  }
 
   let argument: any = null;
 
   // Check for return value
   if (!this._check('SEMICOLON') && !this._isAtEnd()) {
+    if (this._logger) {
+      this._logger.log('parser', 'debug', 'parseReturnStatement: About to parse expression', {
+        currentToken: this._getCurrentToken()?.type,
+        position: this._current,
+      });
+    }
     argument = this._parseExpression();
+    if (this._logger) {
+      this._logger.log('parser', 'debug', 'parseReturnStatement: Expression parsed', {
+        argumentType: argument?.type,
+        position: this._current,
+      });
+    }
   }
 
   // Consume optional semicolon

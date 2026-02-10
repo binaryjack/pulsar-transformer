@@ -37,8 +37,17 @@ import type { IParserInternal } from '../parser.types.js';
 export function _parseClassDeclaration(this: IParserInternal): IClassDeclarationNode {
   const startToken = this._getCurrentToken()!;
 
+  // Parse decorators BEFORE class keyword
+  const decorators: IDecoratorNode[] = [];
+  while (this._check('AT')) {
+    const decorator = this._parseDecorator();
+    if (decorator) {
+      decorators.push(decorator);
+    }
+  }
+
   // Check for 'abstract' modifier
-  const isAbstract = this._check('ABSTRACT');
+  const isAbstract = this._check('ABSTRACT') ? true : false;
   if (isAbstract) {
     this._advance(); // consume 'abstract'
   }
@@ -160,6 +169,7 @@ export function _parseClassDeclaration(this: IParserInternal): IClassDeclaration
     typeParameters,
     body,
     abstract: isAbstract,
+    decorators: decorators.length > 0 ? decorators : undefined,
     location: {
       start: {
         line: startToken!.line,
@@ -258,7 +268,7 @@ function _parseClassMember(
   }
 
   // Parse modifiers
-  const isStatic = this._check('STATIC');
+  const isStatic = this._check('STATIC') ? true : false;
   if (isStatic) {
     this._advance();
   }
@@ -268,17 +278,17 @@ function _parseClassMember(
     this._advance();
   }
 
-  const isAbstract = this._check('ABSTRACT');
+  const isAbstract = this._check('ABSTRACT') ? true : false;
   if (isAbstract) {
     this._advance();
   }
 
-  const isAsync = this._check('ASYNC');
+  const isAsync = this._check('ASYNC') ? true : false;
   if (isAsync) {
     this._advance();
   }
 
-  const isGenerator = this._check('ASTERISK');
+  const isGenerator = this._check('ASTERISK') ? true : false;
   if (isGenerator) {
     this._advance();
   }
@@ -516,7 +526,7 @@ function _parseMethod(
       const typeEndToken = this._getCurrentToken();
       returnType = {
         type: ASTNodeType.TYPE_ANNOTATION,
-        typeString: typeTokens.join(' '),
+        typeString: typeTokens.join(' ').replace(/\s*:\s*/g, ': ').replace(/\s*;\s*/g, '; ').replace(/\s*=>\s*/g, ' => '),
         location: {
           start: {
             line: typeStartToken!.line,
@@ -664,7 +674,7 @@ function _parseGetter(
       const typeEndToken = this._getCurrentToken();
       returnType = {
         type: ASTNodeType.TYPE_ANNOTATION,
-        typeString: typeTokens.join(' '),
+        typeString: typeTokens.join(' ').replace(/\s*:\s*/g, ': ').replace(/\s*;\s*/g, '; ').replace(/\s*=>\s*/g, ' => '),
         location: {
           start: startLocation,
           end: {
