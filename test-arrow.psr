@@ -1,5 +1,0 @@
-component Test() {
-  const items = () => ['a', 'b'];
-  const filtered = items().filter(item => item.includes('a'));
-  return <div>{filtered}</div>;
-}
