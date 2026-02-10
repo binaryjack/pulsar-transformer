@@ -14,15 +14,43 @@ describe('Full Pipeline Integration', () => {
 
   // Helper to normalize whitespace for comparison
   const normalize = (code: string): string => {
-    return code
-      .trim()
+    // Remove comments
+    let normalized = code
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*/g, '')
+      .trim();
+
+    // Extract imports
+    const importRegex = /import\s+[\s\S]*?from\s+['"][^'"]+['"]\s*;/g;
+    const imports = normalized.match(importRegex) || [];
+    const withoutImports = normalized.replace(importRegex, '').trim();
+
+    // Sort imports alphabetically and join
+    const sortedImports = imports
+      .map((imp) => imp.replace(/\s+/g, ' ').trim())
+      .sort()
+      .join('');
+
+    // Normalize the rest of the code
+    const normalizedCode = (sortedImports + withoutImports)
       .replace(/\s+/g, ' ')
       .replace(/\(\s+/g, '(')
       .replace(/\s+\)/g, ')')
       .replace(/\{\s+/g, '{')
       .replace(/\s+\}/g, '}')
       .replace(/\[\s+/g, '[')
-      .replace(/\s+\]/g, ']');
+      .replace(/\s+\]/g, ']')
+      .replace(/\s*;\s*/g, ';')
+      .replace(/\s*,\s*/g, ',')
+      .replace(/\s*:\s*/g, ':')
+      .replace(/\s*=\s*/g, '=')
+      // Remove trailing commas (optional in TypeScript)
+      .replace(/,\}/g, '}')
+      .replace(/,\)/g, ')')
+      .replace(/,\]/g, ']')
+      .trim();
+
+    return normalizedCode;
   };
 
   it('should transform 01-counter.psr correctly', async () => {

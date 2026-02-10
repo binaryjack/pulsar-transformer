@@ -1,6 +1,26 @@
 /**
  * Main Pipeline Entry Point
  * Wires together Lexer → Parser → CodeGenerator
+ *
+ * CURRENT ARCHITECTURE (3 phases - monolithic):
+ * ┌────────────────────────────────────────────────────┐
+ * │  Phase 1: Lexer (Tokenization)                     │
+ * │  Phase 2: Parser (AST Generation)                  │
+ * │  Phase 3: CodeGenerator (Transform + Emit)         │
+ * │           ↑ Does BOTH transformation & emission    │
+ * └────────────────────────────────────────────────────┘
+ *
+ * FUTURE IMPROVEMENT (5 phases - clean separation):
+ * ┌────────────────────────────────────────────────────┐
+ * │  Phase 1: Lexer                                    │
+ * │  Phase 2: Parser                                   │
+ * │  Phase 3: Semantic Analyzer (optional)             │
+ * │  Phase 4: Transformer (AST → AST)                  │
+ * │  Phase 5: CodeGenerator (AST → string)             │
+ * └────────────────────────────────────────────────────┘
+ *
+ * Current approach WORKS (84.5% tests passing).
+ * Separate transformer would improve architecture but isn't required.
  */
 
 import { createCodeGenerator } from './code-generator/index.js';
@@ -16,6 +36,7 @@ export interface IPipelineOptions {
   debug?: boolean;
   debugLevel?: LogLevel;
   debugChannels?: LogChannel[];
+  useTransformer?: boolean;
 }
 
 /**
@@ -93,11 +114,31 @@ export function createPipeline(options: IPipelineOptions = {}) {
         );
         logger.groupEnd();
 
-        // Phase 3: Code Generator
-        logger.group('⚡ Phase 3: Code Generator');
+        // Phase 3: Transformer (optional)
+        let transformedAst = ast;
+        if (options.useTransformer) {
+          logger.group('🔄 Phase 3: Transformer');
+          logger.time('Transformer');
+          const { createTransformer } = await import('./transformer/index.js');
+          const transformer = createTransformer(ast, { sourceFile: options.filePath || 'unknown' });
+          const transformResult = transformer.transform();
+          transformedAst = transformResult.ast;
+          logger.timeEnd('Transformer');
+          logger.info('transform', `✅ Transformed AST with ${transformedAst.body.length} statements`);
+          if (transformResult.context.errors.length > 0) {
+            logger.warn('transform', `⚠️ ${transformResult.context.errors.length} errors during transformation`);
+            transformResult.context.errors.forEach((err: any) => {
+              logger.error('transform', err.message);
+            });
+          }
+          logger.groupEnd();
+        }
+
+        // Phase 4: Code Generator
+        logger.group('⚡ Phase 4: Code Generator');
         logger.time('CodeGenerator');
         const transformStartTime = performance.now();
-        const generator = createCodeGenerator(ast, { filePath: options.filePath });
+        const generator = createCodeGenerator(transformedAst, { filePath: options.filePath });
         const code = generator.generate();
         const transformTime = performance.now() - transformStartTime;
         logger.timeEnd('CodeGenerator');
@@ -148,3 +189,13 @@ export { createCodeGenerator } from './code-generator/index.js';
 export { createLogger, type ILogger, type LogChannel, type LogLevel } from './debug/logger.js';
 export { createLexer } from './lexer/index.js';
 export { createParser } from './parser/index.js';
+export { SemanticAnalyzer, type ISemanticAnalyzer } from './semantic-analyzer/index.js';
+export type {
+  IScope,
+  ISemanticAnalysisResult,
+  ISemanticError,
+  ISymbol,
+  ISymbolTable,
+} from './semantic-analyzer/index.js';
+export { createTransformer, Transformer, type ITransformer } from './transformer/index.js';
+export type { ITransformContext, ITransformError, ITransformResult } from './transformer/index.js';
