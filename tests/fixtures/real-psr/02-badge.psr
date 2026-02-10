@@ -1,0 +1,30 @@
+/**
+ * Golden Test 2: Static Component with Props
+ * Tests: props destructuring, conditional rendering, static JSX
+ */
+
+import { cn } from '@pulsar-framework/design-tokens';
+
+export interface IBadgeProps {
+  label: string;
+  variant?: 'primary' | 'secondary';
+  icon?: string;
+}
+
+export const Badge = ({
+  label,
+  variant = 'primary',
+  icon
+}: IBadgeProps): HTMLElement => {
+  const className = cn(
+    'inline-flex items-center gap-1',
+    variant === 'primary' ? 'bg-blue-600' : 'bg-gray-600'
+  );
+  
+  return (
+    <span className={className}>
+      {icon && <span>{icon}</span>}
+      <span>{label}</span>
+    </span>
+  );
+};

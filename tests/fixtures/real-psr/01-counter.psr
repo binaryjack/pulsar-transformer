@@ -1,0 +1,30 @@
+/**
+ * Golden Test 1: Basic Signal Reactivity
+ * Tests: signal creation, event handlers, JSX with reactive expressions
+ */
+
+import { createSignal } from '@pulsar-framework/pulsar.dev';
+
+export interface ICounterProps {
+  id?: string;
+}
+
+export component Counter({id}: ICounterProps) {
+  const [count, setCount] = createSignal(0);
+  
+  const increment = () => {
+    setCount(count() + 1);
+  };
+  
+  const decrement = () => {
+    setCount(count() - 1);
+  };
+  
+  return (
+    <div>
+      <h2>Counter: {count()}</h2>
+      <button onClick={increment}>Increment</button>
+      <button onClick={decrement}>Decrement</button>
+    </div>
+  );
+}

@@ -1,0 +1,47 @@
+/**
+ * Golden Test 3: Complex Component with Effects
+ * Tests: useEffect, lifecycle, conditional rendering, complex JSX
+ */
+
+import { useEffect } from '@pulsar-framework/pulsar.dev';
+import { cn } from '@pulsar-framework/design-tokens';
+
+export interface IDrawerProps {
+  open: boolean;
+  onClose: () => void;
+  placement?: 'left' | 'right';
+  children: any;
+}
+
+export const Drawer = ({
+  open,
+  onClose,
+  placement = 'right',
+  children
+}: IDrawerProps): HTMLElement => {
+  useEffect(() => {
+    if (!open) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [open, onClose]);
+
+  if (!open) return <div style="display: none;" />;
+
+  const drawerClasses = cn(
+    'fixed z-50 bg-white',
+    placement === 'left' ? 'left-0' : 'right-0'
+  );
+
+  return (
+    <div className={drawerClasses}>
+      {children}
+    </div>
+  );
+};

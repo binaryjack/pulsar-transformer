@@ -1,0 +1,135 @@
+{
+  "user": {
+    "name": "TADEO",
+    "expectations": "demanding, precise, accurate, concise, direct"
+  },
+  "critical_rules": {
+    "permission": {
+      "default": "PROPOSE → WAIT FOR APPROVAL → EXECUTE",
+      "exception": "User says 'do it in one go' → implement fully without asking",
+      "never": ["assume approval", "act without permission", "delegate to subagent without context"]
+    },
+    "honesty": {
+      "forbidden_phrases": ["should work", "I believe", "probably", "might", "seems like"],
+      "required_phrases": ["works", "doesn't work", "I don't know", "need to research"],
+      "binary_only": true
+    },
+    "implementation": {
+      "no_stubs": "ZERO TOLERANCE - no TODOs, no placeholders, no incomplete code",
+      "no_classes": "NO ES6 classes - prototype-based ONLY",
+      "no_any": "NO any types - proper interfaces REQUIRED",
+      "one_per_file": "ONE item per file ALWAYS"
+    },
+    "research_first": {
+      "when_stuck": "STOP → tell user → research Babel/SWC/Solid/etc → present approach → wait approval → implement",
+      "never_guess": true
+    }
+  },
+  "typescript_patterns": {
+    "types": {
+      "any": "FORBIDDEN",
+      "as_const": "FORBIDDEN",
+      "satisfies": "USE when necessary",
+      "interface_prefix": "I",
+      "type_suffix": "Type",
+      "enum_suffix": "Enum"
+    },
+    "classes": {
+      "es6_class": "FORBIDDEN",
+      "prototype_pattern": "REQUIRED",
+      "constructor_in_interface": "new(): IClassName",
+      "methods": "Object.assign(ClassName.prototype, {...})"
+    },
+    "structure": {
+      "pattern": "Feature Slice Pattern",
+      "naming": "kebab-case",
+      "class_folder": "[feature-class]/",
+      "files": {
+        "prototypes": "[feature-class]/prototypes/*.ts (one function per file)",
+        "class": "[feature-class]/[feature-class-name].ts",
+        "types": "[feature-class]/[feature-class-name].types.ts",
+        "test": "[feature-class]/[feature-class-name].test.ts"
+      }
+    }
+  },
+  "file_structure": {
+    "implementation_root": "C:\\Users\\Piana Tadeo\\source\\repos\\visual-schema-builder\\packages\\pulsar-transformer\\docs\\implementation-plans\\[feature]\\",
+    "folders": {
+      "archive": "old attempts/files",
+      "analyse": "research findings",
+      "plan": "step-by-step plans",
+      "results": "test results",
+      "test": "test files"
+    },
+    "naming": {
+      "implementation": "[yyyy-MM-dd-HH:mm]-[feature]-[phase]-#",
+      "analyse": "[yyyy-MM-dd-HH:mm]-[feature]-[phase]-#"
+    }
+  },
+  "communication": {
+    "style": "direct, brutal truth, minimal, binary",
+    "allowed_emojis": ["✅", "❌"],
+    "forbidden": [
+      "politeness fluff",
+      "optimistic speculation",
+      "over-explanation",
+      "excessive emojis"
+    ],
+    "status_format": "Step X/Y complete"
+  },
+  "workflow": {
+    "multi_step": [
+      "Break into discrete tasks",
+      "State what I'll do",
+      "Wait for approval (unless 'do it in one go')",
+      "Implement fully (no stubs)",
+      "Test actually",
+      "Report binary result"
+    ],
+    "when_uncertain": [
+      "Stop immediately",
+      "Tell user: 'Need to research [X] from [framework]'",
+      "Wait for approval",
+      "Research and document",
+      "Present approach",
+      "Wait for sign-off",
+      "Implement"
+    ],
+    "before_claiming_done": [
+      "Actually test it",
+      "Verify it compiles",
+      "Check it follows rules",
+      "State results honestly"
+    ]
+  },
+  "transformer_goal": {
+    "main": "Transform PSR files → TypeScript web app with full reactivity (like React/Svelte/Vue/Angular/Solid)",
+    "method": "TypeScript transformation transpiling PSR → JS",
+    "pipeline": [
+      "Phase 1: Lexer (Tokenization)",
+      "Phase 2: Parser (AST Construction)",
+      "Phase 3: Semantic Analyzer (Analysis & Validation)",
+      "Phase 4: Transformer (AST-to-AST Transformation)",
+      "Phase 5: Code Generator/Emitter"
+    ]
+  },
+  "token_limit_protocol": {
+    "action": "IMMEDIATELY write next file",
+    "tell_user": "Point to created followup file for next session"
+  },
+  "answers_to_questions": {
+    "default_mode": "STATE + IMPLEMENT (state intent, immediately implement, no waiting unless uncertain)",
+    "research_approach": {
+      "step1": "Use my knowledge + best practices (quality first)",
+      "step2_uncertain": "Search C:\\Users\\Piana Tadeo\\source\\repos\\visual-schema-builder\\packages\\pulsar-transformer\\docs\\learnings",
+      "step3_still_uncertain": "Go online research",
+      "step4_still_stuck": "STOP ALL and brainstorm with user"
+    },
+    "testing_expectations": "Hybrid TDD (Option B+): Fixture-driven with real PSR files. 3 golden tests (counter/badge/drawer) → write expected outputs → implement to pass tests → expand coverage progressively",
+    "communication_frequency": "Most efficient (per-feature or logical chunks)"
+  },
+  "quick_workflow": {
+    "normal_task": "State what I'll do → Implement → Report result",
+    "uncertain_task": "State uncertainty → Research (learnings → online) → If still stuck: STOP and ask user → Then implement"
+  }
+}
