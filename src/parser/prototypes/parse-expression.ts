@@ -178,14 +178,14 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
     // Check for arrow function: () => {} or (): ReturnType => {}
     if (this.match(TokenTypeEnum.RPAREN)) {
       const rparenToken = this.advance();
-      
+
       // Check for return type annotation: (): Type =>
       let returnTypeAnnotation = null;
       if (this.match(TokenTypeEnum.COLON)) {
         this.advance(); // consume :
         returnTypeAnnotation = this.parseTypeAnnotation();
       }
-      
+
       if (this.match(TokenTypeEnum.ARROW)) {
         const arrowFunc = this.parseArrowFunction([]);
         if (returnTypeAnnotation) {
@@ -193,7 +193,7 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
         }
         return arrowFunc;
       }
-      
+
       // Empty parens without arrow? Error
       throw new Error(`Unexpected empty parentheses at line ${token.line}`);
     }
@@ -203,7 +203,7 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
     try {
       // Try parsing arrow function parameters
       const params: any[] = [];
-      
+
       // Handle object destructuring: ({label, variant = 'primary'})
       if (this.match(TokenTypeEnum.LBRACE)) {
         const patternStart = this.peek().start;
@@ -275,7 +275,7 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
             `Expected ')' after parameter, got '${this.peek().type}' at line ${this.peek().line}`
           );
         }
-        
+
         this.expect(TokenTypeEnum.RPAREN);
 
         // Check for return type annotation: ): ReturnType
@@ -292,7 +292,7 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
           }
           return arrowFunc;
         }
-        
+
         // If we got here without arrow, it's not an arrow function
         throw new Error(`Expected '=>' for arrow function at line ${this.peek().line}`);
       }
@@ -300,14 +300,14 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
       else {
         do {
           const paramToken = this.expect(TokenTypeEnum.IDENTIFIER);
-          
+
           // Check for type annotation: param: Type
           let typeAnnotation = null;
           if (this.match(TokenTypeEnum.COLON)) {
             this.advance(); // consume :
             typeAnnotation = this.parseTypeAnnotation();
           }
-          
+
           params.push({
             type: 'Parameter',
             pattern: {

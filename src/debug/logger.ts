@@ -40,18 +40,18 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
 
 const LEVEL_COLORS: Record<LogLevel, string> = {
   error: '\x1b[31m', // Red
-  warn: '\x1b[33m',  // Yellow
-  info: '\x1b[36m',  // Cyan
+  warn: '\x1b[33m', // Yellow
+  info: '\x1b[36m', // Cyan
   debug: '\x1b[90m', // Gray
   trace: '\x1b[90m', // Gray
 };
 
 const CHANNEL_COLORS: Record<LogChannel, string> = {
-  lexer: '\x1b[35m',    // Magenta
-  parser: '\x1b[34m',   // Blue
-  codegen: '\x1b[32m',  // Green
+  lexer: '\x1b[35m', // Magenta
+  parser: '\x1b[34m', // Blue
+  codegen: '\x1b[32m', // Green
   pipeline: '\x1b[36m', // Cyan
-  jsx: '\x1b[33m',      // Yellow
+  jsx: '\x1b[33m', // Yellow
   transform: '\x1b[35m', // Magenta
 };
 
@@ -80,7 +80,7 @@ export function Logger(this: ILogger, options: ILoggerOptions = {}): void {
     if (!this.isEnabled(channel, logLevel)) return;
 
     const parts: string[] = [];
-    
+
     // Timestamp
     if (timestamps) {
       const now = new Date();
@@ -98,7 +98,7 @@ export function Logger(this: ILogger, options: ILoggerOptions = {}): void {
 
     // Indent for groups
     const indent = '  '.repeat(groupLevel);
-    
+
     // Message
     parts.push(indent + message);
 

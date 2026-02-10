@@ -44,7 +44,8 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
     if (child.type === 'JSXText') {
       // Don't trim - preserve intentional spaces
       const text = child.value;
-      if (text && text.trim()) { // Only skip if completely empty/whitespace
+      if (text && text.trim()) {
+        // Only skip if completely empty/whitespace
         children.push(`'${text}'`);
       }
     } else if (child.type === 'JSXExpressionContainer') {
@@ -55,10 +56,13 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
   }
 
   // Add trailing comma only if children contain JSXElements (not just text/expressions)
-  const hasJSXElementChildren = children.some(child => child.startsWith('t_element('));
-  const childrenArray = children.length > 0 
-    ? (hasJSXElementChildren ? `[${children.join(', ')},]` : `[${children.join(', ')}]`)
-    : '[]';
+  const hasJSXElementChildren = children.some((child) => child.startsWith('t_element('));
+  const childrenArray =
+    children.length > 0
+      ? hasJSXElementChildren
+        ? `[${children.join(', ')},]`
+        : `[${children.join(', ')}]`
+      : '[]';
 
   return `t_element('${tagName}', ${attrs}, ${childrenArray})`;
 };

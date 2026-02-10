@@ -48,44 +48,49 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
     }
 
     // Text content - accumulate all text-like tokens until JSX boundary
-    if (this.match(TokenTypeEnum.IDENTIFIER) || 
-        this.match(TokenTypeEnum.STRING) ||
-        this.match(TokenTypeEnum.COLON) ||
-        this.match(TokenTypeEnum.COMMA) ||
-        this.match(TokenTypeEnum.DOT) ||
-        this.match(TokenTypeEnum.QUESTION) ||
-        this.match(TokenTypeEnum.EXCLAMATION)) {
-      
+    if (
+      this.match(TokenTypeEnum.IDENTIFIER) ||
+      this.match(TokenTypeEnum.STRING) ||
+      this.match(TokenTypeEnum.COLON) ||
+      this.match(TokenTypeEnum.COMMA) ||
+      this.match(TokenTypeEnum.DOT) ||
+      this.match(TokenTypeEnum.QUESTION) ||
+      this.match(TokenTypeEnum.EXCLAMATION)
+    ) {
       // Accumulate consecutive text tokens
       const textParts: string[] = [];
       const textStart = this.peek().start;
       let textEnd = this.peek().end;
-      
-      while (!this.isAtEnd() && 
-             !this.match(TokenTypeEnum.LT) && 
-             !this.match(TokenTypeEnum.JSX_TAG_CLOSE) && 
-             !this.match(TokenTypeEnum.LBRACE)) {
-        
+
+      while (
+        !this.isAtEnd() &&
+        !this.match(TokenTypeEnum.LT) &&
+        !this.match(TokenTypeEnum.JSX_TAG_CLOSE) &&
+        !this.match(TokenTypeEnum.LBRACE)
+      ) {
         const token = this.peek();
-        
+
         // Stop at JSX-specific tokens
-        if (token.type === TokenTypeEnum.JSX_TAG_START ||
-            token.type === TokenTypeEnum.JSX_TAG_END) {
+        if (
+          token.type === TokenTypeEnum.JSX_TAG_START ||
+          token.type === TokenTypeEnum.JSX_TAG_END
+        ) {
           break;
         }
-        
+
         // Accumulate text and punctuation
-        if (token.type === TokenTypeEnum.IDENTIFIER ||
-            token.type === TokenTypeEnum.STRING ||
-            token.type === TokenTypeEnum.COLON ||
-            token.type === TokenTypeEnum.COMMA ||
-            token.type === TokenTypeEnum.DOT ||
-            token.type === TokenTypeEnum.QUESTION ||
-            token.type === TokenTypeEnum.EXCLAMATION) {
+        if (
+          token.type === TokenTypeEnum.IDENTIFIER ||
+          token.type === TokenTypeEnum.STRING ||
+          token.type === TokenTypeEnum.COLON ||
+          token.type === TokenTypeEnum.COMMA ||
+          token.type === TokenTypeEnum.DOT ||
+          token.type === TokenTypeEnum.QUESTION ||
+          token.type === TokenTypeEnum.EXCLAMATION
+        ) {
           textParts.push(token.value as string);
           // Add space after punctuation
-          if (token.type === TokenTypeEnum.COLON ||
-              token.type === TokenTypeEnum.COMMA) {
+          if (token.type === TokenTypeEnum.COLON || token.type === TokenTypeEnum.COMMA) {
             textParts.push(' ');
           }
           textEnd = token.end;
@@ -94,7 +99,7 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
           break;
         }
       }
-      
+
       if (textParts.length > 0) {
         const textValue = textParts.join('');
         children.push({

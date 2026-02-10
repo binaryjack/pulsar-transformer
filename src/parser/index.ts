@@ -20,8 +20,8 @@ import './prototypes/parse-jsx-element.js';
 import './prototypes/parse-program.js';
 import './prototypes/parse-return-statement.js';
 import './prototypes/parse-statement.js';
-import './prototypes/parse-variable-declaration.js';
 import './prototypes/parse-type-annotation.js';
+import './prototypes/parse-variable-declaration.js';
 import './prototypes/parse.js';
 import './prototypes/peek.js';
 

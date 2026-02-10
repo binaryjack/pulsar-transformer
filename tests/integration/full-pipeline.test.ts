@@ -31,11 +31,11 @@ describe('Full Pipeline Integration', () => {
 
     // Import and use createPipeline with debug enabled
     const { createPipeline } = await import('../../src/index.js');
-    const pipeline = createPipeline({ 
-      filePath: '01-counter.psr', 
+    const pipeline = createPipeline({
+      filePath: '01-counter.psr',
       debug: true,
       debugLevel: 'debug',
-      debugChannels: ['pipeline', 'jsx', 'codegen']
+      debugChannels: ['pipeline', 'jsx', 'codegen'],
     });
     const result = await pipeline.transform(input);
 

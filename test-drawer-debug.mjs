@@ -12,10 +12,10 @@ export const Drawer = ({
 };
 `;
 
-const pipeline = createPipeline({ 
-  debug: true, 
+const pipeline = createPipeline({
+  debug: true,
   debugLevel: 'debug',
-  debugChannels: ['parser', 'codegen']
+  debugChannels: ['parser', 'codegen'],
 });
 
 try {

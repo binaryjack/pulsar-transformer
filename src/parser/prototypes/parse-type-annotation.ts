@@ -89,12 +89,7 @@ Parser.prototype.parsePrimaryType = function (this: IParser): any {
   }
   // Keyword literals: true, false, null, undefined
   else if (
-    this.match(
-      TokenTypeEnum.TRUE,
-      TokenTypeEnum.FALSE,
-      TokenTypeEnum.NULL,
-      TokenTypeEnum.UNDEFINED
-    )
+    this.match(TokenTypeEnum.TRUE, TokenTypeEnum.FALSE, TokenTypeEnum.NULL, TokenTypeEnum.UNDEFINED)
   ) {
     const token = this.advance();
     let value: any;
@@ -144,12 +139,12 @@ Parser.prototype.parsePrimaryType = function (this: IParser): any {
     if (isFunctionType) {
       // Parse function type
       const params: any[] = [];
-      
+
       while (!this.match(TokenTypeEnum.RPAREN) && !this.isAtEnd()) {
         const paramName = this.expect(TokenTypeEnum.IDENTIFIER);
         this.expect(TokenTypeEnum.COLON);
         const paramType = this.parseTypeAnnotation();
-        
+
         params.push({
           type: 'Parameter',
           name: paramName.value,

@@ -3,9 +3,9 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { createCodeGenerator } from '../code-generator/index.js';
 import { createLexer } from '../lexer/index.js';
 import { createParser } from '../parser/index.js';
-import { createCodeGenerator } from '../code-generator/index.js';
 
 describe('Drawer Parsing Edge Cases', () => {
   it('should parse multi-line destructured params', () => {

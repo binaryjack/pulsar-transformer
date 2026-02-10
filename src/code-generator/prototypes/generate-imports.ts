@@ -16,11 +16,11 @@ CodeGenerator.prototype.generateImports = function (this: ICodeGenerator): strin
     if (stmt.type === 'ImportDeclaration') {
       const importDecl = stmt as IImportDeclaration;
       const source = importDecl.source.value;
-      
+
       if (!importsBySource.has(source)) {
         importsBySource.set(source, new Set());
       }
-      
+
       const specifiers = importsBySource.get(source)!;
       for (const spec of importDecl.specifiers) {
         specifiers.add(spec.imported.name);
@@ -34,7 +34,7 @@ CodeGenerator.prototype.generateImports = function (this: ICodeGenerator): strin
     if (!importsBySource.has(runtimeSource)) {
       importsBySource.set(runtimeSource, new Set());
     }
-    
+
     const specifiers = importsBySource.get(runtimeSource)!;
     for (const imp of this.imports) {
       specifiers.add(imp);

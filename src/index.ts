@@ -4,7 +4,7 @@
  */
 
 import { createCodeGenerator } from './code-generator/index.js';
-import { createLogger, type ILogger, type LogChannel, type LogLevel } from './debug/logger.js';
+import { createLogger, type LogChannel, type LogLevel } from './debug/logger.js';
 import { createLexer } from './lexer/index.js';
 import { createParser } from './parser/index.js';
 
@@ -60,7 +60,7 @@ export function createPipeline(options: IPipelineOptions = {}) {
     transform: async (source: string): Promise<IPipelineResult> => {
       logger.info('pipeline', '🚀 Starting PSR transformation');
       logger.debug('pipeline', `Input: ${source.length} characters`);
-      
+
       const startTime = performance.now();
       const diagnostics: IDiagnostic[] = [];
 
@@ -86,7 +86,11 @@ export function createPipeline(options: IPipelineOptions = {}) {
         const parserTime = performance.now() - parserStartTime;
         logger.timeEnd('Parser');
         logger.info('parser', `✅ Generated AST with ${ast.body.length} statements`);
-        logger.trace('parser', 'AST structure', ast.body.map((s: any) => s.type));
+        logger.trace(
+          'parser',
+          'AST structure',
+          ast.body.map((s: any) => s.type)
+        );
         logger.groupEnd();
 
         // Phase 3: Code Generator

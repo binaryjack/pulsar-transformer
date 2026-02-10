@@ -103,13 +103,13 @@ CodeGenerator.prototype.generateArrowFunction = function (this: ICodeGenerator, 
       } else {
         // Simple identifier
         let result = p.pattern.name;
-        
+
         // Add type annotation if present
         if (p.typeAnnotation) {
           const typeStr = this.generateTypeAnnotation(p.typeAnnotation);
           result += `: ${typeStr}`;
         }
-        
+
         return result;
       }
     })
