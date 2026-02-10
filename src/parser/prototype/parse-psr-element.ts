@@ -13,10 +13,10 @@ import type {
   IPSRElementNode,
   IPSRFragmentNode,
   IPSRSpreadAttributeNode,
-} from '../ast/index.js'
-import { ASTNodeType } from '../ast/index.js'
-import type { IParserInternal } from '../parser.types.js'
-import { decodeHTMLEntities } from '../utils/decode-html-entities.js'
+} from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import type { IParserInternal } from '../parser.types.js';
+import { decodeHTMLEntities } from '../utils/decode-html-entities.js';
 
 /**
  * Helper to check if tag name starts with uppercase (component reference)
@@ -323,7 +323,16 @@ function _parsePSRAttribute(
         this._advance(); // Consume RBRACE
         value = null; // Empty/comment value
       } else {
+        // SAFETY: Set context flag to prevent infinite recursion
+        // When parsing expressions inside JSX attributes, disable JSX parsing
+        // This prevents: <button style={{...}}> -> parseExpression -> parsePrimaryExpression -> parsePSRElement (infinite loop)
+        const wasInJSXAttributeExpression = this._inJSXAttributeExpression;
+        this._inJSXAttributeExpression = true;
+
         value = this._parseJSXExpression();
+
+        // Restore previous context
+        this._inJSXAttributeExpression = wasInJSXAttributeExpression;
 
         // Check if expression parsing failed
         if (value === null) {
@@ -547,7 +556,7 @@ function _parseJSXExpression(this: IParserInternal): any {
 
     // Reconstruct object literal parsing from this point
     const properties: any[] = [];
-    
+
     // SAFETY: Prevent infinite loops
     let iterationCount = 0;
     const maxIterations = 1000;
@@ -565,12 +574,12 @@ function _parseJSXExpression(this: IParserInternal): any {
         });
         return null;
       }
-      
+
       // Handle end of object before comma
       if (this._check('RBRACE')) {
         break;
       }
-      
+
       // Handle spread properties
       if (this._check('SPREAD')) {
         this._advance();
@@ -603,7 +612,7 @@ function _parseJSXExpression(this: IParserInternal): any {
 
       this._expect('COLON', 'Expected ":" after property name');
       const value = this._parseExpression();
-      
+
       // CRITICAL: Check if expression parsing failed or we're at unexpected token
       if (!value || this._isAtEnd()) {
         this._addError({
@@ -625,7 +634,7 @@ function _parseJSXExpression(this: IParserInternal): any {
         },
         value,
       });
-      
+
       // CRITICAL FIX: Break if no comma found (this prevents infinite loop)
       // Original: while (this._match('COMMA') && !this._check('RBRACE'))
       // Problem: If neither COMMA nor RBRACE, loops forever
@@ -692,6 +701,5 @@ export {
   _parseJSXExpression,
   _parseNonObjectExpression,
   _parsePSRAttribute,
-  _parsePSRChild
-}
-
+  _parsePSRChild,
+};

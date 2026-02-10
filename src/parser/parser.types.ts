@@ -44,6 +44,7 @@ export interface IParserInternal extends IParser {
   _source: string;
   _lexer: ILexer; // Lexer instance for type context control
   _expressionDepth: number; // Track expression parsing recursion depth
+  _inJSXAttributeExpression: boolean; // Context flag to prevent infinite JSX recursion
 
   // Debug tracking
   _iterationCount?: number;

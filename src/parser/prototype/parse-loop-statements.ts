@@ -4,11 +4,11 @@ import type {
   IDoWhileStatementNode,
   IForStatementNode,
   IWhileStatementNode,
-} from '../ast/ast-node-types.js'
-import { ASTNodeType } from '../ast/ast-node-types.js'
-import { TokenType } from '../lexer/token-types.js'
-import type { IParserInternal } from '../parser.types.js'
-import { parseExpression } from './parse-expression.js'
+} from '../ast/ast-node-types.js';
+import { ASTNodeType } from '../ast/ast-node-types.js';
+import { TokenType } from '../lexer/token-types.js';
+import type { IParserInternal } from '../parser.types.js';
+import { parseExpression } from './parse-expression.js';
 
 /**
  * Parses for loop statements
@@ -16,7 +16,7 @@ import { parseExpression } from './parse-expression.js'
  */
 export function _parseForStatement(this: IParserInternal): IForStatementNode | null {
   const startToken = this._getCurrentToken();
-  
+
   if (!startToken) {
     return null;
   }
@@ -204,7 +204,7 @@ export function _parseForStatement(this: IParserInternal): IForStatementNode | n
  */
 export function _parseWhileStatement(this: IParserInternal): IWhileStatementNode | null {
   const startToken = this._getCurrentToken();
-  
+
   if (!startToken) {
     return null;
   }
@@ -276,7 +276,7 @@ export function _parseWhileStatement(this: IParserInternal): IWhileStatementNode
  */
 export function _parseDoWhileStatement(this: IParserInternal): IDoWhileStatementNode | null {
   const startToken = this._getCurrentToken();
-  
+
   if (!startToken) {
     return null;
   }
@@ -373,7 +373,19 @@ export function _parseDoWhileStatement(this: IParserInternal): IDoWhileStatement
  */
 function _parseLoopBody(this: IParserInternal): IBlockStatementNode | IASTNode {
   if (this._getCurrentToken()!.type === TokenType.LBRACE) {
-    return _parseBlockStatement.call(this);
+    const blockStmt = _parseBlockStatement.call(this);
+    if (!blockStmt) {
+      // Return empty block if parsing failed
+      return {
+        type: ASTNodeType.BLOCK_STATEMENT,
+        body: [],
+        location: {
+          start: { line: 0, column: 0, offset: 0 },
+          end: { line: 0, column: 0, offset: 0 },
+        },
+      };
+    }
+    return blockStmt;
   } else {
     return this._parseStatement();
   }
@@ -384,7 +396,7 @@ function _parseLoopBody(this: IParserInternal): IBlockStatementNode | IASTNode {
  */
 export function _parseBlockStatement(this: IParserInternal): IBlockStatementNode | null {
   const startToken = this._getCurrentToken();
-  
+
   if (!startToken) {
     return null;
   }
@@ -403,17 +415,21 @@ export function _parseBlockStatement(this: IParserInternal): IBlockStatementNode
   this._advance(); // Consume '{'
 
   const body: IASTNode[] = [];
-  
+
   // SAFETY: Add position tracking
   let safetyCounter = 0;
   const maxIterations = 50000;
 
   while (!this._isAtEnd()) {
     const currentToken = this._getCurrentToken();
-    if (!currentToken || currentToken.type === TokenType.RBRACE || currentToken.type === TokenType.EOF) {
+    if (
+      !currentToken ||
+      currentToken.type === TokenType.RBRACE ||
+      currentToken.type === TokenType.EOF
+    ) {
       break;
     }
-    
+
     if (++safetyCounter > maxIterations) {
       this._addError({
         code: 'PSR-E010',
@@ -425,13 +441,13 @@ export function _parseBlockStatement(this: IParserInternal): IBlockStatementNode
       });
       break;
     }
-    
+
     const beforePos = this._current;
     const statement = this._parseStatement();
     if (statement) {
       body.push(statement);
     }
-    
+
     // SAFETY: Ensure progress
     if (this._current === beforePos) {
       this._addError({

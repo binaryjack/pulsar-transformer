@@ -10,10 +10,10 @@
  * "hello"
  */
 
-import { ASTNodeType } from '../ast/index.js'
-import { TokenType } from '../lexer/token-types.js'
-import type { IParserInternal } from '../parser.types.js'
-import { parseExportDeclaration } from './parse-export-declaration.js'
+import { ASTNodeType } from '../ast/index.js';
+import { TokenType } from '../lexer/token-types.js';
+import type { IParserInternal } from '../parser.types.js';
+import { parseExportDeclaration } from './parse-export-declaration.js';
 
 /**
  * Parse expression
@@ -22,7 +22,12 @@ import { parseExportDeclaration } from './parse-export-declaration.js'
  * Maximum depth of 100 allows deeply nested expressions while preventing hangs
  */
 export function parseExpression(this: IParserInternal): any {
-<<<<<<< HEAD
+  console.log(
+    '[parseExpression] Entry - pos:',
+    this._current,
+    'token:',
+    this._getCurrentToken()?.type
+  );
   if (this._logger) {
     this._logger.log('parser', 'debug', 'parseExpression: START', {
       currentToken: this._getCurrentToken()?.type,
@@ -30,18 +35,12 @@ export function parseExpression(this: IParserInternal): any {
       position: this._current,
     });
   }
-  const result = _parseConditionalExpression.call(this);
-  if (this._logger) {
-    this._logger.log('parser', 'debug', 'parseExpression: DONE', {
-      resultType: result?.type,
-      position: this._current,
-    });
-  }
-=======
+
   const MAX_EXPRESSION_DEPTH = 100;
 
   // Track recursion depth to prevent infinite loops
   this._expressionDepth = (this._expressionDepth || 0) + 1;
+  console.log('[parseExpression] Depth:', this._expressionDepth);
 
   if (this._expressionDepth > MAX_EXPRESSION_DEPTH) {
     this._addError({
@@ -56,10 +55,20 @@ export function parseExpression(this: IParserInternal): any {
     return null;
   }
 
+  console.log('[parseExpression] About to call _parseConditionalExpression');
   const result = _parseConditionalExpression.call(this);
+  console.log('[parseExpression] _parseConditionalExpression returned, type:', result?.type);
 
   this._expressionDepth--;
->>>>>>> 35c9f2b349e0cba67b8785a5e666c2a86450ad27
+
+  if (this._logger) {
+    this._logger.log('parser', 'debug', 'parseExpression: DONE', {
+      resultType: result?.type,
+      position: this._current,
+    });
+  }
+
+  console.log('[parseExpression] Exit');
   return result;
 }
 
@@ -408,7 +417,9 @@ function _parsePrimaryExpression(this: IParserInternal): any {
   }
 
   // PSR element: <tag>
-  if (token.type === 'LT') {
+  // SAFETY: Only parse JSX/PSR when NOT inside JSX attribute expression
+  // This prevents infinite recursion: JSX attribute -> expression -> object literal -> JSX
+  if (token.type === 'LT' && !this._inJSXAttributeExpression) {
     if (this._logger) {
       this._logger.log(
         'parser',
@@ -417,6 +428,7 @@ function _parsePrimaryExpression(this: IParserInternal): any {
         {
           position: this._current,
           tokenValue: token?.value,
+          inJSXAttributeExpression: this._inJSXAttributeExpression,
         }
       );
     }
@@ -1090,7 +1102,8 @@ function _parseMemberAccess(this: IParserInternal, object: any): any {
           start: object.location.start,
           end: property.location.end,
         },
-      };  } else if (this._match('LBRACKET')) {
+      };
+    } else if (this._match('LBRACKET')) {
       // Handle bracket notation: obj[key]
       const property = this._parseExpression();
       if (!property) {
@@ -1912,6 +1925,5 @@ export {
   _parseExpressionStatement,
   _parseLiteral,
   _parseObjectLiteral,
-  _parseTemplateLiteral
-}
-
+  _parseTemplateLiteral,
+};

@@ -9,9 +9,9 @@
  * import './styles.css';
  */
 
-import type { IIdentifierNode, IImportDeclarationNode, ILiteralNode } from '../ast/index.js'
-import { ASTNodeType } from '../ast/index.js'
-import type { IParserInternal } from '../parser.types.js'
+import type { IIdentifierNode, IImportDeclarationNode, ILiteralNode } from '../ast/index.js';
+import { ASTNodeType } from '../ast/index.js';
+import type { IParserInternal } from '../parser.types.js';
 
 /**
  * Parse import declaration
@@ -172,7 +172,7 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
       // Parse named imports
       while (!this._check('RBRACE') && !this._isAtEnd()) {
         const beforePos = this._current; // Safety: track position
-        
+
         const namedToken = this._expect('IDENTIFIER', 'Expected import specifier');
 
         // Check for alias: import { foo as bar }
@@ -204,7 +204,7 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
         if (!this._match('COMMA')) {
           break;
         }
-        
+
         // Safety: if position hasn't advanced, force it
         if (this._current === beforePos) {
           this._advance();
@@ -225,38 +225,15 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
     // Parse specifiers (handle empty case and trailing comma)
     let loopCount = 0;
     while (!this._check('RBRACE') && !this._isAtEnd()) {
-<<<<<<< HEAD
       loopCount++;
-      if (this._logger && loopCount % 10 === 0) {
-        this._logger.log('parser', 'warn', `parseImportDeclaration: Loop iteration ${loopCount}`, {
-          currentToken: this._getCurrentToken()?.type,
-          position: this._current,
-        });
-      }
-
       if (loopCount > 100) {
         throw new Error(
           `parseImportDeclaration: Exceeded 100 iterations in named import loop at position ${this._current}`
         );
       }
 
-      if (this._logger && loopCount <= 5) {
-        this._logger.log(
-          'parser',
-          'debug',
-          `parseImportDeclaration: Loop ${loopCount}, about to parse specifier`,
-          {
-            currentToken: this._getCurrentToken()?.type,
-            tokenValue: this._getCurrentToken()?.value,
-            position: this._current,
-          }
-        );
-      }
-
-=======
       const beforePos = this._current; // Safety: track position
-      
->>>>>>> 35c9f2b349e0cba67b8785a5e666c2a86450ad27
+
       // Check for inline type: import { type Foo, Bar }
       let isSpecifierTypeOnly = false;
       if (this._check('TYPE')) {
@@ -330,18 +307,11 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
         }
         break;
       }
-<<<<<<< HEAD
 
-      if (this._logger && loopCount <= 5) {
-        this._logger.log(
-          'parser',
-          'debug',
-          `parseImportDeclaration: Comma found, continuing loop`,
-          {
-            currentToken: this._getCurrentToken()?.type,
-            position: this._current,
-          }
-        );
+      // Safety: if position hasn't advanced, force it
+      if (this._current === beforePos) {
+        this._advance();
+        break;
       }
     }
 
@@ -351,14 +321,6 @@ export function parseImportDeclaration(this: IParserInternal): IImportDeclaratio
         tokenValue: this._getCurrentToken()?.value,
         position: this._current,
       });
-=======
-      
-      // Safety: if position hasn't advanced, force it
-      if (this._current === beforePos) {
-        this._advance();
-        break;
-      }
->>>>>>> 35c9f2b349e0cba67b8785a5e666c2a86450ad27
     }
 
     this._expect('RBRACE', 'Expected } after import specifiers');

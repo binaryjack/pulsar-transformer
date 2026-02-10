@@ -47,7 +47,11 @@ export function parseReturnStatement(this: IParserInternal): IReturnStatementNod
         position: this._current,
       });
     }
+    console.log('[CRITICAL] About to call this._parseExpression() - position:', this._current);
+    console.log('[CRITICAL] this._parseExpression type:', typeof this._parseExpression);
+    console.log('[CRITICAL] this._parseExpression value:', this._parseExpression);
     argument = this._parseExpression();
+    console.log('[CRITICAL] After calling this._parseExpression() - got result');
     if (this._logger) {
       this._logger.log('parser', 'debug', 'parseReturnStatement: Expression parsed', {
         argumentType: argument?.type,

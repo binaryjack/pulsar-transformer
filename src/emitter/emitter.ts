@@ -46,7 +46,7 @@ export const Emitter = function (this: IEmitterInternal, config?: IEmitterConfig
     _recursionDepth: 0,
     _currentComponent: 'none',
     _currentNodeType: 'none',
-    logger: config?.debug ? null : undefined, // Will be set by pipeline
+    logger: undefined, // Will be set by pipeline
   };
 
   Object.defineProperty(this, 'context', {

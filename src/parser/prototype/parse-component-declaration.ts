@@ -320,26 +320,6 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
       );
     }
     // Skip type tokens until we hit LBRACE (component body start)
-<<<<<<< HEAD
-    let typeSkipCount = 0;
-    while (!this._check('LBRACE') && !this._isAtEnd()) {
-      typeSkipCount++;
-      if (this._logger && typeSkipCount % 10 === 0) {
-        this._logger.log(
-          'parser',
-          'warn',
-          `parseComponentDeclaration: Type skip iteration ${typeSkipCount}`,
-          {
-            currentToken: this._getCurrentToken()?.type,
-            position: this._current,
-          }
-        );
-      }
-      if (typeSkipCount > 100) {
-        throw new Error(
-          `Infinite loop while skipping type annotation at position ${this._current}`
-        );
-=======
     let safetyCounter = 0;
     const maxIterations = 10000;
     while (!this._check('LBRACE') && !this._isAtEnd()) {
@@ -353,7 +333,6 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
           },
         });
         break;
->>>>>>> 35c9f2b349e0cba67b8785a5e666c2a86450ad27
       }
       this._advance();
     }
@@ -361,7 +340,7 @@ export function parseComponentDeclaration(this: IParserInternal): IComponentDecl
       this._logger.log(
         'parser',
         'debug',
-        `parseComponentDeclaration: Finished skipping type (${typeSkipCount} tokens)`,
+        `parseComponentDeclaration: Finished skipping type tokens`,
         {
           currentToken: this._getCurrentToken()?.type,
           position: this._current,
