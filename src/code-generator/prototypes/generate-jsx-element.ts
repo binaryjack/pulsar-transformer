@@ -29,7 +29,14 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
           // Boolean attribute
           value = 'true';
         } else if (attr.value.type === 'Literal') {
-          value = `'${attr.value.value}'`;
+          // Properly escape string attribute values
+          const escapedValue = String(attr.value.value)
+            .replace(/\\/g, '\\\\')  // Escape backslashes first
+            .replace(/'/g, "\\'")    // Escape single quotes
+            .replace(/\n/g, '\\n')   // Escape newlines
+            .replace(/\r/g, '\\r')   // Escape carriage returns
+            .replace(/\t/g, '\\t');  // Escape tabs
+          value = `'${escapedValue}'`;
         } else if (attr.value.type === 'JSXExpressionContainer') {
           value = this.generateExpression(attr.value.expression);
         } else {
