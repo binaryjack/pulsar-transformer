@@ -10,12 +10,7 @@ import { LexerStateEnum, TokenTypeEnum, isAlpha, isDigit } from '../lexer.types.
 Lexer.prototype.scanToken = function (this: ILexer): void {
   // Check state BEFORE skipping whitespace (JSX needs to preserve it)
   const currentState = this.getState();
-  const ch = this.peek();
 
-  console.log('[scanToken] pos:', this.pos, 'char:', JSON.stringify(ch), 'state:', currentState);
-
-  // Handle JSX text content (including whitespace)
-  if (currentState === LexerStateEnum.InsideJSXText) {
     this.scanJSXText();
     return;
   }
@@ -28,16 +23,16 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
     return;
   }
 
-  const ch = this.peek();
+  const char = this.peek();
 
   // Identifiers and keywords
-  if (isAlpha(ch)) {
+  if (isAlpha(char)) {
     this.scanIdentifier();
     return;
   }
 
   // Numbers
-  if (isDigit(ch)) {
+  if (isDigit(char)) {
     this.scanNumber();
     return;
   }
