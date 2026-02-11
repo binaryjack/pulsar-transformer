@@ -46,6 +46,7 @@ export interface ICodeGenerator {
   generateCallExpression(node: any): string;
   generateArrowFunction(node: any): string;
   generateObjectExpression(node: any): string;
+  generateTemplateLiteral(node: any): string;
   generateInterface(node: any): string;
   generateComponent(node: any): string;
   generateFunction(node: any): string;

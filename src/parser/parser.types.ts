@@ -94,6 +94,7 @@ export interface ITypeAnnotation extends IASTNode {
 export interface IComponentDeclaration extends IASTNode {
   type: 'ComponentDeclaration';
   name: IIdentifier;
+  typeParameters?: any[];
   params: IParameter[];
   body: IBlockStatement;
   exported: boolean;
@@ -106,6 +107,7 @@ export interface IComponentDeclaration extends IASTNode {
 export interface IFunctionDeclaration extends IASTNode {
   type: 'FunctionDeclaration';
   id: IIdentifier | null;
+  typeParameters?: any[];
   params: IParameter[];
   body: IBlockStatement;
   returnType?: ITypeAnnotation;
@@ -185,6 +187,7 @@ export interface IIfStatement extends IASTNode {
 export type IExpression =
   | IIdentifier
   | ILiteral
+  | ITemplateLiteral
   | ICallExpression
   | IMemberExpression
   | IBinaryExpression
@@ -205,6 +208,26 @@ export interface ILiteral extends IASTNode {
   type: 'Literal';
   value: string | number | boolean | null;
   raw: string;
+}
+
+/**
+ * Template Literal (ES2015)
+ * `hello ${name}!`
+ * Following ESTree specification
+ */
+export interface ITemplateLiteral extends IASTNode {
+  type: 'TemplateLiteral';
+  quasis: ITemplateElement[];
+  expressions: IExpression[];
+}
+
+export interface ITemplateElement extends IASTNode {
+  type: 'TemplateElement';
+  value: {
+    cooked: string; // Processed value (escape sequences converted)
+    raw: string; // Raw value (as written in source)
+  };
+  tail: boolean; // true if this is the last element
 }
 
 export interface IStringLiteral extends ILiteral {

@@ -19,6 +19,7 @@ import './prototypes/scan-identifier.js';
 import './prototypes/scan-jsx-text.js';
 import './prototypes/scan-number.js';
 import './prototypes/scan-string.js';
+import './prototypes/scan-template.js';
 import './prototypes/scan-token.js';
 import './prototypes/scan-tokens.js';
 import './prototypes/skip-whitespace.js';

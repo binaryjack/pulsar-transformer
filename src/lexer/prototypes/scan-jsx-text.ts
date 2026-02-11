@@ -11,6 +11,8 @@ Lexer.prototype.scanJSXText = function (this: ILexer): void {
   const start = this.pos;
   let text = '';
 
+  console.log('[scanJSXText] START at pos', this.pos, 'char:', JSON.stringify(this.peek()));
+
   // Scan until we hit a JSX boundary
   while (!this.isAtEnd()) {
     const ch = this.peek();
@@ -41,13 +43,24 @@ Lexer.prototype.scanJSXText = function (this: ILexer): void {
     this.advance();
   }
 
+  console.log('[scanJSXText] Accumulated text:', JSON.stringify(text), 'length:', text.length);
+
   // Only add token if we have non-empty text
   if (text.length > 0) {
-    // Trim whitespace but preserve internal spaces
+    // For JSX, we need to preserve whitespace between expressions
+    // Example: <div>{a} {b}</div> should have a space between a and b
+    // But trim leading/trailing newlines/spaces at element boundaries
     const trimmed = text.trim();
 
     if (trimmed.length > 0) {
+      // Has actual content - use trimmed version
+      console.log('[scanJSXText] Adding JSX_TEXT token (trimmed):', JSON.stringify(trimmed));
       this.addToken(TokenTypeEnum.JSX_TEXT, trimmed);
+    } else if (text.match(/^\s+$/)) {
+      // Whitespace-only between expressions: collapse to single space
+      // This handles: {expr1} {expr2} -> space preserved
+      console.log('[scanJSXText] Adding JSX_TEXT token (whitespace collapsed to space)');
+      this.addToken(TokenTypeEnum.JSX_TEXT, ' ');
     }
   }
 

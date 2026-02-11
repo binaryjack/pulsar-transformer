@@ -16,6 +16,12 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
   if (node.openingElement.attributes.length > 0) {
     const attrPairs = node.openingElement.attributes
       .map((attr: any) => {
+        // Handle JSX spread attributes: {...props}
+        if (attr.type === 'JSXSpreadAttribute') {
+          return `...${this.generateExpression(attr.argument)}`;
+        }
+
+        // Handle regular JSX attributes: name={value}
         const name = attr.name.name;
         let value;
 

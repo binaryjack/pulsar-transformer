@@ -55,6 +55,17 @@ CodeGenerator.prototype.generateTypeAnnotation = function (
       return `(${paramList}) => ${returnTypeStr}`;
     }
 
+    case 'TypeLiteral': {
+      // Object literal type: {key: Type; prop?: string}
+      const members = typeNode.members || [];
+      const propStrings = members.map((m: any) => {
+        const optional = m.optional ? '?' : '';
+        const typeStr = this.generateTypeAnnotation(m.typeAnnotation);
+        return `${m.key.name}${optional}: ${typeStr}`;
+      });
+      return `{${propStrings.join('; ')}}`;
+    }
+
     default:
       return 'any';
   }

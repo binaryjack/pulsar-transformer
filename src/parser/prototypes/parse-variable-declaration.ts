@@ -65,7 +65,6 @@ Parser.prototype.parseVariableDeclaration = function (this: IParser): IVariableD
       while (!this.match(TokenTypeEnum.RBRACE) && !this.isAtEnd()) {
         const keyToken = this.expect(TokenTypeEnum.IDENTIFIER);
 
-        // TODO: Support {key: value} syntax
         properties.push({
           type: 'Property',
           key: {

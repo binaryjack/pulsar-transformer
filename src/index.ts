@@ -177,7 +177,11 @@ export function createPipeline(options: IPipelineOptions = {}) {
         };
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
-        logger.error('pipeline', '❌ Transformation failed', { error: errorMsg });
+        const errorStack = error instanceof Error ? error.stack : '';
+        logger.error('pipeline', '❌ Transformation failed', {
+          error: errorMsg,
+          stack: errorStack,
+        });
         diagnostics.push({
           type: 'error',
           phase: 'Pipeline',

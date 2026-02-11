@@ -1,0 +1,32 @@
+# Resource Refetch Patterns Supervisor Plan
+
+## Short Description
+
+Supervisor validation for resource refetch patterns transformation implementation to ensure quality and completeness.
+
+## Mandatory AI Task Before Start
+
+- Read carefully and respect the following rules
+- Link to ai-collaboration-rules: `C:\Users\Piana Tadeo\source\repos\visual-schema-builder\packages\pulsar-transformer\docs\ai-collaboration-rules.json`
+
+## Supervisor Responsibilities
+
+This supervisor guarantees that the agent responsible for implementing `2026-02-11-14-20-resource-refetch-patterns.md` has fulfilled their work properly.
+
+### Validation Checklist:
+
+- [ ] Resource refetch method parsing implemented
+- [ ] Reactive refetch system transformation working
+- [ ] Manual and automatic refetching handled
+- [ ] Dependency-based invalidation implemented
+- [ ] Batched and debounced refetches supported
+- [ ] Refetch scheduling and cancellation optimized
+- [ ] Integration tests created and passing
+- [ ] Unit tests created and passing
+- [ ] E2E tests created and passing
+- [ ] Complex dependency scenarios tested
+
+### Decision Process:
+
+If validation passes → Move on to next implementation
+If validation fails → Create failure report: `2026-02-11-14-20-resource-refetch-patterns.supervisor.failed.md` and warn user

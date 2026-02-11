@@ -6,12 +6,8 @@
 import { TokenTypeEnum } from '../../lexer/lexer.types.js';
 import type { IParser } from '../parser.js';
 import { Parser } from '../parser.js';
-import type {
-  IComponentDeclaration,
-  IParameter,
-  IPattern,
-  ITypeAnnotation,
-} from '../parser.types.js';
+import type { IComponentDeclaration } from '../parser.types.js';
+import { parseParameterList } from '../strategies/parameter-parsing-strategy.js';
 
 Parser.prototype.parseComponentDeclaration = function (this: IParser): IComponentDeclaration {
   const start = this.peek().start;
@@ -20,115 +16,15 @@ Parser.prototype.parseComponentDeclaration = function (this: IParser): IComponen
 
   const nameToken = this.expect(TokenTypeEnum.IDENTIFIER);
 
+  // Parse type parameters if present: component Counter<T>()
+  const typeParameters = this.parseTypeParameters();
+
   this.expect(TokenTypeEnum.LPAREN);
 
-  // Parse parameters
-  const params: IParameter[] = [];
-
-  if (!this.match(TokenTypeEnum.RPAREN)) {
-    do {
-      // Parse parameter pattern (can be identifier or destructuring)
-      let pattern: IPattern;
-
-      if (this.match(TokenTypeEnum.LBRACE)) {
-        // Object destructuring: {id}
-        const patternStart = this.peek().start;
-        this.advance();
-
-        const properties: any[] = [];
-
-        while (!this.match(TokenTypeEnum.RBRACE) && !this.isAtEnd()) {
-          const keyToken = this.expect(TokenTypeEnum.IDENTIFIER);
-
-          // Check for default value: { key = 'default' }
-          let defaultValue = null;
-          if (this.match(TokenTypeEnum.EQUALS)) {
-            this.advance(); // consume =
-            defaultValue = this.parsePrimaryExpression();
-          }
-
-          properties.push({
-            type: 'Property',
-            key: {
-              type: 'Identifier',
-              name: keyToken.value,
-              start: keyToken.start,
-              end: keyToken.end,
-            },
-            value: {
-              type: 'Identifier',
-              name: keyToken.value,
-              start: keyToken.start,
-              end: keyToken.end,
-            },
-            shorthand: true,
-            defaultValue,
-            start: keyToken.start,
-            end: keyToken.end,
-          });
-
-          if (this.match(TokenTypeEnum.COMMA)) {
-            this.advance();
-          }
-        }
-
-        const patternEnd = this.peek().end;
-        this.expect(TokenTypeEnum.RBRACE);
-
-        pattern = {
-          type: 'ObjectPattern',
-          properties,
-          start: patternStart,
-          end: patternEnd,
-        };
-      } else {
-        // Simple identifier
-        const idToken = this.expect(TokenTypeEnum.IDENTIFIER);
-        pattern = {
-          type: 'Identifier',
-          name: idToken.value,
-          start: idToken.start,
-          end: idToken.end,
-        };
-      }
-
-      // Type annotation
-      let typeAnnotation = undefined;
-      if (this.match(TokenTypeEnum.COLON)) {
-        this.advance();
-        const typeToken = this.expect(TokenTypeEnum.IDENTIFIER);
-
-        typeAnnotation = {
-          type: 'TypeAnnotation',
-          typeAnnotation: {
-            type: 'TypeReference',
-            typeName: {
-              type: 'Identifier',
-              name: typeToken.value,
-              start: typeToken.start,
-              end: typeToken.end,
-            },
-            start: typeToken.start,
-            end: typeToken.end,
-          },
-          start: typeToken.start,
-          end: typeToken.end,
-        } satisfies ITypeAnnotation;
-      }
-
-      params.push({
-        type: 'Parameter',
-        pattern,
-        typeAnnotation,
-        start: pattern.start,
-        end: typeAnnotation?.end || pattern.end,
-      });
-
-      if (this.match(TokenTypeEnum.COMMA)) {
-        this.advance();
-      }
-    } while (!this.match(TokenTypeEnum.RPAREN) && !this.isAtEnd());
-  }
+  // Use shared parameter parsing strategy (fixes type annotation bug)
+  // Previously: manually parsed IDENTIFIER only (couldn't handle T[], A | B, etc.)
+  // Now: calls parseTypeAnnotation() which handles all TypeScript types
+  const params = parseParameterList(this);
 
   this.expect(TokenTypeEnum.RPAREN);
 
@@ -143,6 +39,7 @@ Parser.prototype.parseComponentDeclaration = function (this: IParser): IComponen
       start: nameToken.start,
       end: nameToken.end,
     },
+    typeParameters: typeParameters.length > 0 ? typeParameters : undefined,
     params,
     body,
     exported: false,

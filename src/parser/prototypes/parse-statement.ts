@@ -24,6 +24,9 @@ Parser.prototype.parseStatement = function (this: IParser): IStatementNode | nul
     case TokenTypeEnum.COMPONENT:
       return this.parseComponentDeclaration();
 
+    case TokenTypeEnum.FUNCTION:
+      return this.parseFunctionDeclaration();
+
     case TokenTypeEnum.CONST:
     case TokenTypeEnum.LET:
     case TokenTypeEnum.VAR:

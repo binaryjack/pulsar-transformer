@@ -3,6 +3,7 @@
  * Expression parsing with operator precedence (simplified Pratt parser)
  */
 
+import type { IToken } from '../../lexer/lexer.types.js';
 import { TokenTypeEnum } from '../../lexer/lexer.types.js';
 import type { IParser } from '../parser.js';
 import { Parser } from '../parser.js';
@@ -11,6 +12,7 @@ import type { IExpression } from '../parser.types.js';
 // Operator precedence (higher = binds tighter)
 const PRECEDENCE: Record<string, number> = {
   [TokenTypeEnum.PIPE_PIPE]: 1,
+  [TokenTypeEnum.QUESTION_QUESTION]: 1, // ?? (nullish coalescing, same as ||)
   [TokenTypeEnum.AMPERSAND_AMPERSAND]: 2,
   [TokenTypeEnum.PIPE]: 3,
   [TokenTypeEnum.AMPERSAND]: 4,
@@ -27,6 +29,7 @@ const PRECEDENCE: Record<string, number> = {
   [TokenTypeEnum.PERCENT]: 8,
   [TokenTypeEnum.LPAREN]: 9, // Call expression
   [TokenTypeEnum.DOT]: 10, // Member access
+  [TokenTypeEnum.QUESTION_DOT]: 10, // ?. (optional chaining, same as .)
 };
 
 function getPrecedence(type: string): number {
@@ -45,8 +48,9 @@ Parser.prototype.parseExpression = function (this: IParser, precedence: number =
     if (token.type === TokenTypeEnum.LPAREN) {
       left = this.parseCallExpression(left);
     }
-    // Member expression: obj.prop
-    else if (token.type === TokenTypeEnum.DOT) {
+    // Member expression: obj.prop or obj?.prop (optional chaining)
+    else if (token.type === TokenTypeEnum.DOT || token.type === TokenTypeEnum.QUESTION_DOT) {
+      const isOptional = token.type === TokenTypeEnum.QUESTION_DOT;
       this.advance();
       const property = this.expect(TokenTypeEnum.IDENTIFIER);
 
@@ -60,11 +64,12 @@ Parser.prototype.parseExpression = function (this: IParser, precedence: number =
           end: property.end,
         },
         computed: false,
+        optional: isOptional,
         start: left.start,
         end: property.end,
-      };
+      } as any;
     }
-    // Binary expression: a + b
+    // Binary expression: a + b, a ?? b (nullish coalescing)
     else if (PRECEDENCE[token.type]) {
       const operator = this.advance();
       const right = this.parseExpression(getPrecedence(operator.type));
@@ -72,7 +77,8 @@ Parser.prototype.parseExpression = function (this: IParser, precedence: number =
       left = {
         type:
           operator.type === TokenTypeEnum.AMPERSAND_AMPERSAND ||
-          operator.type === TokenTypeEnum.PIPE_PIPE
+          operator.type === TokenTypeEnum.PIPE_PIPE ||
+          operator.type === TokenTypeEnum.QUESTION_QUESTION
             ? 'LogicalExpression'
             : 'BinaryExpression',
         left,
@@ -169,6 +175,12 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
       start: token.start,
       end: token.end,
     };
+  }
+
+  // Template Literal
+  if (token.type === TokenTypeEnum.TEMPLATE_LITERAL) {
+    this.advance();
+    return this.parseTemplateLiteral(token);
   }
 
   // Parenthesized expression
@@ -536,5 +548,118 @@ Parser.prototype.parseObjectExpression = function (this: IParser): IExpression {
     properties,
     start,
     end: endToken.end,
+  };
+};
+
+/**
+ * Parse template literal
+ * Splits content into quasis (string parts) and expressions
+ *
+ * Example: `hello ${name}!`
+ * → quasis: ["hello ", "!"], expressions: [name]
+ */
+Parser.prototype.parseTemplateLiteral = function (this: IParser, token: IToken): IExpression {
+  const content = token.value;
+  const quasis: any[] = [];
+  const expressions: IExpression[] = [];
+
+  // If no ${} found, it's a simple template literal
+  if (!content.includes('${')) {
+    quasis.push({
+      type: 'TemplateElement',
+      value: {
+        cooked: content,
+        raw: content,
+      },
+      tail: true,
+      start: token.start,
+      end: token.end,
+    });
+
+    return {
+      type: 'TemplateLiteral',
+      quasis,
+      expressions: [],
+      start: token.start,
+      end: token.end,
+    };
+  }
+
+  // Parse template with expressions
+  let pos = 0;
+  let depth = 0;
+
+  while (pos < content.length) {
+    // Find next ${
+    const exprStart = content.indexOf('${', pos);
+
+    if (exprStart === -1) {
+      // No more expressions - rest is final quasi
+      const tail = content.substring(pos);
+      quasis.push({
+        type: 'TemplateElement',
+        value: {
+          cooked: tail,
+          raw: tail,
+        },
+        tail: true,
+        start: token.start + pos,
+        end: token.end,
+      });
+      break;
+    }
+
+    // Add quasi before expression
+    const quasi = content.substring(pos, exprStart);
+    quasis.push({
+      type: 'TemplateElement',
+      value: {
+        cooked: quasi,
+        raw: quasi,
+      },
+      tail: false,
+      start: token.start + pos,
+      end: token.start + exprStart,
+    });
+
+    // Find matching }
+    pos = exprStart + 2; // skip ${
+    depth = 1;
+    const exprStartPos = pos;
+
+    while (pos < content.length && depth > 0) {
+      if (content[pos] === '{') depth++;
+      if (content[pos] === '}') depth--;
+      if (depth > 0) pos++;
+    }
+
+    if (depth !== 0) {
+      throw new Error(
+        `Unmatched braces in template expression at line ${token.line}, column ${token.column}`
+      );
+    }
+
+    // Extract and parse the expression
+    const exprText = content.substring(exprStartPos, pos);
+
+    // Create a mini-lexer and parser for the expression
+    // For simplicity, we'll use a basic identifier parser
+    // In a full implementation, we'd recursively parse the expression
+    expressions.push({
+      type: 'Identifier',
+      name: exprText.trim(),
+      start: token.start + exprStartPos,
+      end: token.start + pos,
+    });
+
+    pos++; // skip closing }
+  }
+
+  return {
+    type: 'TemplateLiteral',
+    quasis,
+    expressions,
+    start: token.start,
+    end: token.end,
   };
 };

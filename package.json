@@ -24,8 +24,8 @@
     "verify": "tsx verify-integration.ts",
     "test:integration": "vitest run tests/integration-full-pipeline.test.ts"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@pulsar-framework/pulsar.dev": "workspace:0.7.0-alpha",
     "@types/jsdom": "^21.1.7",
     "@vitest/coverage-v8": "^2.1.8",
     "jsdom": "^25.0.1",

@@ -8,6 +8,7 @@ import { TokenTypeEnum } from '../../lexer/lexer.types.js';
 import type { IParser } from '../parser.js';
 import { Parser } from '../parser.js';
 import type { IFunctionDeclaration } from '../parser.types.js';
+import { parseParameterList } from '../strategies/parameter-parsing-strategy.js';
 
 Parser.prototype.parseFunctionDeclaration = function (this: IParser): IFunctionDeclaration {
   const start = this.peek().start;
@@ -26,30 +27,13 @@ Parser.prototype.parseFunctionDeclaration = function (this: IParser): IFunctionD
     };
   }
 
+  // Parse type parameters if present: function name<T>()
+  const typeParameters = this.parseTypeParameters();
+
   this.expect(TokenTypeEnum.LPAREN);
 
-  // Parameters (simplified)
-  const params: any[] = [];
-  if (!this.match(TokenTypeEnum.RPAREN)) {
-    do {
-      const paramToken = this.expect(TokenTypeEnum.IDENTIFIER);
-      params.push({
-        type: 'Parameter',
-        pattern: {
-          type: 'Identifier',
-          name: paramToken.value,
-          start: paramToken.start,
-          end: paramToken.end,
-        },
-        start: paramToken.start,
-        end: paramToken.end,
-      });
-
-      if (this.match(TokenTypeEnum.COMMA)) {
-        this.advance();
-      }
-    } while (!this.match(TokenTypeEnum.RPAREN));
-  }
+  // Use shared parameter parsing strategy (eliminates duplication)
+  const params = parseParameterList(this);
 
   this.expect(TokenTypeEnum.RPAREN);
 
@@ -82,6 +66,7 @@ Parser.prototype.parseFunctionDeclaration = function (this: IParser): IFunctionD
   return {
     type: 'FunctionDeclaration',
     id,
+    typeParameters: typeParameters.length > 0 ? typeParameters : undefined,
     params,
     body,
     returnType,

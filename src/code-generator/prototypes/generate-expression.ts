@@ -19,6 +19,9 @@ CodeGenerator.prototype.generateExpression = function (this: ICodeGenerator, nod
       }
       return String(node.value);
 
+    case 'TemplateLiteral':
+      return this.generateTemplateLiteral(node);
+
     case 'CallExpression':
       return this.generateCallExpression(node);
 
@@ -26,7 +29,9 @@ CodeGenerator.prototype.generateExpression = function (this: ICodeGenerator, nod
       const object = this.generateExpression(node.object);
       const property = node.computed
         ? `[${this.generateExpression(node.property)}]`
-        : `.${node.property.name}`;
+        : node.optional
+          ? `?.${node.property.name}`
+          : `.${node.property.name}`;
       return `${object}${property}`;
 
     case 'BinaryExpression':
@@ -131,11 +136,9 @@ CodeGenerator.prototype.generateArrowFunction = function (this: ICodeGenerator, 
       statements.push(this.generateStatement(stmt));
     }
     this.indentLevel--;
-    
-    const body = statements.length > 0 
-      ? `{\n${statements.join('\n')}\n${this.indent()}}`
-      : '{}';
-    
+
+    const body = statements.length > 0 ? `{\n${statements.join('\n')}\n${this.indent()}}` : '{}';
+
     return `(${params})${returnType} => ${body}`;
   } else {
     return `(${params})${returnType} => ${this.generateExpression(node.body)}`;
@@ -163,4 +166,41 @@ CodeGenerator.prototype.generateObjectExpression = function (
     .join(', ');
 
   return `{ ${props} }`;
+};
+
+/**
+ * Generate template literal
+ * Transforms template literal to string concatenation
+ * Example: `hello ${name}!` → 'hello ' + name + '!'
+ */
+CodeGenerator.prototype.generateTemplateLiteral = function (
+  this: ICodeGenerator,
+  node: any
+): string {
+  const { quasis, expressions } = node;
+
+  // Simple template literal without expressions
+  if (expressions.length === 0) {
+    return `'${quasis[0].value.cooked}'`;
+  }
+
+  // Template with expressions - build concatenation chain
+  const parts: string[] = [];
+
+  for (let i = 0; i < quasis.length; i++) {
+    const quasi = quasis[i];
+
+    // Add string part if not empty
+    if (quasi.value.cooked !== '') {
+      parts.push(`'${quasi.value.cooked}'`);
+    }
+
+    // Add expression if not the last quasi
+    if (i < expressions.length) {
+      parts.push(this.generateExpression(expressions[i]));
+    }
+  }
+
+  // Join with + operator
+  return parts.join(' + ');
 };

@@ -94,25 +94,41 @@ CodeGenerator.prototype.generateComponent = function (this: ICodeGenerator, node
 
   const parts: string[] = [];
 
+  // Generate type parameters: <T> or <T, U>
+  let typeParams = '';
+  if (node.typeParameters && node.typeParameters.length > 0) {
+    const typeParamStrings = node.typeParameters.map((tp: any) => tp.name);
+    typeParams = `<${typeParamStrings.join(', ')}>`;
+  }
+
   // Function signature
   const params = node.params
     .map((p: any) => {
       if (p.pattern.type === 'ObjectPattern') {
         const props = p.pattern.properties.map((prop: any) => prop.key.name).join(', ');
         const typeAnnotation = p.typeAnnotation
-          ? `: ${p.typeAnnotation.typeAnnotation.typeName.name}`
+          ? `: ${this.generateTypeAnnotation(p.typeAnnotation)}`
           : '';
         return `{${props}}${typeAnnotation}`;
       }
-      return p.pattern.name;
+      let paramStr = p.pattern.name;
+      if (p.optional) {
+        paramStr += '?';
+      }
+      if (p.typeAnnotation) {
+        paramStr += `: ${this.generateTypeAnnotation(p.typeAnnotation)}`;
+      }
+      return paramStr;
     })
     .join(', ');
 
-  parts.push(`function ${node.name.name}(${params}): HTMLElement {`);
+  parts.push(`function ${node.name.name}${typeParams}(${params}): HTMLElement {`);
   this.indentLevel++;
 
-  // Registry wrapper
-  parts.push(`${this.indent()}return $REGISTRY.execute('component:${node.name.name}', () => {`);
+  // Registry wrapper - execute(id, parentId, factory)
+  parts.push(
+    `${this.indent()}return $REGISTRY.execute('component:${node.name.name}', null, () => {`
+  );
   this.indentLevel++;
 
   // Body statements
@@ -136,10 +152,44 @@ CodeGenerator.prototype.generateFunction = function (this: ICodeGenerator, node:
   const parts: string[] = [];
 
   const name = node.id ? node.id.name : '';
-  const params = node.params.map((p: any) => p.pattern.name).join(', ');
-  const returnType = node.returnType ? `: ${node.returnType.typeAnnotation.typeName.name}` : '';
 
-  parts.push(`function ${name}(${params})${returnType} {`);
+  // Generate type parameters: <T> or <T, U> or <T extends Base>
+  let typeParams = '';
+  if (node.typeParameters && node.typeParameters.length > 0) {
+    const typeParamStrings = node.typeParameters.map((tp: any) => {
+      let result = tp.name;
+      if (tp.constraint) {
+        result += ` extends ${this.generateTypeAnnotation(tp.constraint)}`;
+      }
+      if (tp.default) {
+        result += ` = ${this.generateTypeAnnotation(tp.default)}`;
+      }
+      return result;
+    });
+    typeParams = `<${typeParamStrings.join(', ')}>`;
+  }
+
+  // Generate parameters with type annotations
+  const params = node.params
+    .map((p: any) => {
+      let paramStr = p.pattern.name;
+      if (p.optional) {
+        paramStr += '?';
+      }
+      if (p.typeAnnotation) {
+        // Add type annotation: param: Type or param?: Type
+        const typeStr = this.generateTypeAnnotation(p.typeAnnotation);
+        paramStr += `: ${typeStr}`;
+      }
+      return paramStr;
+    })
+    .join(', ');
+
+  const returnType = node.returnType
+    ? `: ${this.generateTypeAnnotation(node.returnType.typeAnnotation)}`
+    : '';
+
+  parts.push(`function ${name}${typeParams}(${params})${returnType} {`);
   this.indentLevel++;
 
   for (const stmt of node.body.body) {
@@ -235,7 +285,7 @@ CodeGenerator.prototype.generateVariableDeclaration = function (
       }
 
       init = ` = (${params}): ${returnType} => {
-${this.indent()}  return $REGISTRY.execute('component:${pattern}', () => {
+${this.indent()}  return $REGISTRY.execute('component:${pattern}', null, () => {
 ${bodyStatements}${this.indent()}  });
 ${this.indent()}}`;
     } else if (decl.init) {

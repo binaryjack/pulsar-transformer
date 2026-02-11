@@ -29,11 +29,19 @@ export enum TokenTypeEnum {
   NULL = 'NULL',
   UNDEFINED = 'UNDEFINED',
 
+  // Template Literals
+  TEMPLATE_LITERAL = 'TEMPLATE_LITERAL', // `simple template`
+  TEMPLATE_HEAD = 'TEMPLATE_HEAD', // `start${
+  TEMPLATE_MIDDLE = 'TEMPLATE_MIDDLE', // }middle${
+  TEMPLATE_TAIL = 'TEMPLATE_TAIL', // }end`
+
   // Operators
   EQUALS = 'EQUALS', // =
   ARROW = 'ARROW', // =>
   COLON = 'COLON', // :
   QUESTION = 'QUESTION', // ?
+  QUESTION_QUESTION = 'QUESTION_QUESTION', // ?? (nullish coalescing)
+  QUESTION_DOT = 'QUESTION_DOT', // ?. (optional chaining)
   PLUS = 'PLUS', // +
   MINUS = 'MINUS', // -
   STAR = 'STAR', // *
@@ -153,6 +161,7 @@ export interface ILexer {
   scanNumber(): void;
   scanComment(): void;
   scanJSXText(): void;
+  scanTemplate(): void;
 
   // Helper methods
   isKeyword(text: string): TokenTypeEnum | null;

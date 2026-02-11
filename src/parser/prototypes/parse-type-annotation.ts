@@ -57,8 +57,56 @@ Parser.prototype.parsePrimaryType = function (this: IParser): any {
   const start = this.peek().start;
   let type: any;
 
+  // Object literal type: {key: Type; prop?: string}
+  if (this.match(TokenTypeEnum.LBRACE)) {
+    const startToken = this.advance(); // consume {
+    const members: any[] = [];
+
+    while (!this.match(TokenTypeEnum.RBRACE) && !this.isAtEnd()) {
+      // Parse property name
+      const propName = this.expect(TokenTypeEnum.IDENTIFIER);
+
+      // Check for optional property: prop?
+      let optional = false;
+      if (this.match(TokenTypeEnum.QUESTION)) {
+        optional = true;
+        this.advance(); // consume ?
+      }
+
+      this.expect(TokenTypeEnum.COLON); // expect :
+      const propType = this.parseTypeAnnotation(); // parse property type
+
+      members.push({
+        type: 'PropertySignature',
+        key: {
+          type: 'Identifier',
+          name: propName.value,
+          start: propName.start,
+          end: propName.end,
+        },
+        typeAnnotation: propType,
+        optional,
+        start: propName.start,
+        end: propType.end,
+      });
+
+      // Handle comma or semicolon separator
+      if (this.match(TokenTypeEnum.COMMA, TokenTypeEnum.SEMICOLON)) {
+        this.advance();
+      }
+    }
+
+    const endToken = this.expect(TokenTypeEnum.RBRACE); // consume }
+
+    type = {
+      type: 'TypeLiteral',
+      members,
+      start: startToken.start,
+      end: endToken.end,
+    };
+  }
   // String literal type: 'primary'
-  if (this.match(TokenTypeEnum.STRING)) {
+  else if (this.match(TokenTypeEnum.STRING)) {
     const token = this.advance();
     type = {
       type: 'LiteralType',
@@ -190,43 +238,6 @@ Parser.prototype.parsePrimaryType = function (this: IParser): any {
       start: token.start,
       end: token.end,
     };
-
-    // Check for array suffix: string[]
-    while (this.match(TokenTypeEnum.LBRACKET)) {
-      this.advance(); // consume [
-      this.expect(TokenTypeEnum.RBRACKET); // expect ]
-      const endToken = this.tokens[this.current - 1];
-
-      type = {
-        type: 'ArrayType',
-        elementType: type,
-        start: type.start,
-        end: endToken.end,
-      };
-    }
-  }
-  // Function type: () => ReturnType
-  else if (this.match(TokenTypeEnum.LPAREN)) {
-    const parenStart = this.advance();
-
-    // Parse parameters (simplified - skip for now)
-    // TODO: Parse full parameter list with types
-    while (!this.match(TokenTypeEnum.RPAREN) && !this.isAtEnd()) {
-      this.advance();
-    }
-
-    this.expect(TokenTypeEnum.RPAREN);
-    this.expect(TokenTypeEnum.ARROW);
-
-    const returnType = this.parseTypeAnnotation();
-
-    type = {
-      type: 'FunctionType',
-      parameters: [], // Simplified
-      returnType,
-      start: parenStart.start,
-      end: returnType.end,
-    };
   }
   // Fallback: treat as "any" type
   else {
@@ -241,6 +252,21 @@ Parser.prototype.parsePrimaryType = function (this: IParser): any {
       },
       start: token.start,
       end: token.end,
+    };
+  }
+
+  // Handle array suffix AFTER we've parsed the base type: T[], string[], etc.
+  // This works for ALL types: identifiers, object literals, parenthesized, etc.
+  while (this.match(TokenTypeEnum.LBRACKET)) {
+    this.advance(); // consume [
+    this.expect(TokenTypeEnum.RBRACKET); // expect ]
+    const endToken = this.tokens[this.current - 1];
+
+    type = {
+      type: 'ArrayType',
+      elementType: type,
+      start: type.start,
+      end: endToken.end,
     };
   }
 

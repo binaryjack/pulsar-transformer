@@ -8,19 +8,23 @@ import type { ILexer } from '../lexer.types.js';
 import { LexerStateEnum, TokenTypeEnum, isAlpha, isDigit } from '../lexer.types.js';
 
 Lexer.prototype.scanToken = function (this: ILexer): void {
+  // Check state BEFORE skipping whitespace (JSX needs to preserve it)
+  const currentState = this.getState();
+  const ch = this.peek();
+
+  console.log('[scanToken] pos:', this.pos, 'char:', JSON.stringify(ch), 'state:', currentState);
+
+  // Handle JSX text content (including whitespace)
+  if (currentState === LexerStateEnum.InsideJSXText) {
+    this.scanJSXText();
+    return;
+  }
+
+  // Skip whitespace for normal code (but not JSX)
   this.skipWhitespace();
 
   if (this.isAtEnd()) {
     this.addToken(TokenTypeEnum.EOF);
-    return;
-  }
-
-  // Check state for context-aware scanning
-  const currentState = this.getState();
-
-  // Handle JSX text content
-  if (currentState === LexerStateEnum.InsideJSXText) {
-    this.scanJSXText();
     return;
   }
 
@@ -51,6 +55,14 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
       this.scanString(ch);
       return;
 
+    // Template literals
+    case '`':
+      // Backtrack since scanTemplate expects to be at opening backtick
+      this.pos--;
+      this.column--;
+      this.scanTemplate();
+      return;
+
     // Single-char delimiters
     case '(':
       this.addToken(TokenTypeEnum.LPAREN, '(');
@@ -61,20 +73,27 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
     case '{':
       this.addToken(TokenTypeEnum.LBRACE, '{');
 
-      // If in JSX text, switch to Normal for expression
-      if (this.getState() === LexerStateEnum.InsideJSXText) {
+      // If in JSX (tag attributes OR text content), switch to Normal for expression
+      const currentState = this.getState();
+      if (
+        currentState === LexerStateEnum.InsideJSXText ||
+        currentState === LexerStateEnum.InsideJSX
+      ) {
         this.pushState(LexerStateEnum.Normal);
       }
       return;
     case '}':
       this.addToken(TokenTypeEnum.RBRACE, '}');
 
-      // If we pushed Normal for JSX expression, pop back
-      if (
-        this.stateStack.length > 0 &&
-        this.stateStack[this.stateStack.length - 1] === LexerStateEnum.InsideJSXText
-      ) {
-        this.popState(); // Back to InsideJSXText
+      // If we pushed Normal for JSX expression, pop back to JSX state
+      if (this.stateStack.length > 0) {
+        const previousState = this.stateStack[this.stateStack.length - 1];
+        if (
+          previousState === LexerStateEnum.InsideJSXText ||
+          previousState === LexerStateEnum.InsideJSX
+        ) {
+          this.popState(); // Back to InsideJSXText or InsideJSX
+        }
       }
       return;
     case '[':
@@ -93,7 +112,14 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
       this.addToken(TokenTypeEnum.COLON, ':');
       return;
     case '?':
-      this.addToken(TokenTypeEnum.QUESTION, '?');
+      // Check for ?? (nullish coalescing) or ?. (optional chaining)
+      if (this.match('?')) {
+        this.addToken(TokenTypeEnum.QUESTION_QUESTION, '??');
+      } else if (this.match('.')) {
+        this.addToken(TokenTypeEnum.QUESTION_DOT, '?.');
+      } else {
+        this.addToken(TokenTypeEnum.QUESTION, '?');
+      }
       return;
 
     // Operators that might be multi-char
@@ -171,8 +197,33 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
           this.pushState(LexerStateEnum.InsideJSX);
         }
       } else {
-        // Could be opening tag: <div or less than operator
+        // Could be opening tag: <div or less than operator or generic <T>
         const nextCh = this.peek();
+
+        // Heuristic: Check if this looks like a generic type parameter
+        // <T>, <T,>, <T extends>, <K, V>
+        // If < is followed by uppercase letter, check what comes after it
+        if (isAlpha(nextCh) && nextCh === nextCh.toUpperCase()) {
+          // Peek ahead to see if this is a generic pattern
+          let lookAhead = nextCh; // Start with the first letter
+          let i = 1;
+          while (i < 30 && this.pos + i < this.source.length) {
+            const ch = this.source[this.pos + i];
+            lookAhead += ch;
+            // Break on definitive generic markers or JSX indicators
+            if (ch === '>' || ch === ',' || ch === '=' || ch === '\n') {
+              break;
+            }
+            i++;
+          }
+
+          // If we see >, comma, extends, or equals soon after, treat as generic
+          if (lookAhead.match(/^[A-Z][a-zA-Z0-9]*\s*(>|,|extends|=)/)) {
+            // Generic type parameter, not JSX
+            this.addToken(TokenTypeEnum.LT, '<');
+            return;
+          }
+        }
 
         if (isAlpha(nextCh)) {
           // Opening tag: <div

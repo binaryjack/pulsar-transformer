@@ -171,6 +171,35 @@ Parser.prototype.parseJSXOpeningElement = function (this: IParser): any {
   const attributes: any[] = [];
 
   while (!this.match(TokenTypeEnum.GT) && !this.match(TokenTypeEnum.SLASH) && !this.isAtEnd()) {
+    // Check for spread attribute: {...props}
+    if (this.match(TokenTypeEnum.LBRACE)) {
+      const lbrace = this.advance(); // consume {
+
+      // Expect spread operator: ...
+      if (!this.match(TokenTypeEnum.SPREAD)) {
+        throw new Error(
+          `Expected spread operator (...) after { in JSX attribute at line ${this.peek().line}`
+        );
+      }
+
+      this.advance(); // consume ...
+
+      // Parse the spread expression
+      const argument = this.parseExpression();
+
+      // Expect closing brace
+      const rbrace = this.expect(TokenTypeEnum.RBRACE);
+
+      attributes.push({
+        type: 'JSXSpreadAttribute',
+        argument,
+        start: lbrace.start,
+        end: rbrace.end,
+      });
+
+      continue; // Skip to next attribute
+    }
+
     // Accept keywords as JSX attribute names
     const token = this.peek();
 

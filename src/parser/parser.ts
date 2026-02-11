@@ -47,6 +47,7 @@ export interface IParser {
   parseArrowFunction(params: any[]): any;
   parseArrayExpression(): any;
   parseObjectExpression(): any;
+  parseTemplateLiteral(token: IToken): any;
   parseJSXOpeningElement(): any;
   parseJSXClosingElement(tagName: string): any;
   parseJSXExpressionContainer(): any;
@@ -55,6 +56,7 @@ export interface IParser {
   parseTypeAnnotation(): any;
   parseUnionType(): any;
   parsePrimaryType(): any;
+  parseTypeParameters(): any[];
 }
 
 /**
