@@ -7,6 +7,7 @@
 import './prototypes/advance.js';
 import './prototypes/expect.js';
 import './prototypes/is-at-end.js';
+import './prototypes/is-keyword-token.js';
 import './prototypes/match.js';
 import './prototypes/parse-block-statement.js';
 import './prototypes/parse-component-declaration.js';

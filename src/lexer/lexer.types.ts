@@ -81,6 +81,15 @@ export enum TokenTypeEnum {
 }
 
 /**
+ * Lexer state for context-aware tokenization
+ */
+export enum LexerStateEnum {
+  Normal = 'Normal',           // Regular JavaScript/TypeScript
+  InsideJSX = 'InsideJSX',     // Inside JSX tag: <div ...>
+  InsideJSXText = 'InsideJSXText', // Between JSX tags: <div>TEXT</div>
+}
+
+/**
  * Token interface with position tracking
  */
 export interface IToken {
@@ -114,6 +123,16 @@ export interface ILexer {
   line: number;
   column: number;
   tokens: IToken[];
+  
+  /**
+   * Current lexer state for context-aware tokenization
+   */
+  state: LexerStateEnum;
+  
+  /**
+   * State stack for nested contexts (JSX in expressions)
+   */
+  stateStack: LexerStateEnum[];
 
   // Core methods
   scanTokens(): IToken[];
@@ -133,10 +152,17 @@ export interface ILexer {
   scanString(quote: string): void;
   scanNumber(): void;
   scanComment(): void;
+  scanJSXText(): void;
 
   // Helper methods
   isKeyword(text: string): TokenTypeEnum | null;
   skipWhitespace(): void;
+  
+  // State management
+  pushState(state: LexerStateEnum): void;
+  popState(): void;
+  getState(): LexerStateEnum;
+  isInJSX(): boolean;
 }
 
 /**

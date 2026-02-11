@@ -26,6 +26,7 @@ export interface IParser {
   match(...types: string[]): boolean;
   expect(type: string, message?: string): IToken;
   isAtEnd(): boolean;
+  isKeywordToken(tokenType: string): boolean;
 
   // Parsing methods
   parseProgram(): IProgramNode;
@@ -76,6 +77,7 @@ Object.assign(Parser.prototype, {
   match: undefined,
   expect: undefined,
   isAtEnd: undefined,
+  isKeywordToken: undefined,
 
   // Parsing methods
   parseProgram: undefined,

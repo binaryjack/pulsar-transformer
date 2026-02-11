@@ -30,6 +30,12 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
   const children: IJSXChild[] = [];
 
   while (!this.isAtEnd()) {
+    // Skip comments in JSX
+    if (this.match(TokenTypeEnum.COMMENT)) {
+      this.advance();
+      continue;
+    }
+
     // Check for closing tag: </div>
     if (this.match(TokenTypeEnum.LT) && this.peek(1).type === TokenTypeEnum.SLASH) {
       break;
@@ -47,7 +53,21 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
       continue;
     }
 
+    // JSX Text Content (from lexer)
+    if (this.match(TokenTypeEnum.JSX_TEXT)) {
+      const token = this.advance();
+      children.push({
+        type: 'JSXText',
+        value: token.value,
+        raw: token.value, // Use value as raw since lexer already handled it
+        start: token.start,
+        end: token.end,
+      });
+      continue;
+    }
+
     // Text content - accumulate all text-like tokens until JSX boundary
+    // (Fallback for non-JSX_TEXT tokens)
     if (
       this.match(TokenTypeEnum.IDENTIFIER) ||
       this.match(TokenTypeEnum.STRING) ||
@@ -151,7 +171,19 @@ Parser.prototype.parseJSXOpeningElement = function (this: IParser): any {
   const attributes: any[] = [];
 
   while (!this.match(TokenTypeEnum.GT) && !this.match(TokenTypeEnum.SLASH) && !this.isAtEnd()) {
-    const attrName = this.expect(TokenTypeEnum.IDENTIFIER);
+    // Accept keywords as JSX attribute names
+    const token = this.peek();
+    
+    if (
+      token.type !== TokenTypeEnum.IDENTIFIER &&
+      !this.isKeywordToken(token.type)
+    ) {
+      throw new Error(
+        `Expected attribute name, got ${token.type} at line ${token.line}`
+      );
+    }
+    
+    const attrName = this.advance();
 
     // Attribute with value: className="foo" or onClick={handler}
     if (this.match(TokenTypeEnum.EQUALS)) {

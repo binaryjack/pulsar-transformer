@@ -5,13 +5,22 @@
 
 import { Lexer } from '../lexer.js';
 import type { ILexer } from '../lexer.types.js';
-import { TokenTypeEnum, isAlpha, isDigit } from '../lexer.types.js';
+import { TokenTypeEnum, LexerStateEnum, isAlpha, isDigit } from '../lexer.types.js';
 
 Lexer.prototype.scanToken = function (this: ILexer): void {
   this.skipWhitespace();
 
   if (this.isAtEnd()) {
     this.addToken(TokenTypeEnum.EOF);
+    return;
+  }
+  
+  // Check state for context-aware scanning
+  const currentState = this.getState();
+  
+  // Handle JSX text content
+  if (currentState === LexerStateEnum.InsideJSXText) {
+    this.scanJSXText();
     return;
   }
 
@@ -51,9 +60,20 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
       return;
     case '{':
       this.addToken(TokenTypeEnum.LBRACE, '{');
+      
+      // If in JSX text, switch to Normal for expression
+      if (this.getState() === LexerStateEnum.InsideJSXText) {
+        this.pushState(LexerStateEnum.Normal);
+      }
       return;
     case '}':
       this.addToken(TokenTypeEnum.RBRACE, '}');
+      
+      // If we pushed Normal for JSX expression, pop back
+      if (this.stateStack.length > 0 && 
+          this.stateStack[this.stateStack.length - 1] === LexerStateEnum.InsideJSXText) {
+        this.popState(); // Back to InsideJSXText
+      }
       return;
     case '[':
       this.addToken(TokenTypeEnum.LBRACKET, '[');
@@ -141,16 +161,37 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
     case '<':
       if (this.match('/')) {
         // JSX closing tag start: </
-        // For now, add as JSX_TAG_CLOSE, proper JSX handling later
         this.addToken(TokenTypeEnum.LT, '<');
         this.addToken(TokenTypeEnum.SLASH, '/');
+        // Transition to InsideJSX for closing tag
+        if (this.getState() === LexerStateEnum.InsideJSXText) {
+          this.popState(); // Exit InsideJSXText
+          this.pushState(LexerStateEnum.InsideJSX);
+        }
       } else {
-        this.addToken(TokenTypeEnum.LT, '<');
+        // Could be opening tag: <div or less than operator
+        const nextCh = this.peek();
+        
+        if (isAlpha(nextCh)) {
+          // Opening tag: <div
+          this.addToken(TokenTypeEnum.LT, '<');
+          // Transition to InsideJSX
+          this.pushState(LexerStateEnum.InsideJSX);
+        } else {
+          // Less than operator: <
+          this.addToken(TokenTypeEnum.LT, '<');
+        }
       }
       return;
 
     case '>':
       this.addToken(TokenTypeEnum.GT, '>');
+      
+      // If we were InsideJSX, transition to InsideJSXText
+      if (this.getState() === LexerStateEnum.InsideJSX) {
+        this.popState(); // Remove InsideJSX
+        this.pushState(LexerStateEnum.InsideJSXText); // Enter text mode
+      }
       return;
 
     case '.':
