@@ -11,6 +11,8 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
   // Check state BEFORE skipping whitespace (JSX needs to preserve it)
   const currentState = this.getState();
 
+  // Handle JSX text content (including whitespace)
+  if (currentState === LexerStateEnum.InsideJSXText) {
     this.scanJSXText();
     return;
   }
@@ -47,7 +49,7 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
       // Backtrack since scanString expects to be at opening quote
       this.pos--;
       this.column--;
-      this.scanString(ch);
+      this.scanString(char);
       return;
 
     // Template literals
