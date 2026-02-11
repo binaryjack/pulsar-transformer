@@ -28,6 +28,9 @@ import { createLogger, type LogChannel, type LogLevel } from './debug/logger.js'
 import { createLexer } from './lexer/index.js';
 import { createParser } from './parser/index.js';
 
+// Initialize tracing (auto-instruments pipeline if PULSAR_TRACE=1)
+import './init-tracing.js';
+
 /**
  * Pipeline options
  */

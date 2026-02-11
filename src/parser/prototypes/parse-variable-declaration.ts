@@ -108,6 +108,14 @@ Parser.prototype.parseVariableDeclaration = function (this: IParser): IVariableD
         start: idToken.start,
         end: idToken.end,
       };
+
+      // Check for type annotation: const x: Type = ...
+      if (this.match(TokenTypeEnum.COLON)) {
+        this.advance(); // consume :
+        // Parse type annotation (handles complex types like string[], () => void, etc.)
+        const typeAnnotation = this.parseTypeAnnotation();
+        (id as any).typeAnnotation = typeAnnotation;
+      }
     }
 
     // Initializer

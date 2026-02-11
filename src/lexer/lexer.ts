@@ -17,7 +17,7 @@ export function Lexer(this: ILexer, source: string, filePath: string = '<input>'
   this.line = 1;
   this.column = 1;
   this.tokens = [];
-  
+
   // Initialize state machine
   this.state = LexerStateEnum.Normal;
   this.stateStack = [];
@@ -48,7 +48,7 @@ Object.assign(Lexer.prototype, {
   // Helpers
   isKeyword: undefined,
   skipWhitespace: undefined,
-  
+
   // State management
   pushState: undefined,
   popState: undefined,

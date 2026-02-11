@@ -40,6 +40,13 @@ Parser.prototype.parseComponentDeclaration = function (this: IParser): IComponen
         while (!this.match(TokenTypeEnum.RBRACE) && !this.isAtEnd()) {
           const keyToken = this.expect(TokenTypeEnum.IDENTIFIER);
 
+          // Check for default value: { key = 'default' }
+          let defaultValue = null;
+          if (this.match(TokenTypeEnum.EQUALS)) {
+            this.advance(); // consume =
+            defaultValue = this.parsePrimaryExpression();
+          }
+
           properties.push({
             type: 'Property',
             key: {
@@ -55,6 +62,7 @@ Parser.prototype.parseComponentDeclaration = function (this: IParser): IComponen
               end: keyToken.end,
             },
             shorthand: true,
+            defaultValue,
             start: keyToken.start,
             end: keyToken.end,
           });

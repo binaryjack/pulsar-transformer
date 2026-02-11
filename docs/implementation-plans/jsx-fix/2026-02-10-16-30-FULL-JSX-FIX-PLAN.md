@@ -13,16 +13,19 @@
 **Goal:** Fix 5 critical blockers preventing JSX transformation from working on real PSR files.
 
 **Current State:**
+
 - ❌ Browser shows blank screen
 - ❌ Transformation returns 0 characters
 - ❌ Errors: "Unexpected character", "Expected IDENTIFIER got COMPONENT", "Unexpected token COMMENT"
 
 **Target State:**
+
 - ✅ Browser renders PSR components
 - ✅ Transformation generates valid TypeScript
 - ✅ All real PSR files work (with text, emojis, comments, keywords)
 
 **Critical Path:**
+
 1. Parser fixes (30 mins) → Unblock test-simple.psr
 2. Lexer state machine (2 days) → Enable context-aware tokenization
 3. JSX text scanning (1 day) → Handle text between tags
@@ -81,6 +84,7 @@
 **File:** `src/parser/prototypes/parse-jsx-element.ts`
 
 **Current Code (Line ~155):**
+
 ```typescript
 const attrName = this.expect(TokenTypeEnum.IDENTIFIER);
 ```
@@ -94,17 +98,12 @@ const attrName = this.expect(TokenTypeEnum.IDENTIFIER);
 const token = this.peek();
 
 // Check if token can be an attribute name
-if (
-  token.type === TokenTypeEnum.IDENTIFIER ||
-  this.isKeywordToken(token.type)
-) {
+if (token.type === TokenTypeEnum.IDENTIFIER || this.isKeywordToken(token.type)) {
   const attrName = this.advance();
-  
+
   // ... continue with existing logic
 } else {
-  throw new Error(
-    `Expected attribute name, got ${token.type} at line ${token.line}`
-  );
+  throw new Error(`Expected attribute name, got ${token.type} at line ${token.line}`);
 }
 ```
 
@@ -121,10 +120,7 @@ import type { IParser } from '../parser.js';
 import { Parser } from '../parser.js';
 import { TokenTypeEnum } from '../../lexer/lexer.types.js';
 
-Parser.prototype.isKeywordToken = function (
-  this: IParser,
-  tokenType: TokenTypeEnum
-): boolean {
+Parser.prototype.isKeywordToken = function (this: IParser, tokenType: TokenTypeEnum): boolean {
   const keywordTypes: TokenTypeEnum[] = [
     TokenTypeEnum.COMPONENT,
     TokenTypeEnum.DEFAULT,
@@ -146,7 +142,7 @@ Parser.prototype.isKeywordToken = function (
     TokenTypeEnum.NULL,
     TokenTypeEnum.UNDEFINED,
   ];
-  
+
   return keywordTypes.includes(tokenType);
 };
 ```
@@ -196,6 +192,7 @@ import './prototypes/is-keyword-token.js';
 **File:** `src/parser/prototypes/parse-jsx-element.ts`
 
 **Current Code (Line ~28 in parseJSXElement function):**
+
 ```typescript
 while (!this.isAtEnd()) {
   // Check for closing tag: </div>
@@ -215,12 +212,12 @@ while (!this.isAtEnd()) {
     this.advance();
     continue;
   }
-  
+
   // Check for closing tag: </div>
   if (this.match(TokenTypeEnum.LT) && this.peek(1).type === TokenTypeEnum.SLASH) {
     break;
   }
-  
+
   // ... rest of existing logic
 ```
 
@@ -249,6 +246,7 @@ while (!this.isAtEnd()) {
 **Test File:** Already created at `pulsar-ui.dev/src/test-simple.psr`
 
 **Current Content:**
+
 ```psr
 export component TestSimple() {
   return (
@@ -270,6 +268,7 @@ export component TestSimple() {
 6. Verify component renders
 
 **Expected Terminal Output:**
+
 ```
 [pulsar] Transformation complete in XXms
 [pulsar] Output length: >0 chars
@@ -277,6 +276,7 @@ export component TestSimple() {
 ```
 
 **Expected Browser:**
+
 - White text on dark background
 - Heading: "Test Component Rendered!"
 - Paragraph: "If you see this, the transformer is working."
@@ -293,6 +293,7 @@ export component TestSimple() {
 ```
 
 **If Fails:**
+
 - Check terminal logs for transformation errors
 - Check browser console for import errors
 - Check transformation output in network tab
@@ -320,8 +321,8 @@ export component TestSimple() {
  * Lexer state for context-aware tokenization
  */
 export enum LexerStateEnum {
-  Normal = 'Normal',           // Regular JavaScript/TypeScript
-  InsideJSX = 'InsideJSX',     // Inside JSX tag: <div ...>
+  Normal = 'Normal', // Regular JavaScript/TypeScript
+  InsideJSX = 'InsideJSX', // Inside JSX tag: <div ...>
   InsideJSXText = 'InsideJSXText', // Between JSX tags: <div>TEXT</div>
 }
 ```
@@ -331,23 +332,23 @@ export enum LexerStateEnum {
 ```typescript
 export interface ILexer {
   // ... existing fields
-  
+
   /**
    * Current lexer state for context-aware tokenization
    */
   state: LexerStateEnum;
-  
+
   /**
    * State stack for nested contexts (JSX in expressions)
    */
   stateStack: LexerStateEnum[];
-  
+
   // State management
   pushState(state: LexerStateEnum): void;
   popState(): void;
   getState(): LexerStateEnum;
   isInJSX(): boolean;
-  
+
   // ... rest remains same
 }
 ```
@@ -382,16 +383,16 @@ export const Lexer: ILexer = function (
   this.line = 1;
   this.column = 0;
   this.tokens = [];
-  
+
   // Initialize state
   this.state = LexerStateEnum.Normal;
   this.stateStack = [];
-  
+
   // Methods assigned via prototype
   this.scanTokens = undefined;
   this.scanToken = undefined;
   // ... existing assignments
-  
+
   // State management methods
   this.pushState = undefined;
   this.popState = undefined;
@@ -423,13 +424,10 @@ export const Lexer: ILexer = function (
 import type { ILexer, LexerStateEnum } from '../lexer.types.js';
 import { Lexer } from '../lexer.js';
 
-Lexer.prototype.pushState = function (
-  this: ILexer,
-  newState: LexerStateEnum
-): void {
+Lexer.prototype.pushState = function (this: ILexer, newState: LexerStateEnum): void {
   // Save current state to stack
   this.stateStack.push(this.state);
-  
+
   // Activate new state
   this.state = newState;
 };
@@ -449,7 +447,7 @@ import { LexerStateEnum } from '../lexer.types.js';
 Lexer.prototype.popState = function (this: ILexer): void {
   // Pop previous state
   const previousState = this.stateStack.pop();
-  
+
   // Restore it, or default to Normal
   this.state = previousState !== undefined ? previousState : LexerStateEnum.Normal;
 };
@@ -482,10 +480,7 @@ import { Lexer } from '../lexer.js';
 import { LexerStateEnum } from '../lexer.types.js';
 
 Lexer.prototype.isInJSX = function (this: ILexer): boolean {
-  return (
-    this.state === LexerStateEnum.InsideJSX ||
-    this.state === LexerStateEnum.InsideJSXText
-  );
+  return this.state === LexerStateEnum.InsideJSX || this.state === LexerStateEnum.InsideJSXText;
 };
 ```
 
@@ -535,7 +530,7 @@ if (currentState === LexerStateEnum.InsideJSXText) {
 case '<':
   // Detect JSX opening tag: <div or </div
   const nextCh = this.peek(1);
-  
+
   if (nextCh === '/') {
     // Closing tag: </div>
     this.addToken(TokenTypeEnum.LT, '<');
@@ -559,7 +554,7 @@ case '<':
 ```typescript
 case '>':
   this.addToken(TokenTypeEnum.GT, '>');
-  
+
   // If we were InsideJSX, transition to InsideJSXText
   if (this.getState() === LexerStateEnum.InsideJSX) {
     this.popState(); // Remove InsideJSX
@@ -573,7 +568,7 @@ case '>':
 ```typescript
 case '{':
   this.addToken(TokenTypeEnum.LBRACE, '{');
-  
+
   // If in JSX text, switch to Normal for expression
   if (this.getState() === LexerStateEnum.InsideJSXText) {
     this.pushState(LexerStateEnum.Normal);
@@ -586,9 +581,9 @@ case '{':
 ```typescript
 case '}':
   this.addToken(TokenTypeEnum.RBRACE, '}');
-  
+
   // If we pushed Normal for JSX expression, pop back
-  if (this.stateStack.length > 0 && 
+  if (this.stateStack.length > 0 &&
       this.stateStack[this.stateStack.length - 1] === LexerStateEnum.InsideJSXText) {
     this.popState(); // Back to InsideJSXText
   }
@@ -613,7 +608,7 @@ case '}':
 
 **File:** `src/lexer/STATE-MACHINE.md` (NEW)
 
-```markdown
+````markdown
 # Lexer State Machine
 
 ## States
@@ -626,27 +621,29 @@ case '}':
 
 \```
 Normal
-  └─ sees '<' + identifier → InsideJSX
+└─ sees '<' + identifier → InsideJSX
 
 InsideJSX
-  ├─ sees '>' → InsideJSXText
-  ├─ sees '/>' → Normal
-  └─ sees '{' → push(Normal)
+├─ sees '>' → InsideJSXText
+├─ sees '/>' → Normal
+└─ sees '{' → push(Normal)
 
 InsideJSXText
-  ├─ sees '<' + '/' → InsideJSX (closing tag)
-  ├─ sees '<' + identifier → InsideJSX (nested opening)
-  ├─ sees '{' → push(Normal)
-  └─ scans text until boundary
+├─ sees '<' + '/' → InsideJSX (closing tag)
+├─ sees '<' + identifier → InsideJSX (nested opening)
+├─ sees '{' → push(Normal)
+└─ scans text until boundary
 
 Normal (in JSX)
-  └─ sees '}' → pop() back to InsideJSXText
+└─ sees '}' → pop() back to InsideJSXText
 \```
 
 ## Examples
 
 ### Simple Element
+
 \```
+
 <div>Hello</div>
 
 Normal → '<' → InsideJSX → '>' → InsideJSXText
@@ -654,7 +651,9 @@ Normal → '<' → InsideJSX → '>' → InsideJSXText
 \```
 
 ### With Expression
+
 \```
+
 <div>{count()}</div>
 
 Normal → '<' → InsideJSX → '>' → InsideJSXText
@@ -663,7 +662,9 @@ Normal → '<' → InsideJSX → '>' → InsideJSXText
 \```
 
 ### Nested
+
 \```
+
 <div><span>Text</span></div>
 
 Normal → '<' → InsideJSX → '>' → InsideJSXText
@@ -671,7 +672,7 @@ Normal → '<' → InsideJSX → '>' → InsideJSXText
 → '</' → InsideJSX → '>' → InsideJSXText
 → '</' → InsideJSX → '>' → Normal
 \```
-```
+````
 
 **Success Criteria:**
 
@@ -712,47 +713,47 @@ Lexer.prototype.scanJSXText = function (this: ILexer): void {
   const startLine = this.line;
   const startColumn = this.column;
   let text = '';
-  
+
   // Scan until we hit a JSX boundary
   while (!this.isAtEnd()) {
     const ch = this.peek();
     const nextCh = this.peek(1);
-    
+
     // Stop at opening tag: <div
     if (ch === '<' && isAlpha(nextCh)) {
       break;
     }
-    
+
     // Stop at closing tag: </div
     if (ch === '<' && nextCh === '/') {
       break;
     }
-    
+
     // Stop at self-closing: />
     if (ch === '/' && nextCh === '>') {
       break;
     }
-    
+
     // Stop at expression start: {
     if (ch === '{') {
       break;
     }
-    
+
     // Accumulate text (including Unicode/emoji)
     text += ch;
     this.advance();
   }
-  
+
   // Only add token if we have non-empty text
   if (text.length > 0) {
     // Trim whitespace but preserve internal spaces
     const trimmed = text.trim();
-    
+
     if (trimmed.length > 0) {
       this.addToken(TokenTypeEnum.JSX_TEXT, trimmed);
     }
   }
-  
+
   // Transition out of JSX text if we hit a boundary
   // The next scanToken will handle the boundary token
   if (this.getState() === LexerStateEnum.InsideJSXText) {
@@ -814,79 +815,79 @@ describe('Lexer - JSX Text', () => {
     const source = '<div>Hello World</div>';
     const lexer = createLexer(source, 'test.psr');
     const tokens = lexer.scanTokens();
-    
+
     // Find JSX_TEXT token
-    const textToken = tokens.find(t => t.type === TokenTypeEnum.JSX_TEXT);
-    
+    const textToken = tokens.find((t) => t.type === TokenTypeEnum.JSX_TEXT);
+
     expect(textToken).toBeDefined();
     expect(textToken?.value).toBe('Hello World');
   });
-  
+
   it('should scan JSX text with emoji', () => {
     const source = '<span>🔥 Fire</span>';
     const lexer = createLexer(source, 'test.psr');
     const tokens = lexer.scanTokens();
-    
-    const textToken = tokens.find(t => t.type === TokenTypeEnum.JSX_TEXT);
-    
+
+    const textToken = tokens.find((t) => t.type === TokenTypeEnum.JSX_TEXT);
+
     expect(textToken).toBeDefined();
     expect(textToken?.value).toContain('🔥');
     expect(textToken?.value).toContain('Fire');
   });
-  
+
   it('should scan JSX text with Unicode', () => {
     const source = '<div>Hello 世界</div>';
     const lexer = createLexer(source, 'test.psr');
     const tokens = lexer.scanTokens();
-    
-    const textToken = tokens.find(t => t.type === TokenTypeEnum.JSX_TEXT);
-    
+
+    const textToken = tokens.find((t) => t.type === TokenTypeEnum.JSX_TEXT);
+
     expect(textToken).toBeDefined();
     expect(textToken?.value).toContain('世界');
   });
-  
+
   it('should handle text with expressions', () => {
     const source = '<div>Before {expr} After</div>';
     const lexer = createLexer(source, 'test.psr');
     const tokens = lexer.scanTokens();
-    
-    const textTokens = tokens.filter(t => t.type === TokenTypeEnum.JSX_TEXT);
-    
+
+    const textTokens = tokens.filter((t) => t.type === TokenTypeEnum.JSX_TEXT);
+
     expect(textTokens.length).toBe(2);
     expect(textTokens[0].value).toBe('Before');
     expect(textTokens[1].value).toBe('After');
   });
-  
+
   it('should handle nested JSX text', () => {
     const source = '<div>Outer<span>Inner</span>More</div>';
     const lexer = createLexer(source, 'test.psr');
     const tokens = lexer.scanTokens();
-    
-    const textTokens = tokens.filter(t => t.type === TokenTypeEnum.JSX_TEXT);
-    
+
+    const textTokens = tokens.filter((t) => t.type === TokenTypeEnum.JSX_TEXT);
+
     expect(textTokens.length).toBe(3);
     expect(textTokens[0].value).toBe('Outer');
     expect(textTokens[1].value).toBe('Inner');
     expect(textTokens[2].value).toBe('More');
   });
-  
+
   it('should trim whitespace but preserve internal spaces', () => {
     const source = '<div>  Hello   World  </div>';
     const lexer = createLexer(source, 'test.psr');
     const tokens = lexer.scanTokens();
-    
-    const textToken = tokens.find(t => t.type === TokenTypeEnum.JSX_TEXT);
-    
+
+    const textToken = tokens.find((t) => t.type === TokenTypeEnum.JSX_TEXT);
+
     expect(textToken?.value).toBe('Hello   World');
   });
-  
+
   it('should handle empty JSX elements', () => {
     const source = '<div></div>';
     const lexer = createLexer(source, 'test.psr');
     const tokens = lexer.scanTokens();
-    
-    const textTokens = tokens.filter(t => t.type === TokenTypeEnum.JSX_TEXT);
-    
+
+    const textTokens = tokens.filter((t) => t.type === TokenTypeEnum.JSX_TEXT);
+
     expect(textTokens.length).toBe(0);
   });
 });
@@ -980,30 +981,30 @@ describe('Parser - JSX Text', () => {
     const tokens = lexer.scanTokens();
     const parser = createParser(tokens, 'test.psr');
     const element = parser.parseJSXElement();
-    
+
     expect(element.type).toBe('JSXElement');
     expect(element.children.length).toBe(1);
     expect(element.children[0].type).toBe('JSXText');
     expect(element.children[0].value).toBe('Hello');
   });
-  
+
   it('should parse JSX element with emoji', () => {
     const source = '<span>🔥 Test</span>';
     const lexer = createLexer(source, 'test.psr');
     const tokens = lexer.scanTokens();
     const parser = createParser(tokens, 'test.psr');
     const element = parser.parseJSXElement();
-    
+
     expect(element.children[0].value).toContain('🔥');
   });
-  
+
   it('should parse JSX with text and expressions', () => {
     const source = '<div>Text {expr} More</div>';
     const lexer = createLexer(source, 'test.psr');
     const tokens = lexer.scanTokens();
     const parser = createParser(tokens, 'test.psr');
     const element = parser.parseJSXElement();
-    
+
     expect(element.children.length).toBe(3);
     expect(element.children[0].type).toBe('JSXText');
     expect(element.children[1].type).toBe('JSXExpressionContainer');
@@ -1117,13 +1118,13 @@ describe('Parser - JSX Text', () => {
 
 ### Current Status
 
-| Phase | Status | Tests |
-|-------|--------|-------|
-| Phase 1: Lexer | ✅ 100% | X/X passing |
-| Phase 2: Parser | ✅ 100% | X/X passing |
-| Phase 3: Semantic | ✅ 100% | X/X passing |
+| Phase                | Status  | Tests       |
+| -------------------- | ------- | ----------- |
+| Phase 1: Lexer       | ✅ 100% | X/X passing |
+| Phase 2: Parser      | ✅ 100% | X/X passing |
+| Phase 3: Semantic    | ✅ 100% | X/X passing |
 | Phase 4: Transformer | ✅ 100% | X/X passing |
-| Phase 5: CodeGen | ✅ 100% | X/X passing |
+| Phase 5: CodeGen     | ✅ 100% | X/X passing |
 
 ### Browser Validation
 
@@ -1154,6 +1155,7 @@ describe('Parser - JSX Text', () => {
 ### Day 1
 
 **Morning (4 hours):**
+
 - Phase 1.1: Parser keyword flexibility
 - Phase 1.2: Parser comment skip
 - Phase 1.3: Integration test
@@ -1161,6 +1163,7 @@ describe('Parser - JSX Text', () => {
 **Milestone:** ✅ test-simple.psr renders in browser
 
 **Afternoon (4 hours):**
+
 - Phase 2.1: Type definitions
 - Phase 2.2: Lexer constructor
 - Phase 2.3: State management functions
@@ -1172,6 +1175,7 @@ describe('Parser - JSX Text', () => {
 ### Day 2
 
 **Morning (4 hours):**
+
 - Phase 2.4: State transitions
 - Phase 2.5: State diagram documentation
 - Testing state transitions
@@ -1179,6 +1183,7 @@ describe('Parser - JSX Text', () => {
 **Milestone:** ✅ State machine working
 
 **Afternoon (4 hours):**
+
 - Phase 3.1: JSX text scanner
 - Phase 3.2: JSX text tests
 
@@ -1189,6 +1194,7 @@ describe('Parser - JSX Text', () => {
 ### Day 3
 
 **Morning (4 hours):**
+
 - Phase 4.1: Parser simplification
 - Phase 4.2: Parser JSX tests
 - Integration testing
@@ -1196,6 +1202,7 @@ describe('Parser - JSX Text', () => {
 **Milestone:** ✅ Parser consumes JSX_TEXT
 
 **Afternoon (4 hours):**
+
 - Phase 5.1: Golden test updates
 - Phase 5.2: Real PSR file tests
 - Phase 5.3: Documentation
@@ -1209,12 +1216,14 @@ describe('Parser - JSX Text', () => {
 ### High Risk: State Machine Bugs
 
 **Mitigation:**
+
 - Document state diagram BEFORE coding
 - Test each transition individually
 - Add debug logging for state changes
 - Validate state stack integrity
 
 **Fallback:**
+
 - Revert to simple flag: `isInJSX: boolean`
 - Simplify to 2 states: Normal, JSX
 
@@ -1223,12 +1232,14 @@ describe('Parser - JSX Text', () => {
 ### Medium Risk: Unicode Handling
 
 **Mitigation:**
+
 - Test with actual emoji in tests
 - Test with various Unicode ranges
 - Don't assume character widths
 - Use string iteration, not indexing
 
 **Fallback:**
+
 - Accept all bytes until boundary
 - Let browser handle rendering
 
@@ -1237,11 +1248,13 @@ describe('Parser - JSX Text', () => {
 ### Low Risk: Performance
 
 **Mitigation:**
+
 - Profile with large PSR files
 - Optimize hot paths
 - Cache state checks
 
 **Fallback:**
+
 - Acceptable if < 2x slower
 - Optimize after working
 
@@ -1323,6 +1336,7 @@ describe('Parser - JSX Text', () => {
 **Read this plan completely.**
 
 **Respond with:**
+
 - "GO" to proceed with implementation
 - "WAIT" with specific questions
 - "CHANGE" with required modifications

@@ -30,6 +30,7 @@ Normal (in JSX)
 ## Examples
 
 ### Simple Element
+
 ```
 <div>Hello</div>
 
@@ -38,6 +39,7 @@ Normal → '<' → InsideJSX → '>' → InsideJSXText
 ```
 
 ### With Expression
+
 ```
 <div>{count()}</div>
 
@@ -47,6 +49,7 @@ Normal → '<' → InsideJSX → '>' → InsideJSXText
 ```
 
 ### Nested
+
 ```
 <div><span>Text</span></div>
 
@@ -66,6 +69,7 @@ Normal → '<' → InsideJSX → '>' → InsideJSXText
 ## Testing
 
 State machine behavior will be tested via:
+
 - Unit tests for state transitions
 - Integration tests with real PSR files
 - End-to-end browser validation

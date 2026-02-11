@@ -173,16 +173,11 @@ Parser.prototype.parseJSXOpeningElement = function (this: IParser): any {
   while (!this.match(TokenTypeEnum.GT) && !this.match(TokenTypeEnum.SLASH) && !this.isAtEnd()) {
     // Accept keywords as JSX attribute names
     const token = this.peek();
-    
-    if (
-      token.type !== TokenTypeEnum.IDENTIFIER &&
-      !this.isKeywordToken(token.type)
-    ) {
-      throw new Error(
-        `Expected attribute name, got ${token.type} at line ${token.line}`
-      );
+
+    if (token.type !== TokenTypeEnum.IDENTIFIER && !this.isKeywordToken(token.type)) {
+      throw new Error(`Expected attribute name, got ${token.type} at line ${token.line}`);
     }
-    
+
     const attrName = this.advance();
 
     // Attribute with value: className="foo" or onClick={handler}

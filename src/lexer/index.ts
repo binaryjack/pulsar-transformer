@@ -25,5 +25,5 @@ import './prototypes/skip-whitespace.js';
 
 // Export lexer constructor and types
 export { Lexer, createLexer } from './lexer.js';
-export { KEYWORDS, TokenTypeEnum, LexerStateEnum } from './lexer.types.js';
+export { KEYWORDS, LexerStateEnum, TokenTypeEnum } from './lexer.types.js';
 export type { ILexer, ISourcePosition, IToken } from './lexer.types.js';

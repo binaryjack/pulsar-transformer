@@ -93,7 +93,7 @@ export interface ILexer {
   // ... existing fields
   state: LexerStateEnum;
   stateStack: LexerStateEnum[];
-  
+
   // New methods
   pushState(state: LexerStateEnum): void;
   popState(): void;
@@ -129,7 +129,7 @@ export function scanJSXText(this: ILexer): IToken {
   const startLine = this.line;
   const startColumn = this.column;
   let text = '';
-  
+
   // Scan until JSX boundary
   while (
     !this.isAtEnd() &&
@@ -140,10 +140,10 @@ export function scanJSXText(this: ILexer): IToken {
     text += this.peek();
     this.advance();
   }
-  
+
   // Create token
   this.addToken(TokenTypeEnum.JSX_TEXT, text);
-  
+
   return this.tokens[this.tokens.length - 1];
 }
 ```
@@ -284,6 +284,7 @@ if (this.match(TokenTypeEnum.JSX_TEXT)) {
 ### Real PSR Files Test
 
 **Test Files:**
+
 - `src/lab/counter.psr` (has emoji)
 - `src/showcase/pages/home.psr` (has emoji)
 - `src/showcase/pages/about.psr` (has list)

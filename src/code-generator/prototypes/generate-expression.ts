@@ -123,10 +123,19 @@ CodeGenerator.prototype.generateArrowFunction = function (this: ICodeGenerator, 
   }
 
   if (node.body.type === 'BlockStatement') {
-    const savedIndent = this.indentLevel;
-    this.indentLevel = 0;
-    const body = this.generateStatement(node.body);
-    this.indentLevel = savedIndent;
+    // For arrow functions with block body, manually handle braces
+    // to avoid indentation issues with generateBlockStatement
+    const statements: string[] = [];
+    this.indentLevel++;
+    for (const stmt of node.body.body) {
+      statements.push(this.generateStatement(stmt));
+    }
+    this.indentLevel--;
+    
+    const body = statements.length > 0 
+      ? `{\n${statements.join('\n')}\n${this.indent()}}`
+      : '{}';
+    
     return `(${params})${returnType} => ${body}`;
   } else {
     return `(${params})${returnType} => ${this.generateExpression(node.body)}`;

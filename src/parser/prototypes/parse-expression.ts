@@ -328,8 +328,19 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
 
         this.expect(TokenTypeEnum.RPAREN);
 
+        // Check for return type annotation: ): ReturnType
+        let returnTypeAnnotation = null;
+        if (this.match(TokenTypeEnum.COLON)) {
+          this.advance(); // consume :
+          returnTypeAnnotation = this.parseTypeAnnotation();
+        }
+
         if (this.match(TokenTypeEnum.ARROW)) {
-          return this.parseArrowFunction(params);
+          const arrowFunc = this.parseArrowFunction(params);
+          if (returnTypeAnnotation) {
+            (arrowFunc as any).returnType = returnTypeAnnotation;
+          }
+          return arrowFunc;
         }
       }
     } catch (err: any) {

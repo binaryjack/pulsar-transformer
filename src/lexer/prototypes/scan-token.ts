@@ -5,7 +5,7 @@
 
 import { Lexer } from '../lexer.js';
 import type { ILexer } from '../lexer.types.js';
-import { TokenTypeEnum, LexerStateEnum, isAlpha, isDigit } from '../lexer.types.js';
+import { LexerStateEnum, TokenTypeEnum, isAlpha, isDigit } from '../lexer.types.js';
 
 Lexer.prototype.scanToken = function (this: ILexer): void {
   this.skipWhitespace();
@@ -14,10 +14,10 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
     this.addToken(TokenTypeEnum.EOF);
     return;
   }
-  
+
   // Check state for context-aware scanning
   const currentState = this.getState();
-  
+
   // Handle JSX text content
   if (currentState === LexerStateEnum.InsideJSXText) {
     this.scanJSXText();
@@ -60,7 +60,7 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
       return;
     case '{':
       this.addToken(TokenTypeEnum.LBRACE, '{');
-      
+
       // If in JSX text, switch to Normal for expression
       if (this.getState() === LexerStateEnum.InsideJSXText) {
         this.pushState(LexerStateEnum.Normal);
@@ -68,10 +68,12 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
       return;
     case '}':
       this.addToken(TokenTypeEnum.RBRACE, '}');
-      
+
       // If we pushed Normal for JSX expression, pop back
-      if (this.stateStack.length > 0 && 
-          this.stateStack[this.stateStack.length - 1] === LexerStateEnum.InsideJSXText) {
+      if (
+        this.stateStack.length > 0 &&
+        this.stateStack[this.stateStack.length - 1] === LexerStateEnum.InsideJSXText
+      ) {
         this.popState(); // Back to InsideJSXText
       }
       return;
@@ -171,7 +173,7 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
       } else {
         // Could be opening tag: <div or less than operator
         const nextCh = this.peek();
-        
+
         if (isAlpha(nextCh)) {
           // Opening tag: <div
           this.addToken(TokenTypeEnum.LT, '<');
@@ -186,11 +188,19 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
 
     case '>':
       this.addToken(TokenTypeEnum.GT, '>');
-      
-      // If we were InsideJSX, transition to InsideJSXText
+
+      // If we were InsideJSX, check if self-closing or normal tag
       if (this.getState() === LexerStateEnum.InsideJSX) {
-        this.popState(); // Remove InsideJSX
-        this.pushState(LexerStateEnum.InsideJSXText); // Enter text mode
+        // Check if previous token was SLASH (self-closing tag: />)
+        const lastToken = this.tokens[this.tokens.length - 2]; // -1 is >, -2 is previous
+        if (lastToken && lastToken.type === TokenTypeEnum.SLASH) {
+          // Self-closing tag: pop InsideJSX but don't enter InsideJSXText
+          this.popState(); // Remove InsideJSX
+        } else {
+          // Normal opening tag: transition to InsideJSXText
+          this.popState(); // Remove InsideJSX
+          this.pushState(LexerStateEnum.InsideJSXText); // Enter text mode
+        }
       }
       return;
 

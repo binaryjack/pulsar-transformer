@@ -10,6 +10,7 @@ import type {
   ICallExpression,
   IComponentDeclaration,
   IIdentifier,
+  ILiteral,
   IMemberExpression,
   IReturnStatement,
   IStringLiteral,
@@ -82,11 +83,20 @@ export function transformComponentDeclaration(
     end,
   };
 
-  // $REGISTRY.execute('component:Counter', () => { original body })
+  // parentId literal (null for top-level components)
+  const parentIdLiteral: ILiteral = {
+    type: 'Literal',
+    value: null,
+    raw: 'null',
+    start,
+    end,
+  };
+
+  // $REGISTRY.execute('component:Counter', null, () => { original body })
   const registryCall: ICallExpression = {
     type: 'CallExpression',
     callee: memberExpression,
-    arguments: [componentIdLiteral, bodyArrowFunction],
+    arguments: [componentIdLiteral, parentIdLiteral, bodyArrowFunction],
     start,
     end,
   };
