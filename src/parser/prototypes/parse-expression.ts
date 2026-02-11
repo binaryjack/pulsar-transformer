@@ -118,8 +118,8 @@ Parser.prototype.parseExpression = function (this: IParser, precedence: number =
 Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression {
   const token = this.peek();
 
-  // Identifier
-  if (token.type === TokenTypeEnum.IDENTIFIER) {
+  // Identifier or keyword used as identifier
+  if (token.type === TokenTypeEnum.IDENTIFIER || this.isKeywordToken(token.type)) {
     this.advance();
     return {
       type: 'Identifier',

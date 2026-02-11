@@ -230,14 +230,36 @@ component Doubled() {
 // ============================================================================
 // TEST 6: Multiple signals
 // ============================================================================
-await testRender(
-  'Test 6: Multiple signals',
-  `
+console.log('\n🔍 DEBUGGING JSX WHITESPACE FOR TEST 6...');
+
+const test6Source = `
 component MultiSignal() {
   const [first, setFirst] = createSignal('John');
   const [last, setLast] = createSignal('Doe');
   return <div>{first()} {last()}</div>;
-}`,
+}`;
+
+console.log('📝 Original PSR code:');
+console.log(test6Source);
+
+// Transform and inspect
+const test6Result = await transformer.transformPSR(test6Source);
+console.log('\n📝 Generated JavaScript:');
+console.log(test6Result.code);
+
+// Check specifically for space handling in children array
+console.log('\n🔍 Looking for space in children array...');
+const childrenRegex = /t_element\('div', \{\}, \[(.*?)\]/;
+const childrenMatch = test6Result.code.match(childrenRegex);
+if (childrenMatch) {
+  console.log('Children array content:', childrenMatch[1]);
+} else {
+  console.log('❌ Could not find children array');
+}
+
+await testRender(
+  'Test 6: Multiple signals',
+  test6Source,
 
   async (element) => {
     if (element.textContent !== 'John Doe') {

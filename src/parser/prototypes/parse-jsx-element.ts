@@ -3,10 +3,10 @@
  * Parse JSX elements: <div>...</div>
  */
 
-import { TokenTypeEnum } from '../../lexer/lexer.types.js';
-import type { IParser } from '../parser.js';
-import { Parser } from '../parser.js';
-import type { IJSXChild, IJSXElement } from '../parser.types.js';
+import { TokenTypeEnum } from '../../lexer/lexer.types.js'
+import type { IParser } from '../parser.js'
+import { Parser } from '../parser.js'
+import type { IJSXChild, IJSXElement } from '../parser.types.js'
 
 Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
   const start = this.peek().start;
@@ -37,19 +37,21 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
     }
 
     // Check for closing tag: </div>
-    if (this.match(TokenTypeEnum.LT) && this.peek(1).type === TokenTypeEnum.SLASH) {
-      break;
+    if (this.match(TokenTypeEnum.LT)) {
+      // Peek ahead safely to check for slash
+      const nextToken = this.peek(1);
+      if (nextToken && nextToken.type === TokenTypeEnum.SLASH) {
+        break; // This is a closing tag </div>
+      } else {
+        // This is a nested JSX element: <span>...</span>
+        children.push(this.parseJSXElement());
+        continue;
+      }
     }
 
     // JSX Expression: {count()}
     if (this.match(TokenTypeEnum.LBRACE)) {
       children.push(this.parseJSXExpressionContainer());
-      continue;
-    }
-
-    // Nested JSX element: <span>...</span>
-    if (this.match(TokenTypeEnum.LT)) {
-      children.push(this.parseJSXElement());
       continue;
     }
 
@@ -318,6 +320,24 @@ Parser.prototype.parseJSXExpressionContainer = function (this: IParser): any {
   const start = this.peek().start;
 
   this.expect(TokenTypeEnum.LBRACE);
+
+  // Handle JSX comments: {/* ... */}
+  if (this.match(TokenTypeEnum.COMMENT)) {
+    const commentToken = this.advance();
+    const endToken = this.expect(TokenTypeEnum.RBRACE);
+    
+    // Return a special JSXEmptyExpression for comments
+    return {
+      type: 'JSXExpressionContainer',
+      expression: {
+        type: 'JSXEmptyExpression',
+        start: commentToken.start,
+        end: commentToken.end,
+      },
+      start,
+      end: endToken.end,
+    };
+  }
 
   const expression = this.parseExpression();
 

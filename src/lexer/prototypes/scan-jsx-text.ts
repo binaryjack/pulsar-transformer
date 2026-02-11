@@ -5,7 +5,7 @@
 
 import { Lexer } from '../lexer.js';
 import type { ILexer } from '../lexer.types.js';
-import { LexerStateEnum, TokenTypeEnum, isAlpha } from '../lexer.types.js';
+import { TokenTypeEnum, isAlpha } from '../lexer.types.js';
 
 Lexer.prototype.scanJSXText = function (this: ILexer): void {
   const start = this.pos;
@@ -18,11 +18,15 @@ Lexer.prototype.scanJSXText = function (this: ILexer): void {
 
     // Stop at opening tag: <div
     if (ch === '<' && isAlpha(nextCh)) {
+      // Exit InsideJSXText to allow parsing of nested JSX element
+      this.popState();
       break;
     }
 
-    // Stop at closing tag: </div
+    // Stop at closing tag: </div and transition state
     if (ch === '<' && nextCh === '/') {
+      // Exit InsideJSXText back to normal parsing for closing tag
+      this.popState(); // Remove InsideJSXText
       break;
     }
 
@@ -33,6 +37,8 @@ Lexer.prototype.scanJSXText = function (this: ILexer): void {
 
     // Stop at expression start: {
     if (ch === '{') {
+      // Exit InsideJSXText to allow parsing of JSX expression
+      this.popState();
       break;
     }
 
@@ -51,16 +57,13 @@ Lexer.prototype.scanJSXText = function (this: ILexer): void {
     if (trimmed.length > 0) {
       // Has actual content - use trimmed version
       this.addToken(TokenTypeEnum.JSX_TEXT, trimmed);
-    } else if (text.match(/^\s+$/)) {
+    } else if (/^\s+$/.test(text)) {
       // Whitespace-only between expressions: collapse to single space
       // This handles: {expr1} {expr2} -> space preserved
       this.addToken(TokenTypeEnum.JSX_TEXT, ' ');
     }
   }
 
-  // Transition out of JSX text if we hit a boundary
-  // The next scanToken will handle the boundary token
-  if (this.getState() === LexerStateEnum.InsideJSXText) {
-    this.popState(); // Exit InsideJSXText
-  }
+  // NOTE: Do NOT pop state here - let the caller manage state transitions
+  // The JSX text state should persist until we hit a real JSX boundary
 };

@@ -225,8 +225,10 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
         if (isAlpha(nextCh)) {
           // Opening tag: <div
           this.addToken(TokenTypeEnum.LT, '<');
-          // Transition to InsideJSX
-          this.pushState(LexerStateEnum.InsideJSX);
+          // Only transition to InsideJSX if we're in Normal state (not in expression)
+          if (this.getState() === LexerStateEnum.Normal) {
+            this.pushState(LexerStateEnum.InsideJSX);
+          }
         } else {
           // Less than operator: <
           this.addToken(TokenTypeEnum.LT, '<');

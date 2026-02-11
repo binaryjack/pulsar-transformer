@@ -4,7 +4,11 @@
  */
 
 import type { IToken } from '../lexer/lexer.types.js';
-import type { IProgramNode } from './parser.types.js';
+import type {
+  IExportDefaultDeclaration,
+  IExportNamedDeclaration,
+  IProgramNode,
+} from './parser.types.js';
 
 /**
  * Parser interface (prototype-based class)
@@ -32,7 +36,7 @@ export interface IParser {
   parseProgram(): IProgramNode;
   parseStatement(): any;
   parseImportDeclaration(): any;
-  parseExportDeclaration(): any;
+  parseExportDeclaration(): IExportNamedDeclaration | IExportDefaultDeclaration;
   parseInterfaceDeclaration(): any;
   parseComponentDeclaration(): any;
   parseFunctionDeclaration(): any;

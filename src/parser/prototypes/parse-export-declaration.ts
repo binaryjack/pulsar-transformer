@@ -8,12 +8,29 @@
 import { TokenTypeEnum } from '../../lexer/lexer.types.js';
 import type { IParser } from '../parser.js';
 import { Parser } from '../parser.js';
-import type { IExportNamedDeclaration } from '../parser.types.js';
+import type { IExportDefaultDeclaration, IExportNamedDeclaration } from '../parser.types.js';
 
-Parser.prototype.parseExportDeclaration = function (this: IParser): IExportNamedDeclaration {
+Parser.prototype.parseExportDeclaration = function (
+  this: IParser
+): IExportNamedDeclaration | IExportDefaultDeclaration {
   const start = this.peek().start;
 
   this.expect(TokenTypeEnum.EXPORT);
+
+  // Handle export default
+  if (this.peek().type === TokenTypeEnum.DEFAULT) {
+    this.expect(TokenTypeEnum.DEFAULT); // Consume the DEFAULT token
+    const expression = this.parseExpression();
+    if (this.match(TokenTypeEnum.SEMICOLON)) {
+      // Optional semicolon for better error recovery
+    }
+    return {
+      type: 'ExportDefaultDeclaration',
+      declaration: expression,
+      start,
+      end: this.current > 0 ? this.tokens[this.current - 1].end : start,
+    } as any;
+  }
 
   let declaration = null;
 

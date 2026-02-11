@@ -21,6 +21,13 @@ CodeGenerator.prototype.generateStatement = function (this: ICodeGenerator, node
       }
       return '';
 
+    case 'ExportDefaultDeclaration':
+      if (node.declaration) {
+        const expr = this.generateExpression(node.declaration);
+        return `export default ${expr};`;
+      }
+      return '';
+
     case 'InterfaceDeclaration':
       return this.generateInterface(node);
 

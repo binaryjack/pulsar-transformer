@@ -60,6 +60,11 @@ export interface IExportSpecifier extends IASTNode {
   local: IIdentifier;
 }
 
+export interface IExportDefaultDeclaration extends IASTNode {
+  type: 'ExportDefaultDeclaration';
+  declaration: IExpression;
+}
+
 /**
  * Interface Declaration (TypeScript)
  * interface ICounterProps { id?: string; }
@@ -143,6 +148,7 @@ export interface IVariableDeclarator extends IASTNode {
 export type IStatementNode =
   | IImportDeclaration
   | IExportNamedDeclaration
+  | IExportDefaultDeclaration
   | IInterfaceDeclaration
   | IComponentDeclaration
   | IFunctionDeclaration

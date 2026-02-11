@@ -15,6 +15,7 @@ Parser.prototype.isKeywordToken = function (this: IParser, tokenType: TokenTypeE
     TokenTypeEnum.FUNCTION,
     TokenTypeEnum.INTERFACE,
     TokenTypeEnum.EXPORT,
+    TokenTypeEnum.DEFAULT,
     TokenTypeEnum.IMPORT,
     TokenTypeEnum.FROM,
     TokenTypeEnum.RETURN,

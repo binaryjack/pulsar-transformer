@@ -3,8 +3,8 @@
  * Transform JSX to t_element() calls
  */
 
-import type { ICodeGenerator } from '../code-generator.js';
-import { CodeGenerator } from '../code-generator.js';
+import type { ICodeGenerator } from '../code-generator.js'
+import { CodeGenerator } from '../code-generator.js'
 
 CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, node: any): string {
   this.addImport('t_element');
@@ -52,9 +52,20 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
       const text = child.value;
       if (text && text.trim()) {
         // Only skip if completely empty/whitespace
-        children.push(`'${text}'`);
+        // Properly escape string: newlines, backslashes, single quotes
+        const escapedText = text
+          .replace(/\\/g, '\\\\')  // Escape backslashes first
+          .replace(/'/g, "\\'")    // Escape single quotes
+          .replace(/\n/g, '\\n')   // Escape newlines
+          .replace(/\r/g, '\\r')   // Escape carriage returns
+          .replace(/\t/g, '\\t');  // Escape tabs
+        children.push(`'${escapedText}'`);
       }
     } else if (child.type === 'JSXExpressionContainer') {
+      // Skip JSX comments (JSXEmptyExpression)
+      if (child.expression.type === 'JSXEmptyExpression') {
+        continue; // Don't add comments to output
+      }
       children.push(this.generateExpression(child.expression));
     } else if (child.type === 'JSXElement') {
       children.push(this.generateJSXElement(child));
