@@ -40,7 +40,7 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
   // Advance for single-char tokens
   this.advance();
 
-  switch (ch) {
+  switch (char) {
     // Strings
     case '"':
     case "'":
@@ -265,6 +265,6 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
       return;
 
     default:
-      throw new Error(`Unexpected character '${ch}' at line ${this.line}, column ${this.column}`);
+      throw new Error(`Unexpected character '${char}' at line ${this.line}, column ${this.column}`);
   }
 };
