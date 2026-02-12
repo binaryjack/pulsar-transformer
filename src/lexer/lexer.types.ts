@@ -67,6 +67,8 @@ export enum TokenTypeEnum {
   RBRACKET = 'RBRACKET', // ]
   LT = 'LT', // <
   GT = 'GT', // >
+  LT_EQUALS = 'LT_EQUALS', // <=
+  GT_EQUALS = 'GT_EQUALS', // >=
   SEMICOLON = 'SEMICOLON', // ;
   COMMA = 'COMMA', // ,
   DOT = 'DOT', // .

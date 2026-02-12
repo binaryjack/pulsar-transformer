@@ -3,9 +3,9 @@
  * Scans identifier or keyword
  */
 
-import { Lexer } from '../lexer.js';
-import type { ILexer } from '../lexer.types.js';
-import { isAlphaNumeric, TokenTypeEnum } from '../lexer.types.js';
+import { Lexer } from '../lexer.js'
+import type { ILexer } from '../lexer.types.js'
+import { isAlphaNumeric, LexerStateEnum, TokenTypeEnum } from '../lexer.types.js'
 
 Lexer.prototype.scanIdentifier = function (this: ILexer): void {
   const start = this.pos;
@@ -22,7 +22,19 @@ Lexer.prototype.scanIdentifier = function (this: ILexer): void {
   const text = this.source.substring(start, this.pos);
 
   // Check if keyword
-  const keywordType = this.isKeyword(text);
+  let keywordType = this.isKeyword(text);
+
+  // Context-aware keyword handling: "component" is ONLY a keyword outside JSX
+  // In JSX attributes like <Route component={Foo} />, treat as identifier
+  if (keywordType === TokenTypeEnum.COMPONENT) {
+    const currentState = this.getState();
+    if (currentState === LexerStateEnum.InsideJSX) {
+      console.log(`[LEXER-DEBUG] "component" found in InsideJSX state → treating as IDENTIFIER`);
+      keywordType = null; // Treat as identifier in JSX context
+    } else {
+      console.log(`[LEXER-DEBUG] "component" found in ${currentState} state → treating as COMPONENT keyword`);
+    }
+  }
 
   if (keywordType) {
     this.addToken(keywordType, text);

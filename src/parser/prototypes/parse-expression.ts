@@ -11,25 +11,28 @@ import type { IExpression } from '../parser.types.js';
 
 // Operator precedence (higher = binds tighter)
 const PRECEDENCE: Record<string, number> = {
-  [TokenTypeEnum.PIPE_PIPE]: 1,
-  [TokenTypeEnum.QUESTION_QUESTION]: 1, // ?? (nullish coalescing, same as ||)
-  [TokenTypeEnum.AMPERSAND_AMPERSAND]: 2,
-  [TokenTypeEnum.PIPE]: 3,
-  [TokenTypeEnum.AMPERSAND]: 4,
-  [TokenTypeEnum.EQUALS_EQUALS]: 5,
-  [TokenTypeEnum.NOT_EQUALS]: 5,
-  [TokenTypeEnum.EQUALS_EQUALS_EQUALS]: 5,
-  [TokenTypeEnum.NOT_EQUALS_EQUALS]: 5,
-  [TokenTypeEnum.LT]: 6,
-  [TokenTypeEnum.GT]: 6,
-  [TokenTypeEnum.PLUS]: 7,
-  [TokenTypeEnum.MINUS]: 7,
-  [TokenTypeEnum.STAR]: 8,
-  [TokenTypeEnum.SLASH]: 8,
-  [TokenTypeEnum.PERCENT]: 8,
-  [TokenTypeEnum.LPAREN]: 9, // Call expression
-  [TokenTypeEnum.DOT]: 10, // Member access
-  [TokenTypeEnum.QUESTION_DOT]: 10, // ?. (optional chaining, same as .)
+  [TokenTypeEnum.EQUALS]: 1, // Assignment (lowest precedence, right-associative)
+  [TokenTypeEnum.PIPE_PIPE]: 2,
+  [TokenTypeEnum.QUESTION_QUESTION]: 2, // ?? (nullish coalescing, same as ||)
+  [TokenTypeEnum.AMPERSAND_AMPERSAND]: 3,
+  [TokenTypeEnum.PIPE]: 4,
+  [TokenTypeEnum.AMPERSAND]: 5,
+  [TokenTypeEnum.EQUALS_EQUALS]: 6,
+  [TokenTypeEnum.NOT_EQUALS]: 6,
+  [TokenTypeEnum.EQUALS_EQUALS_EQUALS]: 6,
+  [TokenTypeEnum.NOT_EQUALS_EQUALS]: 6,
+  [TokenTypeEnum.LT]: 7,
+  [TokenTypeEnum.GT]: 7,
+  [TokenTypeEnum.LT_EQUALS]: 7,
+  [TokenTypeEnum.GT_EQUALS]: 7,
+  [TokenTypeEnum.PLUS]: 8,
+  [TokenTypeEnum.MINUS]: 8,
+  [TokenTypeEnum.STAR]: 9,
+  [TokenTypeEnum.SLASH]: 9,
+  [TokenTypeEnum.PERCENT]: 9,
+  [TokenTypeEnum.LPAREN]: 10, // Call expression
+  [TokenTypeEnum.DOT]: 11, // Member access
+  [TokenTypeEnum.QUESTION_DOT]: 11, // ?. (optional chaining, same as .)
 };
 
 function getPrecedence(type: string): number {
@@ -69,6 +72,20 @@ Parser.prototype.parseExpression = function (this: IParser, precedence: number =
         end: property.end,
       } as any;
     }
+    // Assignment expression: a = b (right-associative, lowest precedence)
+    else if (token.type === TokenTypeEnum.EQUALS) {
+      const operator = this.advance();
+      const right = this.parseExpression(getPrecedence(operator.type) - 1); // Right-associative: lower precedence on recursion
+
+      left = {
+        type: 'AssignmentExpression',
+        left,
+        operator: operator.value,
+        right,
+        start: left.start,
+        end: right.end,
+      } as any;
+    }
     // Binary expression: a + b, a ?? b (nullish coalescing)
     else if (PRECEDENCE[token.type]) {
       const operator = this.advance();
@@ -90,6 +107,20 @@ Parser.prototype.parseExpression = function (this: IParser, precedence: number =
     } else {
       break;
     }
+  }
+
+  // Arrow function: param => expr (single param without parentheses)
+  if (left.type === 'Identifier' && this.match(TokenTypeEnum.ARROW)) {
+    const arrowFunc = this.parseArrowFunction([
+      {
+        type: 'Parameter',
+        pattern: left,
+        typeAnnotation: null,
+        start: left.start,
+        end: left.end,
+      },
+    ]);
+    return arrowFunc;
   }
 
   // Conditional (ternary) expression: a ? b : c
@@ -120,12 +151,13 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
 
   // Identifier or keyword used as identifier
   if (token.type === TokenTypeEnum.IDENTIFIER || this.isKeywordToken(token.type)) {
-    this.advance();
+    const idToken = this.advance();
+
     return {
       type: 'Identifier',
-      name: token.value,
-      start: token.start,
-      end: token.end,
+      name: idToken.value,
+      start: idToken.start,
+      end: idToken.end,
     };
   }
 
@@ -452,18 +484,33 @@ Parser.prototype.parseArrowFunction = function (this: IParser, params: any[]): I
 };
 
 /**
- * Parse array expression: [1, 2, 3]
+ * Parse array expression: [1, 2, 3] or [...items, 4]
  */
 Parser.prototype.parseArrayExpression = function (this: IParser): IExpression {
   const start = this.peek().start;
   this.expect(TokenTypeEnum.LBRACKET);
 
-  const elements: IExpression[] = [];
+  const elements: (IExpression | null)[] = [];
 
   while (!this.match(TokenTypeEnum.RBRACKET) && !this.isAtEnd()) {
     if (this.match(TokenTypeEnum.COMMA)) {
       elements.push(null as any);
       this.advance();
+    } else if (this.match(TokenTypeEnum.SPREAD)) {
+      // Spread element: ...items
+      const spreadStart = this.advance();
+      const argument = this.parseExpression();
+
+      elements.push({
+        type: 'SpreadElement',
+        argument,
+        start: spreadStart.start,
+        end: argument.end,
+      } as any);
+
+      if (this.match(TokenTypeEnum.COMMA)) {
+        this.advance();
+      }
     } else {
       elements.push(this.parseExpression());
 
@@ -484,7 +531,7 @@ Parser.prototype.parseArrayExpression = function (this: IParser): IExpression {
 };
 
 /**
- * Parse object expression: {key: value}
+ * Parse object expression: {key: value} or {'key': value} or {...obj}
  */
 Parser.prototype.parseObjectExpression = function (this: IParser): IExpression {
   const start = this.peek().start;
@@ -493,10 +540,68 @@ Parser.prototype.parseObjectExpression = function (this: IParser): IExpression {
   const properties: any[] = [];
 
   while (!this.match(TokenTypeEnum.RBRACE) && !this.isAtEnd()) {
-    const keyToken = this.expect(TokenTypeEnum.IDENTIFIER);
+    // Handle spread properties: {...obj}
+    if (this.match(TokenTypeEnum.SPREAD)) {
+      const spreadStart = this.advance();
+      const argument = this.parseExpression();
 
-    // Shorthand: {key} instead of {key: key}
-    if (this.match(TokenTypeEnum.COMMA) || this.match(TokenTypeEnum.RBRACE)) {
+      properties.push({
+        type: 'SpreadElement',
+        argument,
+        start: spreadStart.start,
+        end: argument.end,
+      });
+
+      if (this.match(TokenTypeEnum.COMMA)) {
+        this.advance();
+      }
+      continue;
+    }
+
+    // Keys can be identifiers, strings (for kebab-case), OR keywords (like 'component', 'default')
+    // Keywords are valid as object keys in JavaScript: {component: Foo, default: true}
+    let keyToken: IToken;
+    let keyIsString = false;
+
+    if (this.match(TokenTypeEnum.STRING)) {
+      keyToken = this.advance();
+      keyIsString = true;
+    } else if (this.match(TokenTypeEnum.IDENTIFIER)) {
+      keyToken = this.advance();
+    } else {
+      // Accept keywords as object keys (component, default, return, etc.)
+      // This handles cases like: {component: Foo} or {default: true}
+      const currentToken = this.peek();
+      const keywordTokens = [
+        TokenTypeEnum.COMPONENT,
+        TokenTypeEnum.DEFAULT,
+        TokenTypeEnum.RETURN,
+        TokenTypeEnum.IMPORT,
+        TokenTypeEnum.EXPORT,
+        TokenTypeEnum.CONST,
+        TokenTypeEnum.LET,
+        TokenTypeEnum.VAR,
+        TokenTypeEnum.IF,
+        TokenTypeEnum.ELSE,
+        TokenTypeEnum.FOR,
+        TokenTypeEnum.WHILE,
+        TokenTypeEnum.FUNCTION,
+        TokenTypeEnum.TRUE,
+        TokenTypeEnum.FALSE,
+        TokenTypeEnum.NULL,
+        TokenTypeEnum.UNDEFINED,
+      ];
+
+      if (keywordTokens.includes(currentToken.type)) {
+        keyToken = this.advance();
+      } else {
+        // Not a valid object key token - throw error
+        keyToken = this.expect(TokenTypeEnum.IDENTIFIER);
+      }
+    }
+
+    // Shorthand: {key} instead of {key: key} (only valid for identifiers)
+    if (!keyIsString && (this.match(TokenTypeEnum.COMMA) || this.match(TokenTypeEnum.RBRACE))) {
       properties.push({
         type: 'Property',
         key: {
@@ -522,12 +627,20 @@ Parser.prototype.parseObjectExpression = function (this: IParser): IExpression {
 
       properties.push({
         type: 'Property',
-        key: {
-          type: 'Identifier',
-          name: keyToken.value,
-          start: keyToken.start,
-          end: keyToken.end,
-        },
+        key: keyIsString
+          ? {
+              type: 'Literal',
+              value: keyToken.value,
+              raw: `"${keyToken.value}"`,
+              start: keyToken.start,
+              end: keyToken.end,
+            }
+          : {
+              type: 'Identifier',
+              name: keyToken.value,
+              start: keyToken.start,
+              end: keyToken.end,
+            },
         value,
         computed: false,
         shorthand: false,

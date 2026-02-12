@@ -3,8 +3,8 @@
  * Generate expression code
  */
 
-import type { ICodeGenerator } from '../code-generator.js';
-import { CodeGenerator } from '../code-generator.js';
+import type { ICodeGenerator } from '../code-generator.js'
+import { CodeGenerator } from '../code-generator.js'
 
 CodeGenerator.prototype.generateExpression = function (this: ICodeGenerator, node: any): string {
   if (!node) return '';
@@ -15,7 +15,16 @@ CodeGenerator.prototype.generateExpression = function (this: ICodeGenerator, nod
 
     case 'Literal':
       if (typeof node.value === 'string') {
-        return `'${node.value}'`;
+        // Escape special characters in string literals
+        const escaped = node.value
+          .replace(/\\/g, '\\\\')   // Backslash first!
+          .replace(/'/g, "\\'")      // Single quotes
+          .replace(/\n/g, '\\n')     // Newlines
+          .replace(/\r/g, '\\r')     // Carriage returns
+          .replace(/\t/g, '\\t')     // Tabs
+          .replace(/\f/g, '\\f')     // Form feeds
+          .replace(/\v/g, '\\v');    // Vertical tabs
+        return `'${escaped}'`;
       }
       return String(node.value);
 

@@ -184,6 +184,12 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
       return;
 
     case '<':
+      // Check for <= first
+      if (this.match('=')) {
+        this.addToken(TokenTypeEnum.LT_EQUALS, '<=');
+        return;
+      }
+
       if (this.match('/')) {
         // JSX closing tag start: </
         this.addToken(TokenTypeEnum.LT, '<');
@@ -237,6 +243,12 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
       return;
 
     case '>':
+      // Check for >= first
+      if (this.match('=')) {
+        this.addToken(TokenTypeEnum.GT_EQUALS, '>=');
+        return;
+      }
+
       this.addToken(TokenTypeEnum.GT, '>');
 
       // If we were InsideJSX, check if self-closing or normal tag

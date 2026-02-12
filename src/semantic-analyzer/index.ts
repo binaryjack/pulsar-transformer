@@ -24,7 +24,10 @@ import { checkDeadCode, checkUnusedSymbols } from './prototypes/post-analysis.js
 import {
   checkEffectDependencies,
   checkSignalDependencies,
+  extractCapturedVariables,
+  extractDependencies,
   validateReactivity,
+  walkNode,
 } from './prototypes/reactivity-validation.js';
 import { enterScope, exitScope } from './prototypes/scope-management.js';
 import { declareSymbol, markSymbolUsed, resolveSymbol } from './prototypes/symbol-management.js';
@@ -54,6 +57,9 @@ SemanticAnalyzerPrototype.inferType = inferType;
 SemanticAnalyzerPrototype.validateReactivity = validateReactivity;
 SemanticAnalyzerPrototype.checkSignalDependencies = checkSignalDependencies;
 SemanticAnalyzerPrototype.checkEffectDependencies = checkEffectDependencies;
+SemanticAnalyzerPrototype.extractCapturedVariables = extractCapturedVariables;
+SemanticAnalyzerPrototype.extractDependencies = extractDependencies;
+SemanticAnalyzerPrototype.walkNode = walkNode;
 SemanticAnalyzerPrototype.addError = addError;
 SemanticAnalyzerPrototype.addWarning = addWarning;
 SemanticAnalyzerPrototype.checkUnusedSymbols = checkUnusedSymbols;

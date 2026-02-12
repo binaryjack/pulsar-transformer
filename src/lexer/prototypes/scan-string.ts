@@ -3,9 +3,9 @@
  * Scans string literal with quotes
  */
 
-import { Lexer } from '../lexer.js';
-import type { ILexer } from '../lexer.types.js';
-import { TokenTypeEnum } from '../lexer.types.js';
+import { Lexer } from '../lexer.js'
+import type { ILexer } from '../lexer.types.js'
+import { TokenTypeEnum } from '../lexer.types.js'
 
 Lexer.prototype.scanString = function (this: ILexer, quote: string): void {
   const start = this.pos;
@@ -17,6 +17,16 @@ Lexer.prototype.scanString = function (this: ILexer, quote: string): void {
 
   while (!this.isAtEnd() && this.peek() !== quote) {
     const ch = this.peek();
+
+    // JavaScript doesn't allow unescaped newlines in strings
+    // Provide helpful error message
+    if (ch === '\n' || ch === '\r') {
+      throw new Error(
+        `Unterminated string literal at line ${this.line}, column ${this.column}. ` +
+        `JavaScript/TypeScript doesn't allow unescaped newlines in strings. ` +
+        `Use template literals (\`...\`) for multi-line strings or escape newlines (\\n).`
+      );
+    }
 
     // Handle escape sequences
     if (ch === '\\') {

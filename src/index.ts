@@ -1,26 +1,23 @@
 /**
  * Main Pipeline Entry Point
- * Wires together Lexer → Parser → CodeGenerator
+ * Wires together Lexer → Parser → CodeGenerator (with optional Transformer)
  *
- * CURRENT ARCHITECTURE (3 phases - monolithic):
+ * CURRENT ARCHITECTURE (4 phases - hybrid):
  * ┌────────────────────────────────────────────────────┐
  * │  Phase 1: Lexer (Tokenization)                     │
  * │  Phase 2: Parser (AST Generation)                  │
- * │  Phase 3: CodeGenerator (Transform + Emit)         │
- * │           ↑ Does BOTH transformation & emission    │
+ * │  Phase 3: Transformer (AST → AST) [OPTIONAL]       │
+ * │           ↑ Separate, but default: OFF             │
+ * │  Phase 4: CodeGenerator (AST → JS string)          │
  * └────────────────────────────────────────────────────┘
  *
- * FUTURE IMPROVEMENT (5 phases - clean separation):
- * ┌────────────────────────────────────────────────────┐
- * │  Phase 1: Lexer                                    │
- * │  Phase 2: Parser                                   │
- * │  Phase 3: Semantic Analyzer (optional)             │
- * │  Phase 4: Transformer (AST → AST)                  │
- * │  Phase 5: CodeGenerator (AST → string)             │
- * └────────────────────────────────────────────────────┘
+ * NOTES:
+ * - Transformer is FULLY IMPLEMENTED but not used by default
+ * - SemanticAnalyzer is FULLY IMPLEMENTED but not integrated yet
+ * - CodeGenerator currently handles some transformation internally
+ * - Set `useTransformer: true` to enable Phase 3
  *
- * Current approach WORKS (84.5% tests passing).
- * Separate transformer would improve architecture but isn't required.
+ * STATUS: 84.5% tests passing without optional Transformer
  */
 
 import { createCodeGenerator } from './code-generator/index.js';

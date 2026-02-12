@@ -5,11 +5,11 @@
 
 import type { IProgramNode } from '../parser/parser.types.js';
 import type {
-  ISemanticAnalysisResult,
-  ISymbolTable,
   IScope,
-  ISymbol,
+  ISemanticAnalysisResult,
   ISemanticError,
+  ISymbol,
+  ISymbolTable,
 } from './semantic-analyzer.types.js';
 
 /**
@@ -58,6 +58,9 @@ export interface ISemanticAnalyzer {
   validateReactivity(node: any): void;
   checkSignalDependencies(node: any): void;
   checkEffectDependencies(node: any): void;
+  extractCapturedVariables(node: any): string[];
+  extractDependencies(node: any): string[];
+  walkNode(node: any, callback: (node: any) => void): void;
 
   // Error reporting
   addError(type: string, message: string, node: any): void;
