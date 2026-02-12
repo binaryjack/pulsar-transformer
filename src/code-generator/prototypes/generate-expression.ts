@@ -3,8 +3,8 @@
  * Generate expression code
  */
 
-import type { ICodeGenerator } from '../code-generator.js'
-import { CodeGenerator } from '../code-generator.js'
+import type { ICodeGenerator } from '../code-generator.js';
+import { CodeGenerator } from '../code-generator.js';
 
 CodeGenerator.prototype.generateExpression = function (this: ICodeGenerator, node: any): string {
   if (!node) return '';
@@ -17,13 +17,13 @@ CodeGenerator.prototype.generateExpression = function (this: ICodeGenerator, nod
       if (typeof node.value === 'string') {
         // Escape special characters in string literals
         const escaped = node.value
-          .replace(/\\/g, '\\\\')   // Backslash first!
-          .replace(/'/g, "\\'")      // Single quotes
-          .replace(/\n/g, '\\n')     // Newlines
-          .replace(/\r/g, '\\r')     // Carriage returns
-          .replace(/\t/g, '\\t')     // Tabs
-          .replace(/\f/g, '\\f')     // Form feeds
-          .replace(/\v/g, '\\v');    // Vertical tabs
+          .replace(/\\/g, '\\\\') // Backslash first!
+          .replace(/'/g, "\\'") // Single quotes
+          .replace(/\n/g, '\\n') // Newlines
+          .replace(/\r/g, '\\r') // Carriage returns
+          .replace(/\t/g, '\\t') // Tabs
+          .replace(/\f/g, '\\f') // Form feeds
+          .replace(/\v/g, '\\v'); // Vertical tabs
         return `'${escaped}'`;
       }
       return String(node.value);
@@ -47,6 +47,9 @@ CodeGenerator.prototype.generateExpression = function (this: ICodeGenerator, nod
       return `${this.generateExpression(node.left)} ${node.operator} ${this.generateExpression(node.right)}`;
 
     case 'LogicalExpression':
+      return `${this.generateExpression(node.left)} ${node.operator} ${this.generateExpression(node.right)}`;
+
+    case 'AssignmentExpression':
       return `${this.generateExpression(node.left)} ${node.operator} ${this.generateExpression(node.right)}`;
 
     case 'UnaryExpression':
@@ -170,7 +173,15 @@ CodeGenerator.prototype.generateTemplateLiteral = function (
 
   // Simple template literal without expressions
   if (expressions.length === 0) {
-    return `'${quasis[0].value.cooked}'`;
+    const escaped = quasis[0].value.cooked
+      .replace(/\\/g, '\\\\') // Backslash first!
+      .replace(/'/g, "\\'") // Single quotes
+      .replace(/\n/g, '\\n') // Newlines
+      .replace(/\r/g, '\\r') // Carriage returns
+      .replace(/\t/g, '\\t') // Tabs
+      .replace(/\f/g, '\\f') // Form feeds
+      .replace(/\v/g, '\\v'); // Vertical tabs
+    return `'${escaped}'`;
   }
 
   // Template with expressions - build concatenation chain
@@ -181,7 +192,16 @@ CodeGenerator.prototype.generateTemplateLiteral = function (
 
     // Add string part if not empty
     if (quasi.value.cooked !== '') {
-      parts.push(`'${quasi.value.cooked}'`);
+      // Escape special characters in template literal parts
+      const escaped = quasi.value.cooked
+        .replace(/\\/g, '\\\\') // Backslash first!
+        .replace(/'/g, "\\'") // Single quotes
+        .replace(/\n/g, '\\n') // Newlines
+        .replace(/\r/g, '\\r') // Carriage returns
+        .replace(/\t/g, '\\t') // Tabs
+        .replace(/\f/g, '\\f') // Form feeds
+        .replace(/\v/g, '\\v'); // Vertical tabs
+      parts.push(`'${escaped}'`);
     }
 
     // Add expression if not the last quasi

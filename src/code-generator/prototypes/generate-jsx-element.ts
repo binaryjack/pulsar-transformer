@@ -90,7 +90,7 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
         // For HTML elements: track reactive children to use insert()
         const wrappedExpr = `() => ${this.generateExpression(child.expression)}`;
         reactiveChildren.push({ index: children.length, expression: wrappedExpr });
-        children.push('null'); // Placeholder for now
+        children.push("'$'"); // Placeholder for reactive content
       } else {
         // For components or non-reactive: use as-is
         children.push(this.generateExpression(child.expression));
@@ -132,7 +132,7 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
       this.addImport('insert');
 
       // Generate: (() => { const el = t_element(...); insert(el, ...); return el; })()
-      const staticChildren = children.filter((c) => c !== 'null');
+      const staticChildren = children.filter((c) => c !== "'$'");
       const staticChildrenArray =
         staticChildren.length > 0 ? `[${staticChildren.join(', ')}]` : '[]';
 
