@@ -58,6 +58,7 @@ export interface ICodeGenerator {
   indent(): string;
   addImport(name: string): void;
   needsRegistryWrap(node: any): boolean;
+  isReactiveExpression(node: any): boolean;
 }
 
 /**

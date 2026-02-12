@@ -16,8 +16,26 @@ CodeGenerator.prototype.generateStatement = function (this: ICodeGenerator, node
 
     case 'ExportNamedDeclaration':
       if (node.declaration) {
+        // Skip TypeScript-only declarations (interfaces, type aliases)
+        if (node.declaration.type === 'InterfaceDeclaration') {
+          return '';
+        }
         const code = this.generateStatement(node.declaration);
+        if (!code) return ''; // If declaration generated nothing, skip export
         return `export ${code}`;
+      }
+      // Handle export { Name1, Name2 as Alias } syntax
+      if (node.specifiers && node.specifiers.length > 0) {
+        const specifierList = node.specifiers
+          .map((spec: any) => {
+            if (spec.local.name === spec.exported.name) {
+              return spec.local.name;
+            } else {
+              return `${spec.local.name} as ${spec.exported.name}`;
+            }
+          })
+          .join(', ');
+        return `export { ${specifierList} };`;
       }
       return '';
 
@@ -29,7 +47,8 @@ CodeGenerator.prototype.generateStatement = function (this: ICodeGenerator, node
       return '';
 
     case 'InterfaceDeclaration':
-      return this.generateInterface(node);
+      // TypeScript interfaces are compile-time only, skip in generated JavaScript
+      return '';
 
     case 'ComponentDeclaration':
       return this.generateComponent(node);
@@ -101,35 +120,21 @@ CodeGenerator.prototype.generateComponent = function (this: ICodeGenerator, node
 
   const parts: string[] = [];
 
-  // Generate type parameters: <T> or <T, U>
-  let typeParams = '';
-  if (node.typeParameters && node.typeParameters.length > 0) {
-    const typeParamStrings = node.typeParameters.map((tp: any) => tp.name);
-    typeParams = `<${typeParamStrings.join(', ')}>`;
-  }
-
-  // Function signature
+  // Function signature - strip TypeScript annotations for JavaScript output
   const params = node.params
     .map((p: any) => {
       if (p.pattern.type === 'ObjectPattern') {
         const props = p.pattern.properties.map((prop: any) => prop.key.name).join(', ');
-        const typeAnnotation = p.typeAnnotation
-          ? `: ${this.generateTypeAnnotation(p.typeAnnotation)}`
-          : '';
-        return `{${props}}${typeAnnotation}`;
+        // Skip type annotations - JavaScript output
+        return `{${props}}`;
       }
-      let paramStr = p.pattern.name;
-      if (p.optional) {
-        paramStr += '?';
-      }
-      if (p.typeAnnotation) {
-        paramStr += `: ${this.generateTypeAnnotation(p.typeAnnotation)}`;
-      }
-      return paramStr;
+      // Use parameter name only - no type annotations or optional syntax
+      return p.pattern.name;
     })
     .join(', ');
 
-  parts.push(`function ${node.name.name}${typeParams}(${params}): HTMLElement {`);
+  // JavaScript function - no type parameters or return type annotation
+  parts.push(`function ${node.name.name}(${params}) {`);
   this.indentLevel++;
 
   // Registry wrapper - execute(id, parentId, factory)
@@ -160,43 +165,16 @@ CodeGenerator.prototype.generateFunction = function (this: ICodeGenerator, node:
 
   const name = node.id ? node.id.name : '';
 
-  // Generate type parameters: <T> or <T, U> or <T extends Base>
-  let typeParams = '';
-  if (node.typeParameters && node.typeParameters.length > 0) {
-    const typeParamStrings = node.typeParameters.map((tp: any) => {
-      let result = tp.name;
-      if (tp.constraint) {
-        result += ` extends ${this.generateTypeAnnotation(tp.constraint)}`;
-      }
-      if (tp.default) {
-        result += ` = ${this.generateTypeAnnotation(tp.default)}`;
-      }
-      return result;
-    });
-    typeParams = `<${typeParamStrings.join(', ')}>`;
-  }
-
-  // Generate parameters with type annotations
+  // Generate parameters - JavaScript output (no type annotations)
   const params = node.params
     .map((p: any) => {
-      let paramStr = p.pattern.name;
-      if (p.optional) {
-        paramStr += '?';
-      }
-      if (p.typeAnnotation) {
-        // Add type annotation: param: Type or param?: Type
-        const typeStr = this.generateTypeAnnotation(p.typeAnnotation);
-        paramStr += `: ${typeStr}`;
-      }
-      return paramStr;
+      // Use parameter name only - strip TypeScript syntax
+      return p.pattern.name;
     })
     .join(', ');
 
-  const returnType = node.returnType
-    ? `: ${this.generateTypeAnnotation(node.returnType.typeAnnotation)}`
-    : '';
-
-  parts.push(`function ${name}${typeParams}(${params})${returnType} {`);
+  // JavaScript function - no type parameters or return type
+  parts.push(`function ${name}(${params}) {`);
   this.indentLevel++;
 
   for (const stmt of node.body.body) {

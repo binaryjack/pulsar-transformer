@@ -13,6 +13,7 @@ import './prototypes/generate-statement.js';
 import './prototypes/generate-type-annotation.js';
 import './prototypes/generate.js';
 import './prototypes/indent.js';
+import './prototypes/is-reactive-expression.js';
 
 // Export constructor and types
 export { CodeGenerator, createCodeGenerator } from './code-generator.js';
