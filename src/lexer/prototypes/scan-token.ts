@@ -127,7 +127,13 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
       this.addToken(TokenTypeEnum.MINUS, '-');
       return;
     case '*':
-      this.addToken(TokenTypeEnum.STAR, '*');
+      // Check for exponentiation operator (**)
+      if (this.peek() === '*') {
+        this.advance(); // consume second *
+        this.addToken(TokenTypeEnum.EXPONENTIATION, '**');
+      } else {
+        this.addToken(TokenTypeEnum.STAR, '*');
+      }
       return;
     case '%':
       this.addToken(TokenTypeEnum.PERCENT, '%');

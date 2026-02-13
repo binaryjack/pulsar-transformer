@@ -86,3 +86,30 @@ CodeGenerator.prototype.isReactiveExpression = function (this: ICodeGenerator, n
   // Default: assume non-reactive for safety
   return false;
 };
+
+/**
+ * Check if an expression is a simple reactive expression that can be used directly
+ * Simple reactive expressions: count(), signal.value (no complex operations)
+ */
+CodeGenerator.prototype.isSimpleReactiveExpression = function (
+  this: ICodeGenerator,
+  node: any
+): boolean {
+  if (!node) return false;
+
+  // Simple call expression: count(), getText(), etc.
+  if (node.type === 'CallExpression') {
+    // Allow simple function calls without complex arguments
+    return (
+      node.arguments.length === 0 ||
+      node.arguments.every((arg: any) => arg.type === 'Literal' || arg.type === 'Identifier')
+    );
+  }
+
+  // Simple member expression: signal.value, obj.prop, etc.
+  if (node.type === 'MemberExpression') {
+    return !node.computed; // obj.prop (not obj[expr])
+  }
+
+  return false;
+};

@@ -6,8 +6,21 @@
 import type { ICodeGenerator } from '../code-generator.js';
 import { CodeGenerator } from '../code-generator.js';
 
+/**
+ * Get full tag name from JSX element name node (handles both JSXIdentifier and JSXMemberExpression)
+ */
+CodeGenerator.prototype.getJSXTagName = function (this: ICodeGenerator, nameNode: any): string {
+  if (nameNode.type === 'JSXIdentifier') {
+    return nameNode.name;
+  } else if (nameNode.type === 'JSXMemberExpression') {
+    return this.getJSXTagName(nameNode.object) + '.' + nameNode.property.name;
+  } else {
+    throw new Error(`Unknown JSX element name type: ${nameNode.type}`);
+  }
+};
+
 CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, node: any): string {
-  const tagName = node.openingElement.name.name;
+  const tagName = this.getJSXTagName(node.openingElement.name);
 
   // Check if this is a component (uppercase) or HTML element (lowercase)
   const isComponent = /^[A-Z]/.test(tagName);
@@ -87,10 +100,18 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
       const isReactive = this.isReactiveExpression(child.expression);
 
       if (isReactive && !isComponent) {
-        // For HTML elements: track reactive children to use insert()
-        const wrappedExpr = `() => ${this.generateExpression(child.expression)}`;
-        reactiveChildren.push({ index: children.length, expression: wrappedExpr });
-        children.push("'$'"); // Placeholder for reactive content
+        // For HTML elements with reactive expressions
+        // Simple reactive expressions (count(), signal.value) can be used directly
+        // Complex reactive expressions need insert() approach
+        if (this.isSimpleReactiveExpression(child.expression)) {
+          // Simple reactive: use directly in array
+          children.push(this.generateExpression(child.expression));
+        } else {
+          // Complex reactive: use insert() approach
+          const wrappedExpr = `() => ${this.generateExpression(child.expression)}`;
+          reactiveChildren.push({ index: children.length, expression: wrappedExpr });
+          children.push("'$'"); // Placeholder for reactive content
+        }
       } else {
         // For components or non-reactive: use as-is
         children.push(this.generateExpression(child.expression));
@@ -100,16 +121,8 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
     }
   }
 
-  // Add trailing comma only if children contain JSXElements (not just text/expressions)
-  const hasJSXElementChildren = children.some(
-    (child) => child.startsWith('t_element(') || /^[A-Z]/.test(child.charAt(0))
-  );
-  const childrenArray =
-    children.length > 0
-      ? hasJSXElementChildren
-        ? `[${children.join(', ')},]`
-        : `[${children.join(', ')}]`
-      : '[]';
+  // Generate children array without trailing comma
+  const childrenArray = children.length > 0 ? `[${children.join(', ')}]` : '[]';
 
   // Generate different output for components vs HTML elements
   if (isComponent) {

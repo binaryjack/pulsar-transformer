@@ -18,6 +18,13 @@ Parser.prototype.parseImportDeclaration = function (this: IParser): IImportDecla
 
   this.expect(TokenTypeEnum.IMPORT);
 
+  // Check for full statement type import: import type { ... }
+  let isFullTypeImport = false;
+  if (this.match(TokenTypeEnum.IDENTIFIER) && this.peek().value === 'type') {
+    isFullTypeImport = true;
+    this.advance(); // consume 'type'
+  }
+
   const specifiers: IImportSpecifier[] = [];
 
   // import { ... }
@@ -25,6 +32,17 @@ Parser.prototype.parseImportDeclaration = function (this: IParser): IImportDecla
     this.advance(); // consume {
 
     while (!this.match(TokenTypeEnum.RBRACE) && !this.isAtEnd()) {
+      // Check for inline type import: import { type Foo, ... }
+      let isInlineTypeImport = false;
+      if (
+        !isFullTypeImport &&
+        this.match(TokenTypeEnum.IDENTIFIER) &&
+        this.peek().value === 'type'
+      ) {
+        isInlineTypeImport = true;
+        this.advance(); // consume 'type'
+      }
+
       const importedToken = this.expect(TokenTypeEnum.IDENTIFIER);
 
       const imported: IIdentifier = {
@@ -51,6 +69,7 @@ Parser.prototype.parseImportDeclaration = function (this: IParser): IImportDecla
         type: 'ImportSpecifier',
         imported,
         local,
+        typeOnly: isFullTypeImport || isInlineTypeImport,
         start: imported.start,
         end: local.end,
       });
@@ -83,6 +102,7 @@ Parser.prototype.parseImportDeclaration = function (this: IParser): IImportDecla
     type: 'ImportDeclaration',
     specifiers,
     source,
+    typeOnly: isFullTypeImport,
     start,
     end: source.end,
   };

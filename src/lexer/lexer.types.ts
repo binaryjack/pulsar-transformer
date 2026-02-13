@@ -48,6 +48,7 @@ export enum TokenTypeEnum {
   STAR = 'STAR', // *
   SLASH = 'SLASH', // /
   PERCENT = 'PERCENT', // %
+  EXPONENTIATION = 'EXPONENTIATION', // **
   AMPERSAND = 'AMPERSAND', // &
   PIPE = 'PIPE', // |
   EXCLAMATION = 'EXCLAMATION', // !

@@ -35,12 +35,14 @@ export interface IImportDeclaration extends IASTNode {
   type: 'ImportDeclaration';
   specifiers: IImportSpecifier[];
   source: IStringLiteral;
+  typeOnly?: boolean; // true for 'import type { ... }'
 }
 
 export interface IImportSpecifier extends IASTNode {
   type: 'ImportSpecifier';
   imported: IIdentifier;
   local: IIdentifier;
+  typeOnly?: boolean; // true for 'import { type Foo, ... }'
 }
 
 /**

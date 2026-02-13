@@ -3,10 +3,10 @@
  * Parse JSX elements: <div>...</div>
  */
 
-import { TokenTypeEnum } from '../../lexer/lexer.types.js'
-import type { IParser } from '../parser.js'
-import { Parser } from '../parser.js'
-import type { IJSXChild, IJSXElement } from '../parser.types.js'
+import { TokenTypeEnum } from '../../lexer/lexer.types.js';
+import type { IParser } from '../parser.js';
+import { Parser } from '../parser.js';
+import type { IJSXChild, IJSXElement } from '../parser.types.js';
 
 Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
   const start = this.peek().start;
@@ -140,7 +140,9 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
   }
 
   // Closing tag
-  const closingElement = this.parseJSXClosingElement(openingElement.name.name);
+  const closingElement = this.parseJSXClosingElement(
+    this.getJSXElementFullName(openingElement.name)
+  );
 
   return {
     type: 'JSXElement',
@@ -153,6 +155,54 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
 };
 
 /**
+ * Get full name string from JSX element name (handles both JSXIdentifier and JSXMemberExpression)
+ */
+Parser.prototype.getJSXElementFullName = function (this: IParser, nameNode: any): string {
+  if (nameNode.type === 'JSXIdentifier') {
+    return nameNode.name;
+  } else if (nameNode.type === 'JSXMemberExpression') {
+    return this.getJSXElementFullName(nameNode.object) + '.' + nameNode.property.name;
+  } else {
+    throw new Error(`Unknown JSX element name type: ${nameNode.type}`);
+  }
+};
+
+/**
+ * Parse JSX element name (supports member expressions like Component.Sub)
+ */
+Parser.prototype.parseJSXElementName = function (this: IParser): any {
+  const firstToken = this.expect(TokenTypeEnum.IDENTIFIER);
+
+  let name: any = {
+    type: 'JSXIdentifier',
+    name: firstToken.value,
+    start: firstToken.start,
+    end: firstToken.end,
+  };
+
+  // Handle member expressions: Component.SubComponent.DeepComponent
+  while (this.match(TokenTypeEnum.DOT)) {
+    this.advance(); // consume dot
+    const propertyToken = this.expect(TokenTypeEnum.IDENTIFIER);
+
+    name = {
+      type: 'JSXMemberExpression',
+      object: name,
+      property: {
+        type: 'JSXIdentifier',
+        name: propertyToken.value,
+        start: propertyToken.start,
+        end: propertyToken.end,
+      },
+      start: name.start,
+      end: propertyToken.end,
+    };
+  }
+
+  return name;
+};
+
+/**
  * Parse JSX opening element: <div className="foo">
  */
 Parser.prototype.parseJSXOpeningElement = function (this: IParser): any {
@@ -160,14 +210,8 @@ Parser.prototype.parseJSXOpeningElement = function (this: IParser): any {
 
   this.expect(TokenTypeEnum.LT);
 
-  //Tag name
-  const nameToken = this.expect(TokenTypeEnum.IDENTIFIER);
-  const name = {
-    type: 'JSXIdentifier',
-    name: nameToken.value,
-    start: nameToken.start,
-    end: nameToken.end,
-  };
+  // Parse tag name (supports member expressions like ThemeContext.Provider)
+  const name = this.parseJSXElementName();
 
   // Attributes
   const attributes: any[] = [];
@@ -282,7 +326,7 @@ Parser.prototype.parseJSXOpeningElement = function (this: IParser): any {
 };
 
 /**
- * Parse JSX closing element: </div>
+ * Parse JSX closing element: </div> or </ThemeContext.Provider>
  */
 Parser.prototype.parseJSXClosingElement = function (this: IParser, expectedName: string): any {
   const start = this.peek().start;
@@ -290,11 +334,13 @@ Parser.prototype.parseJSXClosingElement = function (this: IParser, expectedName:
   this.expect(TokenTypeEnum.LT);
   this.expect(TokenTypeEnum.SLASH);
 
-  const nameToken = this.expect(TokenTypeEnum.IDENTIFIER);
+  // Parse closing tag name (supports member expressions)
+  const name = this.parseJSXElementName();
+  const actualName = this.getJSXElementFullName(name);
 
-  if (nameToken.value !== expectedName) {
+  if (actualName !== expectedName) {
     throw new Error(
-      `JSX closing tag mismatch: expected </${expectedName}>, got </${nameToken.value}> at line ${nameToken.line}`
+      `JSX closing tag mismatch: expected </${expectedName}>, got </${actualName}> at line ${this.peek().line}`
     );
   }
 
@@ -302,12 +348,7 @@ Parser.prototype.parseJSXClosingElement = function (this: IParser, expectedName:
 
   return {
     type: 'JSXClosingElement',
-    name: {
-      type: 'JSXIdentifier',
-      name: nameToken.value,
-      start: nameToken.start,
-      end: nameToken.end,
-    },
+    name,
     start,
     end: endToken.end,
   };
@@ -325,7 +366,7 @@ Parser.prototype.parseJSXExpressionContainer = function (this: IParser): any {
   if (this.match(TokenTypeEnum.COMMENT)) {
     const commentToken = this.advance();
     const endToken = this.expect(TokenTypeEnum.RBRACE);
-    
+
     // Return a special JSXEmptyExpression for comments
     return {
       type: 'JSXExpressionContainer',

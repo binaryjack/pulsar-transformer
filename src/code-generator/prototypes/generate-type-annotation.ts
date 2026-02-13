@@ -14,7 +14,9 @@ CodeGenerator.prototype.generateTypeAnnotation = function (
   this: ICodeGenerator,
   typeNode: any
 ): string {
-  if (!typeNode) return 'any';
+  if (!typeNode) {
+    return 'any';
+  }
 
   switch (typeNode.type) {
     case 'TypeReference':

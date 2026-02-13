@@ -19,7 +19,7 @@ export const Drawer = ({
   placement = 'right',
   children,
 }: IDrawerProps): HTMLElement => {
-  return $REGISTRY.execute('component:Drawer', () => {
+  return $REGISTRY.execute('component:Drawer', null, () => {
     useEffect(() => {
       if (!open) return;
 

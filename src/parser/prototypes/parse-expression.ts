@@ -30,9 +30,10 @@ const PRECEDENCE: Record<string, number> = {
   [TokenTypeEnum.STAR]: 9,
   [TokenTypeEnum.SLASH]: 9,
   [TokenTypeEnum.PERCENT]: 9,
-  [TokenTypeEnum.LPAREN]: 10, // Call expression
-  [TokenTypeEnum.DOT]: 11, // Member access
-  [TokenTypeEnum.QUESTION_DOT]: 11, // ?. (optional chaining, same as .)
+  [TokenTypeEnum.EXPONENTIATION]: 10, // ** has higher precedence than *, /, %
+  [TokenTypeEnum.LPAREN]: 11, // Call expression
+  [TokenTypeEnum.DOT]: 12, // Member access
+  [TokenTypeEnum.QUESTION_DOT]: 12, // ?. (optional chaining, same as .)
 };
 
 function getPrecedence(type: string): number {
@@ -86,10 +87,13 @@ Parser.prototype.parseExpression = function (this: IParser, precedence: number =
         end: right.end,
       } as any;
     }
-    // Binary expression: a + b, a ?? b (nullish coalescing)
+    // Binary expression: a + b, a ?? b (nullish coalescing), a ** b (exponentiation)
     else if (PRECEDENCE[token.type]) {
       const operator = this.advance();
-      const right = this.parseExpression(getPrecedence(operator.type));
+
+      // Exponentiation is right-associative: 2 ** 3 ** 2 = 2 ** (3 ** 2)
+      const precedenceAdjustment = operator.type === TokenTypeEnum.EXPONENTIATION ? -1 : 0;
+      const right = this.parseExpression(getPrecedence(operator.type) + precedenceAdjustment);
 
       left = {
         type:

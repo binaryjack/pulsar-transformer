@@ -108,16 +108,31 @@ CodeGenerator.prototype.generateArrowFunction = function (this: ICodeGenerator, 
           })
           .join(', ');
 
-        // JavaScript output - no type annotations
+        // Include type annotation if present
+        if (p.typeAnnotation) {
+          const typeStr = this.generateTypeAnnotation(p.typeAnnotation);
+          return `{${props}}: ${typeStr}`;
+        }
+        console.log('[DEBUG-ARROW-PARAM] No typeAnnotation found for ObjectPattern');
         return `{${props}}`;
       } else {
-        // Simple identifier - JavaScript output, no type annotations
-        return p.pattern.name;
+        // Simple identifier - include type annotation if present
+        const paramName = p.pattern.name;
+        if (p.typeAnnotation) {
+          const typeStr = this.generateTypeAnnotation(p.typeAnnotation);
+          return `${paramName}: ${typeStr}`;
+        }
+        console.log('[DEBUG-ARROW-PARAM] No typeAnnotation found for identifier:', paramName);
+        return paramName;
       }
     })
     .join(', ');
 
-  // JavaScript output - no return type annotations
+  // Generate return type if present
+  let returnTypeStr = '';
+  if (node.returnType) {
+    returnTypeStr = `: ${this.generateTypeAnnotation(node.returnType.typeAnnotation)}`;
+  }
 
   if (node.body.type === 'BlockStatement') {
     // For arrow functions with block body, manually handle braces
@@ -131,9 +146,9 @@ CodeGenerator.prototype.generateArrowFunction = function (this: ICodeGenerator, 
 
     const body = statements.length > 0 ? `{\n${statements.join('\n')}\n${this.indent()}}` : '{}';
 
-    return `(${params}) => ${body}`;
+    return `(${params})${returnTypeStr} => ${body}`;
   } else {
-    return `(${params}) => ${this.generateExpression(node.body)}`;
+    return `(${params})${returnTypeStr} => ${this.generateExpression(node.body)}`;
   }
 };
 

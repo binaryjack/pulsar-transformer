@@ -59,6 +59,7 @@ export interface ICodeGenerator {
   addImport(name: string): void;
   needsRegistryWrap(node: any): boolean;
   isReactiveExpression(node: any): boolean;
+  isSimpleReactiveExpression(node: any): boolean;
 }
 
 /**

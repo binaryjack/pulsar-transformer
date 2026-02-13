@@ -16,12 +16,15 @@ CodeGenerator.prototype.generateStatement = function (this: ICodeGenerator, node
 
     case 'ExportNamedDeclaration':
       if (node.declaration) {
-        // Skip TypeScript-only declarations (interfaces, type aliases)
-        if (node.declaration.type === 'InterfaceDeclaration') {
-          return '';
-        }
+        // Generate TypeScript declarations (including interfaces)
         const code = this.generateStatement(node.declaration);
         if (!code) return ''; // If declaration generated nothing, skip export
+
+        // For interface declarations, the generated code already includes 'export'
+        if (node.declaration.type === 'InterfaceDeclaration') {
+          return code;
+        }
+
         return `export ${code}`;
       }
       // Handle export { Name1, Name2 as Alias } syntax
@@ -47,8 +50,8 @@ CodeGenerator.prototype.generateStatement = function (this: ICodeGenerator, node
       return '';
 
     case 'InterfaceDeclaration':
-      // TypeScript interfaces are compile-time only, skip in generated JavaScript
-      return '';
+      // Generate TypeScript interface into the output
+      return this.generateInterfaceDeclaration(node);
 
     case 'ComponentDeclaration':
       return this.generateComponent(node);
@@ -120,21 +123,49 @@ CodeGenerator.prototype.generateComponent = function (this: ICodeGenerator, node
 
   const parts: string[] = [];
 
-  // Function signature - strip TypeScript annotations for JavaScript output
+  // Generate parameters with type annotations if present
   const params = node.params
     .map((p: any) => {
       if (p.pattern.type === 'ObjectPattern') {
-        const props = p.pattern.properties.map((prop: any) => prop.key.name).join(', ');
-        // Skip type annotations - JavaScript output
+        const props = p.pattern.properties
+          .map((prop: any) => {
+            const key = prop.key.name;
+            if (prop.defaultValue) {
+              const defaultVal = this.generateExpression(prop.defaultValue);
+              return `${key} = ${defaultVal}`;
+            }
+            return key;
+          })
+          .join(', ');
+
+        // Include type annotation if present
+        if (p.typeAnnotation) {
+          const typeStr = this.generateTypeAnnotation(p.typeAnnotation);
+          return `{${props}}: ${typeStr}`;
+        }
         return `{${props}}`;
       }
-      // Use parameter name only - no type annotations or optional syntax
-      return p.pattern.name;
+
+      // Simple identifier parameter with optional type annotation
+      const paramName = p.pattern.name;
+      if (p.typeAnnotation) {
+        const typeStr = this.generateTypeAnnotation(p.typeAnnotation);
+        return `${paramName}: ${typeStr}`;
+      }
+      return paramName;
     })
     .join(', ');
 
-  // JavaScript function - no type parameters or return type annotation
-  parts.push(`function ${node.name.name}(${params}) {`);
+  // Include return type if present, or default to HTMLElement for components
+  let returnTypeStr = '';
+  if (node.returnType) {
+    returnTypeStr = `: ${this.generateTypeAnnotation(node.returnType)}`;
+  } else {
+    // Components default to HTMLElement return type
+    returnTypeStr = ': HTMLElement';
+  }
+
+  parts.push(`function ${node.name.name}(${params})${returnTypeStr} {`);
   this.indentLevel++;
 
   // Registry wrapper - execute(id, parentId, factory)
@@ -165,16 +196,26 @@ CodeGenerator.prototype.generateFunction = function (this: ICodeGenerator, node:
 
   const name = node.id ? node.id.name : '';
 
-  // Generate parameters - JavaScript output (no type annotations)
+  // Generate parameters with type annotations if present
   const params = node.params
     .map((p: any) => {
-      // Use parameter name only - strip TypeScript syntax
-      return p.pattern.name;
+      const paramName = p.pattern.name;
+      // Include type annotation if present
+      if (p.typeAnnotation) {
+        const typeStr = this.generateTypeAnnotation(p.typeAnnotation.typeAnnotation);
+        return `${paramName}: ${typeStr}`;
+      }
+      return paramName;
     })
     .join(', ');
 
-  // JavaScript function - no type parameters or return type
-  parts.push(`function ${name}(${params}) {`);
+  // Include return type if present
+  let returnTypeStr = '';
+  if (node.returnType) {
+    returnTypeStr = `: ${this.generateTypeAnnotation(node.returnType.typeAnnotation)}`;
+  }
+
+  parts.push(`function ${name}(${params})${returnTypeStr} {`);
   this.indentLevel++;
 
   for (const stmt of node.body.body) {
@@ -247,7 +288,13 @@ CodeGenerator.prototype.generateVariableDeclaration = function (
             }
             return result;
           } else {
-            return p.pattern.name;
+            // Simple identifier parameter with optional type annotation
+            const paramName = p.pattern.name;
+            if (p.typeAnnotation) {
+              const typeStr = this.generateTypeAnnotation(p.typeAnnotation);
+              return `${paramName}: ${typeStr}`;
+            }
+            return paramName;
           }
         })
         .join(', ');
@@ -301,6 +348,39 @@ CodeGenerator.prototype.generateBlockStatement = function (
 
   this.indentLevel--;
   parts.push(`${this.indent()}}`);
+
+  return parts.join('\n');
+};
+
+/**
+ * Generate interface declaration
+ * export interface ICounterProps { id?: string; }
+ */
+CodeGenerator.prototype.generateInterfaceDeclaration = function (
+  this: ICodeGenerator,
+  node: any
+): string {
+  const parts: string[] = [];
+
+  // Interface header
+  parts.push(`export interface ${node.name.name} {`);
+
+  // Properties
+  for (const prop of node.body.properties) {
+    const optional = prop.optional ? '?' : '';
+
+    // Handle TypeAnnotation wrapper - the actual type is nested inside
+    let actualTypeNode = prop.typeAnnotation;
+    if (actualTypeNode && actualTypeNode.type === 'TypeAnnotation') {
+      actualTypeNode = actualTypeNode.typeAnnotation;
+    }
+
+    const typeStr = this.generateTypeAnnotation(actualTypeNode);
+    parts.push(`  ${prop.key.name}${optional}: ${typeStr};`);
+  }
+
+  // Closing brace
+  parts.push('}');
 
   return parts.join('\n');
 };
