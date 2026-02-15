@@ -33,7 +33,10 @@ const PRECEDENCE: Record<string, number> = {
   [TokenTypeEnum.EXPONENTIATION]: 10, // ** has higher precedence than *, /, %
   [TokenTypeEnum.LPAREN]: 11, // Call expression
   [TokenTypeEnum.DOT]: 12, // Member access
+  [TokenTypeEnum.LBRACKET]: 12, // Computed member access (same as DOT)
   [TokenTypeEnum.QUESTION_DOT]: 12, // ?. (optional chaining, same as .)
+  [TokenTypeEnum.PLUS_PLUS]: 13, // Postfix ++
+  [TokenTypeEnum.MINUS_MINUS]: 13, // Postfix --
 };
 
 function getPrecedence(type: string): number {
@@ -48,8 +51,20 @@ Parser.prototype.parseExpression = function (this: IParser, precedence: number =
   while (precedence < getPrecedence(this.peek().type)) {
     const token = this.peek();
 
+    // Postfix increment/decrement: x++, x--
+    if (token.type === TokenTypeEnum.PLUS_PLUS || token.type === TokenTypeEnum.MINUS_MINUS) {
+      const operator = this.advance();
+      left = {
+        type: 'UpdateExpression',
+        operator: operator.value,
+        argument: left,
+        prefix: false,
+        start: left.start,
+        end: operator.end,
+      } as any;
+    }
     // Call expression: func()
-    if (token.type === TokenTypeEnum.LPAREN) {
+    else if (token.type === TokenTypeEnum.LPAREN) {
       left = this.parseCallExpression(left);
     }
     // Member expression: obj.prop or obj?.prop (optional chaining)
@@ -71,6 +86,22 @@ Parser.prototype.parseExpression = function (this: IParser, precedence: number =
         optional: isOptional,
         start: left.start,
         end: property.end,
+      } as any;
+    }
+    // Computed member expression: obj[key] or obj?.[key] (with optional chaining)
+    else if (token.type === TokenTypeEnum.LBRACKET) {
+      this.advance(); // consume [
+      const property = this.parseExpression();
+      const endToken = this.expect(TokenTypeEnum.RBRACKET);
+
+      left = {
+        type: 'MemberExpression',
+        object: left,
+        property,
+        computed: true,
+        optional: false,
+        start: left.start,
+        end: endToken.end,
       } as any;
     }
     // Assignment expression: a = b (right-associative, lowest precedence)
@@ -417,6 +448,21 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
     return this.parseObjectExpression();
   }
 
+  // Prefix increment/decrement: ++x, --x
+  if (token.type === TokenTypeEnum.PLUS_PLUS || token.type === TokenTypeEnum.MINUS_MINUS) {
+    const operator = this.advance();
+    const argument = this.parsePrimaryExpression();
+
+    return {
+      type: 'UpdateExpression',
+      operator: operator.value,
+      argument,
+      prefix: true,
+      start: operator.start,
+      end: argument.end,
+    };
+  }
+
   // Unary expression: !x, -x
   if (token.type === TokenTypeEnum.EXCLAMATION || token.type === TokenTypeEnum.MINUS) {
     const operator = this.advance();
@@ -680,6 +726,11 @@ Parser.prototype.parseTemplateLiteral = function (this: IParser, token: IToken):
   const quasis: any[] = [];
   const expressions: IExpression[] = [];
 
+  // DEBUG: Log template literal content
+  if (content.includes('product.price') || content.includes('price')) {
+    console.log('[TEMPLATE-DEBUG] Parsing template literal:', JSON.stringify(content));
+  }
+
   // If no ${} found, it's a simple template literal
   if (!content.includes('${')) {
     quasis.push({
@@ -713,6 +764,12 @@ Parser.prototype.parseTemplateLiteral = function (this: IParser, token: IToken):
     if (exprStart === -1) {
       // No more expressions - rest is final quasi
       const tail = content.substring(pos);
+
+      // DEBUG
+      if (content.includes('product.price') || content.includes('price')) {
+        console.log(`[TEMPLATE-DEBUG] Final quasi:`, JSON.stringify(tail), `(pos=${pos})`);
+      }
+
       quasis.push({
         type: 'TemplateElement',
         value: {
@@ -728,6 +785,16 @@ Parser.prototype.parseTemplateLiteral = function (this: IParser, token: IToken):
 
     // Add quasi before expression
     const quasi = content.substring(pos, exprStart);
+
+    // DEBUG
+    if (content.includes('product.price') || content.includes('price')) {
+      console.log(
+        `[TEMPLATE-DEBUG] Quasi ${quasis.length}:`,
+        JSON.stringify(quasi),
+        `(pos=${pos}, exprStart=${exprStart})`
+      );
+    }
+
     quasis.push({
       type: 'TemplateElement',
       value: {
@@ -758,6 +825,15 @@ Parser.prototype.parseTemplateLiteral = function (this: IParser, token: IToken):
 
     // Extract and parse the expression
     const exprText = content.substring(exprStartPos, pos);
+
+    // DEBUG
+    if (content.includes('product.price') || content.includes('price')) {
+      console.log(
+        `[TEMPLATE-DEBUG] Expression ${expressions.length}:`,
+        JSON.stringify(exprText),
+        `(exprStartPos=${exprStartPos}, pos=${pos})`
+      );
+    }
 
     // Create a mini-lexer and parser for the expression
     // For simplicity, we'll use a basic identifier parser

@@ -14,6 +14,8 @@ CodeGenerator.prototype.getJSXTagName = function (this: ICodeGenerator, nameNode
     return nameNode.name;
   } else if (nameNode.type === 'JSXMemberExpression') {
     return this.getJSXTagName(nameNode.object) + '.' + nameNode.property.name;
+  } else if (nameNode.type === 'JSXFragment') {
+    return '<Fragment>';
   } else {
     throw new Error(`Unknown JSX element name type: ${nameNode.type}`);
   }
@@ -21,6 +23,29 @@ CodeGenerator.prototype.getJSXTagName = function (this: ICodeGenerator, nameNode
 
 CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, node: any): string {
   const tagName = this.getJSXTagName(node.openingElement.name);
+
+  // Handle React Fragment: just return children array directly
+  if (tagName === '<Fragment>') {
+    if (node.children.length === 0) {
+      return '[]';
+    }
+
+    const childrenCode = node.children
+      .map((child: any) => {
+        if (child.type === 'JSXText') {
+          const trimmed = child.value.trim();
+          return trimmed ? JSON.stringify(trimmed) : null;
+        } else if (child.type === 'JSXExpressionContainer') {
+          return this.generateExpression(child.expression);
+        } else if (child.type === 'JSXElement') {
+          return this.generateJSXElement(child);
+        }
+        return null;
+      })
+      .filter((c: any) => c !== null);
+
+    return childrenCode.length === 1 ? childrenCode[0] : '[' + childrenCode.join(', ') + ']';
+  }
 
   // Check if this is a component (uppercase) or HTML element (lowercase)
   const isComponent = /^[A-Z]/.test(tagName);
@@ -37,11 +62,18 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
       .map((attr: any) => {
         // Handle JSX spread attributes: {...props}
         if (attr.type === 'JSXSpreadAttribute') {
-          return `...${this.generateExpression(attr.argument)}`;
+          return '...' + this.generateExpression(attr.argument);
         }
 
         // Handle regular JSX attributes: name={value}
         const name = attr.name.name;
+
+        // DEBUG: Log attribute name
+        if (name && name.includes(' ')) {
+          console.log('[ATTR-DEBUG] Attribute name with space:', JSON.stringify(name));
+          console.log('[ATTR-DEBUG] Full attribute:', JSON.stringify(attr));
+        }
+
         let value;
 
         if (attr.value === null) {
@@ -55,18 +87,18 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
             .replace(/\n/g, '\\n') // Escape newlines
             .replace(/\r/g, '\\r') // Escape carriage returns
             .replace(/\t/g, '\\t'); // Escape tabs
-          value = `'${escapedValue}'`;
+          value = "'" + escapedValue + "'";
         } else if (attr.value.type === 'JSXExpressionContainer') {
           value = this.generateExpression(attr.value.expression);
         } else {
           value = this.generateExpression(attr.value);
         }
 
-        return `${name}: ${value}`;
+        return name + ': ' + value;
       })
       .join(', ');
 
-    attrs = `{ ${attrPairs} }`;
+    attrs = '{ ' + attrPairs + ' }';
   }
 
   // Generate children array
@@ -79,6 +111,7 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
     if (child.type === 'JSXText') {
       // Don't trim - preserve intentional spaces
       const text = child.value;
+      console.log('[DEBUG-CODEGEN-JSXTEXT] Raw text value:', JSON.stringify(text));
       if (text && text.trim()) {
         // Only skip if completely empty/whitespace
         // Properly escape string: newlines, backslashes, single quotes
@@ -88,7 +121,9 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
           .replace(/\n/g, '\\n') // Escape newlines
           .replace(/\r/g, '\\r') // Escape carriage returns
           .replace(/\t/g, '\\t'); // Escape tabs
-        children.push(`'${escapedText}'`);
+        console.log('[DEBUG-CODEGEN-JSXTEXT] Escaped text:', JSON.stringify(escapedText));
+        console.log('[DEBUG-CODEGEN-JSXTEXT] Final output:', "'" + escapedText + "'");
+        children.push("'" + escapedText + "'");
       }
     } else if (child.type === 'JSXExpressionContainer') {
       // Skip JSX comments (JSXEmptyExpression)
@@ -96,8 +131,21 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
         continue; // Don't add comments to output
       }
 
+      // DEBUG: Check template literal processing
+      if (JSON.stringify(child.expression).includes('product.price')) {
+        console.log(
+          '[JSX-DEBUG] Template literal expression:',
+          JSON.stringify(child.expression.type)
+        );
+      }
+
       // Check if expression is reactive (contains function call)
       const isReactive = this.isReactiveExpression(child.expression);
+
+      // DEBUG
+      if (JSON.stringify(child.expression).includes('product.price')) {
+        console.log('[JSX-DEBUG] isReactive:', isReactive);
+      }
 
       if (isReactive && !isComponent) {
         // For HTML elements with reactive expressions
@@ -105,16 +153,32 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
         // Complex reactive expressions need insert() approach
         if (this.isSimpleReactiveExpression(child.expression)) {
           // Simple reactive: use directly in array
-          children.push(this.generateExpression(child.expression));
+          const expr = this.generateExpression(child.expression);
+          // DEBUG
+          if (expr.includes('product.price')) {
+            console.log('[JSX-DEBUG] Simple reactive path, expression:', expr);
+          }
+          children.push(expr);
         } else {
           // Complex reactive: use insert() approach
-          const wrappedExpr = `() => ${this.generateExpression(child.expression)}`;
+          const expr = this.generateExpression(child.expression);
+          const wrappedExpr = '() => ' + expr; // Use string concatenation to avoid template literal evaluation
+          // DEBUG
+          if (expr.includes('product.price')) {
+            console.log('[JSX-DEBUG] Complex reactive path, expression:', expr);
+            console.log('[JSX-DEBUG] Complex reactive path, wrapped:', wrappedExpr);
+          }
           reactiveChildren.push({ index: children.length, expression: wrappedExpr });
-          children.push("'$'"); // Placeholder for reactive content
+          children.push("'__REACTIVE__'"); // Placeholder for reactive content (unique to avoid conflicts)
         }
       } else {
         // For components or non-reactive: use as-is
-        children.push(this.generateExpression(child.expression));
+        const expr = this.generateExpression(child.expression);
+        // DEBUG
+        if (expr.includes('product.price')) {
+          console.log('[JSX-DEBUG] Non-reactive path, expression:', expr);
+        }
+        children.push(expr);
       }
     } else if (child.type === 'JSXElement') {
       children.push(this.generateJSXElement(child));
@@ -122,7 +186,8 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
   }
 
   // Generate children array without trailing comma
-  const childrenArray = children.length > 0 ? `[${children.join(', ')}]` : '[]';
+  // Use string concatenation to avoid $ interpolation in template literals
+  const childrenArray = children.length > 0 ? '[' + children.join(', ') + ']' : '[]';
 
   // Generate different output for components vs HTML elements
   if (isComponent) {
@@ -130,14 +195,17 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
     // Merge attributes and children into props object
     if (children.length > 0) {
       // Add children to props
+      // Use function replacement to avoid $ interpretation in replace()
       const propsWithChildren =
         attrs === '{}'
-          ? `{ children: ${childrenArray} }`
-          : attrs.replace(/}$/, `, children: ${childrenArray} }`);
-      return `${tagName}(${propsWithChildren})`;
+          ? '{ children: ' + childrenArray + ' }'
+          : attrs.replace(/}$/, () => ', children: ' + childrenArray + ' }');
+
+      const result = tagName + '(' + propsWithChildren + ')';
+      return result;
     } else {
       // No children, just props
-      return `${tagName}(${attrs})`;
+      return tagName + '(' + attrs + ')';
     }
   } else {
     // HTML element with reactive children: use insert()
@@ -145,18 +213,29 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
       this.addImport('insert');
 
       // Generate: (() => { const el = t_element(...); insert(el, ...); return el; })()
-      const staticChildren = children.filter((c) => c !== "'$'");
+      const staticChildren = children.filter((c) => c !== "'__REACTIVE__'");
       const staticChildrenArray =
-        staticChildren.length > 0 ? `[${staticChildren.join(', ')}]` : '[]';
+        staticChildren.length > 0 ? '[' + staticChildren.join(', ') + ']' : '[]';
 
       const insertCalls = reactiveChildren
-        .map(({ expression }) => `insert(_el$, ${expression});`)
+        .map(({ expression }) => 'insert(_el$, ' + expression + ');')
         .join(' ');
 
-      return `(() => { const _el$ = t_element('${tagName}', ${attrs}, ${staticChildrenArray}); ${insertCalls} return _el$; })()`;
+      return (
+        "(() => { const _el$ = t_element('" +
+        tagName +
+        "', " +
+        attrs +
+        ', ' +
+        staticChildrenArray +
+        '); ' +
+        insertCalls +
+        ' return _el$; })()'
+      );
     }
 
     // HTML element: t_element('div', {...}, [...])
-    return `t_element('${tagName}', ${attrs}, ${childrenArray})`;
+    const result = "t_element('" + tagName + "', " + attrs + ', ' + childrenArray + ')';
+    return result;
   }
 };

@@ -14,6 +14,25 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
   // Opening tag
   const openingElement = this.parseJSXOpeningElement();
 
+  // Get tag name for matching closing tag (handle fragments)
+  const tagName =
+    openingElement.name.type === 'JSXFragment'
+      ? '<Fragment>'
+      : this.getJSXElementFullName(openingElement.name);
+
+  // DEBUG: Log when parsing JSX element
+  const isInArrowFunction = this.tokens
+    .slice(Math.max(0, this.current - 10), this.current)
+    .some((t) => t.type === TokenTypeEnum.ARROW);
+  if (isInArrowFunction) {
+    console.log('[DEBUG-JSX-IN-ARROW] Parsing JSX element:', tagName);
+    console.log('[DEBUG-JSX-IN-ARROW] Self-closing:', openingElement.selfClosing);
+    console.log(
+      '[DEBUG-JSX-IN-ARROW] Next 5 tokens:',
+      this.tokens.slice(this.current, this.current + 5).map((t) => `${t.type}:${t.value}`)
+    );
+  }
+
   // Check for self-closing
   if (openingElement.selfClosing) {
     return {
@@ -29,7 +48,20 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
   // Parse children
   const children: IJSXChild[] = [];
 
+  // DEBUG: Track children collection in arrow function context
+  if (isInArrowFunction) {
+    console.log('[DEBUG-JSX-IN-ARROW] Starting children collection loop...');
+  }
+
   while (!this.isAtEnd()) {
+    // DEBUG: Show current token
+    if (isInArrowFunction) {
+      const curr = this.peek();
+      console.log(
+        `[DEBUG-JSX-IN-ARROW] Loop iteration, current token: ${curr.type}:${JSON.stringify(curr.value)}`
+      );
+    }
+
     // Skip comments in JSX
     if (this.match(TokenTypeEnum.COMMENT)) {
       this.advance();
@@ -41,9 +73,15 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
       // Peek ahead safely to check for slash
       const nextToken = this.peek(1);
       if (nextToken && nextToken.type === TokenTypeEnum.SLASH) {
+        if (isInArrowFunction) {
+          console.log('[DEBUG-JSX-IN-ARROW] Found closing tag, breaking children loop');
+        }
         break; // This is a closing tag </div>
       } else {
         // This is a nested JSX element: <span>...</span>
+        if (isInArrowFunction) {
+          console.log('[DEBUG-JSX-IN-ARROW] Found nested JSX element');
+        }
         children.push(this.parseJSXElement());
         continue;
       }
@@ -51,6 +89,9 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
 
     // JSX Expression: {count()}
     if (this.match(TokenTypeEnum.LBRACE)) {
+      if (isInArrowFunction) {
+        console.log('[DEBUG-JSX-IN-ARROW] Found LBRACE, parsing expression container');
+      }
       children.push(this.parseJSXExpressionContainer());
       continue;
     }
@@ -58,6 +99,9 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
     // JSX Text Content (from lexer)
     if (this.match(TokenTypeEnum.JSX_TEXT)) {
       const token = this.advance();
+      if (isInArrowFunction) {
+        console.log('[DEBUG-JSX-IN-ARROW] Found JSX_TEXT:', JSON.stringify(token.value));
+      }
       children.push({
         type: 'JSXText',
         value: token.value,
@@ -136,13 +180,28 @@ Parser.prototype.parseJSXElement = function (this: IParser): IJSXElement {
     }
 
     // Unknown token - try to skip
+    if (isInArrowFunction) {
+      const curr = this.peek();
+      console.log(
+        '[DEBUG-JSX-IN-ARROW] Unknown/unhandled token, skipping:',
+        `${curr.type}:${JSON.stringify(curr.value)}`
+      );
+    }
     this.advance();
   }
 
+  // DEBUG: Show final children count
+  if (isInArrowFunction) {
+    console.log(`[DEBUG-JSX-IN-ARROW] Children collection complete. Count: ${children.length}`);
+    children.forEach((child, i) => {
+      console.log(
+        `  Child ${i}: ${child.type} = ${JSON.stringify('value' in child ? child.value : '...')}`
+      );
+    });
+  }
+
   // Closing tag
-  const closingElement = this.parseJSXClosingElement(
-    this.getJSXElementFullName(openingElement.name)
-  );
+  const closingElement = this.parseJSXClosingElement(tagName);
 
   return {
     type: 'JSXElement',
@@ -209,6 +268,23 @@ Parser.prototype.parseJSXOpeningElement = function (this: IParser): any {
   const start = this.peek().start;
 
   this.expect(TokenTypeEnum.LT);
+
+  // Check for React Fragment shorthand: <>
+  if (this.match(TokenTypeEnum.GT)) {
+    const gt = this.advance();
+    return {
+      type: 'JSXOpeningElement',
+      name: {
+        type: 'JSXFragment',
+        start,
+        end: gt.end,
+      },
+      attributes: [],
+      selfClosing: false,
+      start,
+      end: gt.end,
+    };
+  }
 
   // Parse tag name (supports member expressions like ThemeContext.Provider)
   const name = this.parseJSXElementName();
@@ -333,6 +409,29 @@ Parser.prototype.parseJSXClosingElement = function (this: IParser, expectedName:
 
   this.expect(TokenTypeEnum.LT);
   this.expect(TokenTypeEnum.SLASH);
+
+  // Check for React Fragment closing: </>
+  if (this.match(TokenTypeEnum.GT)) {
+    const gt = this.advance();
+
+    // Validate fragment closing matches opening
+    if (expectedName !== '<Fragment>') {
+      throw new Error(
+        `JSX closing tag </> does not match opening tag <${expectedName}> at line ${start}`
+      );
+    }
+
+    return {
+      type: 'JSXClosingElement',
+      name: {
+        type: 'JSXFragment',
+        start,
+        end: gt.end,
+      },
+      start,
+      end: gt.end,
+    };
+  }
 
   // Parse closing tag name (supports member expressions)
   const name = this.parseJSXElementName();

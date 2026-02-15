@@ -1,0 +1,14 @@
+// Test the exact Unicode characters that were failing
+const test1 = '∩┐╜';  // Character from position 9248
+const test2 = '∩╕Å';  // Character from position 9654  
+const test3 = 'Γ£ô';  // Character from position 11611
+
+export component UnicodeSuccess() {
+  return (
+    <div>
+      <p>Success: {test1}</p>
+      <p>Success: {test2}</p> 
+      <p>Success: {test3}</p>
+    </div>
+  );
+}

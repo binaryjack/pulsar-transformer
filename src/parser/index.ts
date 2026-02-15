@@ -13,6 +13,7 @@ import './prototypes/parse-block-statement.js';
 import './prototypes/parse-component-declaration.js';
 import './prototypes/parse-export-declaration.js';
 import './prototypes/parse-expression.js';
+import './prototypes/parse-for-statement.js';
 import './prototypes/parse-function-declaration.js';
 import './prototypes/parse-if-statement.js';
 import './prototypes/parse-import-declaration.js';
@@ -24,6 +25,7 @@ import './prototypes/parse-statement.js';
 import './prototypes/parse-type-annotation.js';
 import './prototypes/parse-type-parameters.js';
 import './prototypes/parse-variable-declaration.js';
+import './prototypes/parse-while-statement.js';
 import './prototypes/parse.js';
 import './prototypes/peek.js';
 

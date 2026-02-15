@@ -158,7 +158,9 @@ export type IStatementNode =
   | IBlockStatement
   | IReturnStatement
   | IExpressionStatement
-  | IIfStatement;
+  | IIfStatement
+  | IForStatement
+  | IWhileStatement;
 
 export type IDeclarationNode =
   | IComponentDeclaration
@@ -188,6 +190,20 @@ export interface IIfStatement extends IASTNode {
   alternate: IStatementNode | null;
 }
 
+export interface IForStatement extends IASTNode {
+  type: 'ForStatement';
+  init: IVariableDeclaration | IExpression | null;
+  test: IExpression | null;
+  update: IExpression | null;
+  body: IStatementNode;
+}
+
+export interface IWhileStatement extends IASTNode {
+  type: 'WhileStatement';
+  test: IExpression;
+  body: IStatementNode;
+}
+
 /**
  * ==================== EXPRESSIONS ====================
  */
@@ -201,6 +217,7 @@ export type IExpression =
   | IBinaryExpression
   | ILogicalExpression
   | IUnaryExpression
+  | IUpdateExpression
   | IConditionalExpression
   | IArrowFunctionExpression
   | IArrayExpression
@@ -282,6 +299,13 @@ export interface IUnaryExpression extends IASTNode {
   operator: string; // !, -, +, ~
   argument: IExpression;
   prefix: boolean;
+}
+
+export interface IUpdateExpression extends IASTNode {
+  type: 'UpdateExpression';
+  operator: string; // ++, --
+  argument: IExpression;
+  prefix: boolean; // true for ++x, false for x++
 }
 
 export interface IConditionalExpression extends IASTNode {

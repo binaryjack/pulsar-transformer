@@ -94,9 +94,9 @@ export function suggestFixForTokenSequence(
     return `Found multiple EQUALS tokens. This should be a single '${hasThird ? 'EQUALS_EQUALS_EQUALS' : 'EQUALS_EQUALS'}' (${hasThird ? '===' : '=='}) token.`;
   }
 
-  // STAR + STAR = exponentiation (not supported)
+  // STAR + STAR = this should not happen if lexer correctly tokenizes ** as EXPONENTIATION
   if (prev?.type === 'STAR' && current.type === 'STAR') {
-    return `Found '**' operator (exponentiation). This operator is not yet supported by the parser.\nConsider using Math.pow() instead.`;
+    return `Found two separate '*' tokens. This might indicate a lexer issue - '**' should be tokenized as a single EXPONENTIATION token.`;
   }
 
   // LT + LT = left shift (not supported)
@@ -153,7 +153,7 @@ export function createTransformationFailureDiagnostic(
   lines.push('');
   lines.push('📖 Common operator issues:');
   lines.push('   • >= and <= : Should be single tokens (GT_EQUALS, LT_EQUALS)');
-  lines.push('   • ** : Exponentiation not yet supported (use Math.pow)');
+  lines.push('   • ** : Exponentiation IS supported (tokenized as EXPONENTIATION)');
   lines.push('   • >> and << : Bitwise shifts not yet supported');
   lines.push('');
 

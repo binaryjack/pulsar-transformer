@@ -4,6 +4,7 @@
  * To: export const Counter = (): HTMLElement => { return $REGISTRY.execute(...); }
  */
 
+import { getUnifiedTracker } from '../../debug/unified-tracker.js';
 import type {
   IArrowFunctionExpression,
   IBlockStatement,
@@ -35,126 +36,161 @@ export function transformComponentDeclaration(
   this: ITransformer,
   node: IComponentDeclaration
 ): IVariableDeclaration {
+  // 🔍 Track transformation step
+  const unifiedTracker = getUnifiedTracker();
+  if (unifiedTracker.currentSession?.transformationTracker) {
+    unifiedTracker.currentSession.transformationTracker.startStep(
+      `transform-component-${node.name.name}`,
+      'Transform Component Declaration',
+      'COMPONENT_TRANSFORM' as any,
+      'ComponentDeclaration',
+      { componentName: node.name.name, hasParams: node.params.length > 0 }
+    );
+  }
+
   const { name, params, body, exported, start, end } = node;
 
   // Track import usage
   this.context.usedImports.add('$REGISTRY');
 
-  // Create $REGISTRY.execute call
-  const registryObject: IIdentifier = {
-    type: 'Identifier',
-    name: '$REGISTRY',
-    start,
-    end,
-  };
-
-  const executeProperty: IIdentifier = {
-    type: 'Identifier',
-    name: 'execute',
-    start,
-    end,
-  };
-
-  const memberExpression: IMemberExpression = {
-    type: 'MemberExpression',
-    object: registryObject,
-    property: executeProperty,
-    computed: false,
-    start,
-    end,
-  };
-
-  // Component identifier argument
-  const componentIdLiteral: IStringLiteral = {
-    type: 'Literal',
-    value: `component:${name.name}`,
-    raw: `'component:${name.name}'`,
-    start,
-    end,
-  };
-
-  // Original component body wrapped in arrow function
-  const bodyArrowFunction: IArrowFunctionExpression = {
-    type: 'ArrowFunctionExpression',
-    params: [],
-    body: body,
-    async: false,
-    start,
-    end,
-  };
-
-  // parentId literal (null for top-level components)
-  const parentIdLiteral: ILiteral = {
-    type: 'Literal',
-    value: null,
-    raw: 'null',
-    start,
-    end,
-  };
-
-  // $REGISTRY.execute('component:Counter', null, () => { original body })
-  const registryCall: ICallExpression = {
-    type: 'CallExpression',
-    callee: memberExpression,
-    arguments: [componentIdLiteral, parentIdLiteral, bodyArrowFunction],
-    start,
-    end,
-  };
-
-  // return $REGISTRY.execute(...)
-  const returnStatement: IReturnStatement = {
-    type: 'ReturnStatement',
-    argument: registryCall,
-    start,
-    end,
-  };
-
-  // { return $REGISTRY.execute(...); }
-  const wrappedBody: IBlockStatement = {
-    type: 'BlockStatement',
-    body: [returnStatement],
-    start,
-    end,
-  };
-
-  // Arrow function: (params) => { return $REGISTRY.execute(...); }
-  // Note: Return type will be inferred or added by CodeGenerator
-  const arrowFunction: IArrowFunctionExpression = {
-    type: 'ArrowFunctionExpression',
-    params: params,
-    body: wrappedBody,
-    async: false,
-    start,
-    end,
-  };
-
-  // Variable declarator: Counter = () => ...
-  const declarator: IVariableDeclarator = {
-    type: 'VariableDeclarator',
-    id: {
+  try {
+    const registryObject: IIdentifier = {
       type: 'Identifier',
-      name: name.name,
+      name: '$REGISTRY',
       start,
       end,
-    } as IIdentifier,
-    init: arrowFunction,
-    start,
-    end,
-  };
+    };
 
-  // Variable declaration: export const Counter = ...
-  const variableDeclaration: IVariableDeclaration = {
-    type: 'VariableDeclaration',
-    kind: 'const',
-    declarations: [declarator],
-    start,
-    end,
-  };
+    const executeProperty: IIdentifier = {
+      type: 'Identifier',
+      name: 'execute',
+      start,
+      end,
+    };
 
-  // Preserve exported status
-  if (exported) {
-    (variableDeclaration as any).exported = true;
+    const memberExpression: IMemberExpression = {
+      type: 'MemberExpression',
+      object: registryObject,
+      property: executeProperty,
+      computed: false,
+      start,
+      end,
+    };
+
+    // Component identifier argument
+    const componentIdLiteral: IStringLiteral = {
+      type: 'Literal',
+      value: `component:${name.name}`,
+      raw: `'component:${name.name}'`,
+      start,
+      end,
+    };
+
+    // Original component body wrapped in arrow function
+    const bodyArrowFunction: IArrowFunctionExpression = {
+      type: 'ArrowFunctionExpression',
+      params: [],
+      body: body,
+      async: false,
+      start,
+      end,
+    };
+
+    // parentId literal (null for top-level components)
+    const parentIdLiteral: ILiteral = {
+      type: 'Literal',
+      value: null,
+      raw: 'null',
+      start,
+      end,
+    };
+
+    // $REGISTRY.execute('component:Counter', null, () => { original body })
+    const registryCall: ICallExpression = {
+      type: 'CallExpression',
+      callee: memberExpression,
+      arguments: [componentIdLiteral, parentIdLiteral, bodyArrowFunction],
+      start,
+      end,
+    };
+
+    // return $REGISTRY.execute(...)
+    const returnStatement: IReturnStatement = {
+      type: 'ReturnStatement',
+      argument: registryCall,
+      start,
+      end,
+    };
+
+    // { return $REGISTRY.execute(...); }
+    const wrappedBody: IBlockStatement = {
+      type: 'BlockStatement',
+      body: [returnStatement],
+      start,
+      end,
+    };
+
+    // Arrow function: (params) => { return $REGISTRY.execute(...); }
+    // Note: Return type will be inferred or added by CodeGenerator
+    const arrowFunction: IArrowFunctionExpression = {
+      type: 'ArrowFunctionExpression',
+      params: params,
+      body: wrappedBody,
+      async: false,
+      start,
+      end,
+    };
+
+    // Variable declarator: Counter = () => ...
+    const declarator: IVariableDeclarator = {
+      type: 'VariableDeclarator',
+      id: {
+        type: 'Identifier',
+        name: name.name,
+        start,
+        end,
+      } as IIdentifier,
+      init: arrowFunction,
+      start,
+      end,
+    };
+
+    // Variable declaration: export const Counter = ...
+    const variableDeclaration: IVariableDeclaration = {
+      type: 'VariableDeclaration',
+      kind: 'const',
+      declarations: [declarator],
+      start,
+      end,
+    };
+
+    // Preserve exported status
+    if (exported) {
+      (variableDeclaration as any).exported = true;
+    }
+
+    // 🔍 Complete transformation step
+    if (unifiedTracker.currentSession?.transformationTracker) {
+      unifiedTracker.currentSession.transformationTracker.completeStep(
+        `transform-component-${node.name.name}`,
+        'VariableDeclaration',
+        {
+          exported: exported,
+          generated: '$REGISTRY.execute() wrapper',
+          returnType: 'HTMLElement',
+        }
+      );
+    }
+
+    return variableDeclaration;
+  } catch (error) {
+    // 🔍 Handle transformation failure
+    if (unifiedTracker.currentSession?.transformationTracker) {
+      unifiedTracker.currentSession.transformationTracker.failStep(
+        `transform-component-${node.name.name}`,
+        `Component transformation failed: ${error}`
+      );
+    }
+    throw error;
   }
-
-  return variableDeclaration;
 }

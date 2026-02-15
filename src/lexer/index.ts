@@ -18,6 +18,7 @@ import './prototypes/scan-comment.js';
 import './prototypes/scan-identifier.js';
 import './prototypes/scan-jsx-text.js';
 import './prototypes/scan-number.js';
+import './prototypes/scan-regex.js';
 import './prototypes/scan-string.js';
 import './prototypes/scan-template.js';
 import './prototypes/scan-token.js';

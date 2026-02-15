@@ -4,7 +4,15 @@
  */
 
 export type LogLevel = 'error' | 'warn' | 'info' | 'debug' | 'trace';
-export type LogChannel = 'lexer' | 'parser' | 'codegen' | 'pipeline' | 'jsx' | 'transform';
+export type LogChannel =
+  | 'lexer'
+  | 'parser'
+  | 'codegen'
+  | 'pipeline'
+  | 'jsx'
+  | 'transform'
+  | 'validation'
+  | 'preprocessor';
 
 export interface ILoggerOptions {
   enabled?: boolean;
@@ -53,6 +61,8 @@ const CHANNEL_COLORS: Record<LogChannel, string> = {
   pipeline: '\x1b[36m', // Cyan
   jsx: '\x1b[33m', // Yellow
   transform: '\x1b[35m', // Magenta
+  validation: '\x1b[31m', // Red
+  preprocessor: '\x1b[37m', // White
 };
 
 const RESET = '\x1b[0m';

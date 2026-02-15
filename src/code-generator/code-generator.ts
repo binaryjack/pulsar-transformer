@@ -48,11 +48,13 @@ export interface ICodeGenerator {
   generateObjectExpression(node: any): string;
   generateTemplateLiteral(node: any): string;
   generateInterface(node: any): string;
+  generateInterfaceDeclaration(node: any): string;
   generateComponent(node: any): string;
   generateFunction(node: any): string;
   generateVariableDeclaration(node: any): string;
   generateBlockStatement(node: any): string;
   generateTypeAnnotation(typeNode: any): string;
+  getJSXTagName(nameNode: any): string;
 
   // Helpers
   indent(): string;

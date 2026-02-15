@@ -55,6 +55,10 @@ CodeGenerator.prototype.generateExpression = function (this: ICodeGenerator, nod
     case 'UnaryExpression':
       return `${node.operator}${this.generateExpression(node.argument)}`;
 
+    case 'UpdateExpression':
+      const arg = this.generateExpression(node.argument);
+      return node.prefix ? `${node.operator}${arg}` : `${arg}${node.operator}`;
+
     case 'ConditionalExpression':
       return `${this.generateExpression(node.test)} ? ${this.generateExpression(node.consequent)} : ${this.generateExpression(node.alternate)}`;
 
@@ -144,11 +148,13 @@ CodeGenerator.prototype.generateArrowFunction = function (this: ICodeGenerator, 
     }
     this.indentLevel--;
 
-    const body = statements.length > 0 ? `{\n${statements.join('\n')}\n${this.indent()}}` : '{}';
+    const body =
+      statements.length > 0 ? '{\n' + statements.join('\n') + '\n' + this.indent() + '}' : '{}';
 
-    return `(${params})${returnTypeStr} => ${body}`;
+    return '(' + params + ')' + returnTypeStr + ' => ' + body;
   } else {
-    return `(${params})${returnTypeStr} => ${this.generateExpression(node.body)}`;
+    // Use string concatenation instead of template literals to avoid $ interpolation issues
+    return '(' + params + ')' + returnTypeStr + ' => ' + this.generateExpression(node.body);
   }
 };
 
@@ -186,7 +192,10 @@ CodeGenerator.prototype.generateTemplateLiteral = function (
 ): string {
   const { quasis, expressions } = node;
 
-  // Simple template literal without expressions
+  // DEBUG: Track all calls
+  console.log('[TLITERAL] Called with:', JSON.stringify(node, null, 2).substring(0, 200));
+
+  // Simple template literal without expressions - convert to string
   if (expressions.length === 0) {
     const escaped = quasis[0].value.cooked
       .replace(/\\/g, '\\\\') // Backslash first!
@@ -199,32 +208,28 @@ CodeGenerator.prototype.generateTemplateLiteral = function (
     return `'${escaped}'`;
   }
 
-  // Template with expressions - build concatenation chain
+  // Template with expressions - preserve as template literal
   const parts: string[] = [];
 
   for (let i = 0; i < quasis.length; i++) {
     const quasi = quasis[i];
 
-    // Add string part if not empty
-    if (quasi.value.cooked !== '') {
-      // Escape special characters in template literal parts
-      const escaped = quasi.value.cooked
-        .replace(/\\/g, '\\\\') // Backslash first!
-        .replace(/'/g, "\\'") // Single quotes
-        .replace(/\n/g, '\\n') // Newlines
-        .replace(/\r/g, '\\r') // Carriage returns
-        .replace(/\t/g, '\\t') // Tabs
-        .replace(/\f/g, '\\f') // Form feeds
-        .replace(/\v/g, '\\v'); // Vertical tabs
-      parts.push(`'${escaped}'`);
-    }
+    // Add template string part (raw value preserves escapes)
+    const raw = quasi.value.raw || quasi.value.cooked || '';
+    parts.push(raw);
 
     // Add expression if not the last quasi
     if (i < expressions.length) {
-      parts.push(this.generateExpression(expressions[i]));
+      const expr = this.generateExpression(expressions[i]);
+      parts.push('${' + expr + '}');
     }
   }
 
-  // Join with + operator
-  return parts.join(' + ');
+  // Reconstruct as template literal using string concatenation to avoid evaluation
+  if (parts.join('').includes('price')) {
+    console.log('[FIX-DEBUG] parts array:', JSON.stringify(parts));
+    console.log('[FIX-DEBUG] joined:', parts.join(''));
+    console.log('[FIX-DEBUG] result:', '`' + parts.join('') + '`');
+  }
+  return '`' + parts.join('') + '`';
 };

@@ -27,6 +27,103 @@ export function initializeTracing(): void {
   wrapTracedMethod(Parser.prototype, 'parseComponentDeclaration', 'parser');
   wrapTracedMethod(Parser.prototype, 'parseJSXElement', 'parser');
   wrapTracedMethod(Parser.prototype, 'parseVariableDeclaration', 'parser');
+
+  // ✅ MISSING: Transformer tracing
+  instrumentTransformer();
+
+  // ✅ MISSING: Code Generator tracing
+  instrumentCodeGenerator();
+
+  // ✅ MISSING: Semantic Analyzer tracing
+  instrumentSemanticAnalyzer();
+}
+
+/**
+ * Instrument transformer methods with tracing
+ */
+async function instrumentTransformer(): Promise<void> {
+  try {
+    const { TransformerPrototype } = await import('./transformer/transformer.js');
+
+    // Core transformation methods
+    wrapTracedMethod(TransformerPrototype, 'transform', 'transformer');
+    wrapTracedMethod(TransformerPrototype, 'transformProgram', 'transformer');
+    wrapTracedMethod(TransformerPrototype, 'transformStatement', 'transformer');
+    wrapTracedMethod(TransformerPrototype, 'transformExpression', 'transformer');
+
+    // Component transformation (critical)
+    wrapTracedMethod(TransformerPrototype, 'transformComponentDeclaration', 'transformer');
+    wrapTracedMethod(TransformerPrototype, 'transformJSXElement', 'transformer');
+    wrapTracedMethod(TransformerPrototype, 'transformCallExpression', 'transformer');
+
+    // Other transformations
+    wrapTracedMethod(TransformerPrototype, 'transformFunctionDeclaration', 'transformer');
+    wrapTracedMethod(TransformerPrototype, 'transformVariableDeclaration', 'transformer');
+    wrapTracedMethod(TransformerPrototype, 'transformInterfaceDeclaration', 'transformer');
+    wrapTracedMethod(TransformerPrototype, 'transformExportNamedDeclaration', 'transformer');
+    wrapTracedMethod(TransformerPrototype, 'transformBlockStatement', 'transformer');
+
+    console.log('[TRACER] Transformer instrumentation complete');
+  } catch (error) {
+    console.warn('[TRACER] Failed to instrument transformer:', (error as Error).message);
+  }
+}
+
+/**
+ * Instrument code generator methods with tracing
+ */
+async function instrumentCodeGenerator(): Promise<void> {
+  try {
+    const { CodeGenerator } = await import('./code-generator/code-generator.js');
+
+    // Core generation methods
+    wrapTracedMethod((CodeGenerator as any).prototype, 'generate', 'codegen');
+    wrapTracedMethod((CodeGenerator as any).prototype, 'generateProgram', 'codegen');
+    wrapTracedMethod((CodeGenerator as any).prototype, 'generateStatement', 'codegen');
+    wrapTracedMethod((CodeGenerator as any).prototype, 'generateExpression', 'codegen');
+
+    // JSX and reactive generation (critical)
+    wrapTracedMethod((CodeGenerator as any).prototype, 'generateJSXElement', 'codegen');
+    wrapTracedMethod((CodeGenerator as any).prototype, 'isReactiveExpression', 'codegen');
+
+    // Import and type management
+    wrapTracedMethod((CodeGenerator as any).prototype, 'generateImports', 'codegen');
+    wrapTracedMethod((CodeGenerator as any).prototype, 'generateTypeAnnotation', 'codegen');
+    wrapTracedMethod((CodeGenerator as any).prototype, 'addImport', 'codegen');
+
+    console.log('[TRACER] Code generator instrumentation complete');
+  } catch (error) {
+    console.warn('[TRACER] Failed to instrument code generator:', (error as Error).message);
+  }
+}
+
+/**
+ * Instrument semantic analyzer methods with tracing
+ */
+async function instrumentSemanticAnalyzer(): Promise<void> {
+  try {
+    const { SemanticAnalyzerPrototype } = await import('./semantic-analyzer/semantic-analyzer.js');
+
+    // Core analysis methods
+    wrapTracedMethod(SemanticAnalyzerPrototype, 'analyze', 'semantic');
+    wrapTracedMethod(SemanticAnalyzerPrototype, 'analyzeProgram', 'semantic');
+    wrapTracedMethod(SemanticAnalyzerPrototype, 'analyzeStatement', 'semantic');
+    wrapTracedMethod(SemanticAnalyzerPrototype, 'analyzeExpression', 'semantic');
+
+    // Component analysis (critical)
+    wrapTracedMethod(SemanticAnalyzerPrototype, 'analyzeComponentDeclaration', 'semantic');
+    wrapTracedMethod(SemanticAnalyzerPrototype, 'analyzeJSXElement', 'semantic');
+    wrapTracedMethod(SemanticAnalyzerPrototype, 'analyzeCallExpression', 'semantic');
+
+    // Reactivity analysis
+    wrapTracedMethod(SemanticAnalyzerPrototype, 'validateReactivity', 'semantic');
+    wrapTracedMethod(SemanticAnalyzerPrototype, 'checkSignalDependencies', 'semantic');
+    wrapTracedMethod(SemanticAnalyzerPrototype, 'checkEffectDependencies', 'semantic');
+
+    console.log('[TRACER] Semantic analyzer instrumentation complete');
+  } catch (error) {
+    console.warn('[TRACER] Failed to instrument semantic analyzer:', (error as Error).message);
+  }
 }
 
 // Auto-initialize on module load

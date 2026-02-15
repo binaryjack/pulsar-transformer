@@ -13,6 +13,9 @@
     "./pipeline": {
       "types": "./dist/pipeline/index.d.ts",
       "default": "./dist/pipeline/index.js"
+    },
+    "./typescript-transformer": {
+      "default": "./dist/typescript-transformer-index.js"
     }
   },
   "scripts": {
@@ -24,12 +27,15 @@
     "verify": "tsx verify-integration.ts",
     "test:integration": "vitest run tests/integration-full-pipeline.test.ts"
   },
+  "dependencies": {
+    "acorn": "^8.14.0",
+    "typescript": "^5.9.3"
+  },
   "devDependencies": {
     "@pulsar-framework/pulsar.dev": "workspace:0.7.0-alpha",
     "@types/jsdom": "^21.1.7",
     "@vitest/coverage-v8": "^2.1.8",
     "jsdom": "^25.0.1",
-    "typescript": "^5.9.3",
     "vitest": "^2.1.8"
   },
   "keywords": [

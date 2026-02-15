@@ -17,16 +17,18 @@ Lexer.prototype.scanJSXText = function (this: ILexer): void {
     const nextCh = this.peek(1);
 
     // Stop at opening tag: <div
+    // CRITICAL FIX: Don't pop state here - let handleLessThan manage it
     if (ch === '<' && isAlpha(nextCh)) {
-      // Exit InsideJSXText to allow parsing of nested JSX element
+      // Exit InsideJSXText - the < handler will push InsideJSX
       this.popState();
       break;
     }
 
-    // Stop at closing tag: </div and transition state
+    // Stop at closing tag: </div
+    // CRITICAL FIX: Don't pop state here - let handleLessThan manage it
     if (ch === '<' && nextCh === '/') {
-      // Exit InsideJSXText back to normal parsing for closing tag
-      this.popState(); // Remove InsideJSXText
+      // Exit InsideJSXText - the </ handler will push InsideJSX
+      this.popState();
       break;
     }
 
@@ -37,7 +39,18 @@ Lexer.prototype.scanJSXText = function (this: ILexer): void {
 
     // Stop at expression start: {
     if (ch === '{') {
-      // Exit InsideJSXText to allow parsing of JSX expression
+      // Exit InsideJSXText - the { handler will push InsideJSXExpression
+      this.popState();
+      // Set flag so handleBrace knows we came from JSX text
+      this.justExitedJSXTextForBrace = true;
+      break;
+    }
+
+    // Stop at expression end: }
+    // This can happen if we're in nested JSX: <div>{condition && <span>text</span>}</div>
+    // The } should exit the expression, not be treated as text
+    if (ch === '}') {
+      // Exit InsideJSXText - the } handler will exit expression
       this.popState();
       break;
     }

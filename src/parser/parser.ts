@@ -43,6 +43,8 @@ export interface IParser {
   parseVariableDeclaration(): any;
   parseBlockStatement(): any;
   parseIfStatement(): any;
+  parseForStatement(): any;
+  parseWhileStatement(): any;
   parseReturnStatement(): any;
   parseExpression(precedence?: number): any;
   parseJSXElement(): any;
@@ -55,6 +57,8 @@ export interface IParser {
   parseJSXOpeningElement(): any;
   parseJSXClosingElement(tagName: string): any;
   parseJSXExpressionContainer(): any;
+  parseJSXElementName(): any;
+  getJSXElementFullName(nameNode: any): string;
 
   // Type parsing
   parseTypeAnnotation(): any;
@@ -96,6 +100,8 @@ Object.assign(Parser.prototype, {
   parseVariableDeclaration: undefined,
   parseBlockStatement: undefined,
   parseIfStatement: undefined,
+  parseForStatement: undefined,
+  parseWhileStatement: undefined,
   parseReturnStatement: undefined,
   parseExpression: undefined,
   parseJSXElement: undefined,

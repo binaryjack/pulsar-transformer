@@ -1,10 +1,7 @@
 /**
  * Lexer.prototype.scanTemplate
  * Scans template literal with backticks, handling ${} expressions
- * Follows ESTree specification for TemplateLiteral
- *
- * Simplified implementation: Scans the entire template literal content,
- * then let the parser handle splitting it into parts and expressions.
+ * Properly emits TEMPLATE_HEAD, TEMPLATE_MIDDLE, TEMPLATE_TAIL
  */
 
 import { Lexer } from '../lexer.js';
@@ -12,75 +9,82 @@ import type { ILexer } from '../lexer.types.js';
 import { TokenTypeEnum } from '../lexer.types.js';
 
 /**
- * Scan template literal: `simple` or `hello ${name}`
- *
- * For now, emits TEMPLATE_LITERAL with the raw content.
- * The parser will handle splitting into quasis and expressions.
+ * Scan template literal part
+ * Called when:
+ * 1. Initial ` (backtick) via handleBacktick - pos is AT the backtick
+ * 2. After } in template via handleRightBrace - pos is AFTER the }
  */
 Lexer.prototype.scanTemplate = function (this: ILexer): void {
-  const start = this.pos;
-
-  // Skip opening backtick
-  this.advance();
+  // handleBacktick backtracks, so peek() === '`' means fresh start
+  // Otherwise we're continuing after } and pos is already at next content
+  const isStart = this.peek(-1) !== '}';
+  
+  if (isStart && this.peek() === '`') {
+    // Fresh start: skip opening backtick
+    this.advance();
+    this.templateDepth++;
+  }
 
   let value = '';
-  let raw = '';
 
-  // Scan until closing backtick
-  while (!this.isAtEnd() && this.peek() !== '`') {
+  // Scan until ${ or closing `
+  while (!this.isAtEnd()) {
     const ch = this.peek();
+
+    // Check for interpolation start: ${
+    if (ch === '$' && this.peek(1) === '{') {
+      // Emit TEMPLATE_HEAD (first ${) or TEMPLATE_MIDDLE (after })
+      const tokenType = isStart
+        ? TokenTypeEnum.TEMPLATE_HEAD 
+        : TokenTypeEnum.TEMPLATE_MIDDLE;
+      
+      this.addToken(tokenType, value);
+      
+      // Consume ${ - they're structural markers
+      this.advance(); // $
+      this.advance(); // {
+      
+      // Expression will be lexed normally
+      // When } is hit, handleRightBrace will call us again
+      return;
+    }
+
+    // Check for closing backtick
+    if (ch === '`') {  
+      // Simple template (no ${) or final part after last }
+      const tokenType = isStart && this.templateDepth === 0
+        ? TokenTypeEnum.TEMPLATE_LITERAL
+        : TokenTypeEnum.TEMPLATE_TAIL;
+      
+      this.addToken(tokenType, value);
+      this.advance(); // consume `
+      this.templateDepth--;
+      return;
+    }
 
     // Handle escape sequences
     if (ch === '\\') {
-      raw += ch;
       this.advance();
-
       if (!this.isAtEnd()) {
         const escaped = this.peek();
-        raw += escaped;
-
         switch (escaped) {
-          case 'n':
-            value += '\n';
-            break;
-          case 't':
-            value += '\t';
-            break;
-          case 'r':
-            value += '\r';
-            break;
-          case '\\':
-            value += '\\';
-            break;
-          case '`':
-            value += '`';
-            break;
-          case '$':
-            // Escaped dollar sign: \$ → $
-            value += '$';
-            break;
-          default:
-            value += escaped;
+          case 'n': value += '\n'; break;
+          case 't': value += '\t'; break;
+          case 'r': value += '\r'; break;
+          case '\\': value += '\\'; break;
+          case '`': value += '`'; break;
+          case '$': value += '$'; break;
+          default: value += escaped;
         }
         this.advance();
       }
       continue;
     }
 
-    // Regular character (including $ and {)
-    raw += ch;
+    // Regular character
     value += ch;
     this.advance();
   }
 
-  // Consume closing backtick
-  if (!this.isAtEnd() && this.peek() === '`') {
-    this.advance();
-  } else {
-    throw new Error(`Unterminated template literal at line ${this.line}, column ${this.column}`);
-  }
-
-  // Emit TEMPLATE_LITERAL with the content
-  // Store both value and raw for the parser to use
-  this.addToken(TokenTypeEnum.TEMPLATE_LITERAL, value);
+  throw new Error(`Unterminated template literal at line ${this.line}, column ${this.column}`);
 };

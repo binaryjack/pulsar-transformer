@@ -3,6 +3,7 @@
  * Early detection of transformation issues before they reach the browser
  */
 
+import * as acorn from 'acorn';
 import type { IToken } from '../lexer/lexer.types.js';
 
 export interface IValidationResult {
@@ -20,11 +21,123 @@ export interface IValidationWarning {
 }
 
 export interface IValidationError {
-  type: 'parse-error' | 'lexer-error' | 'empty-output';
+  type: 'parse-error' | 'lexer-error' | 'empty-output' | 'typescript-syntax';
   message: string;
   line?: number;
   column?: number;
   fatal: boolean;
+}
+
+/**
+ * Pre-transformation validation - detects common PSR syntax errors
+ * These are DEVELOPER ERRORS in the PSR file, not transformer bugs
+ */
+export function validateInputSyntax(source: string, fileName: string): IValidationError[] {
+  const errors: IValidationError[] = [];
+
+  // ERROR 1: Missing space after JSX text before expression
+  // Bad:  <span>Price:{price}</span>
+  // Good: <span>Price: {price}</span>
+  const noSpacePattern = />[a-zA-Z]+:\{/g;
+  const noSpaceMatches = [...source.matchAll(noSpacePattern)];
+  if (noSpaceMatches.length > 0) {
+    const firstMatch = noSpaceMatches[0];
+    const lines = source.substring(0, firstMatch.index).split('\n');
+    errors.push({
+      type: 'parse-error',
+      message: `Syntax warning: Missing space before JSX expression. Found "${firstMatch[0]}"`,
+      line: lines.length,
+      fatal: false,
+    });
+  }
+
+  // ERROR 2: JSX comments using HTML syntax
+  // Bad:  <!-- comment -->
+  // Good: {/* comment */}
+  if (source.includes('<!--')) {
+    const commentIndex = source.indexOf('<!--');
+    const lines = source.substring(0, commentIndex).split('\n');
+    errors.push({
+      type: 'parse-error',
+      message: `Syntax error: HTML comments <!-- --> not supported in JSX. Use {/* comment */} instead.`,
+      line: lines.length,
+      fatal: true,
+    });
+  }
+
+  // ERROR 4: String concatenation in attributes
+  // Bad:  <div class="button " + variant>
+  // Good: <div class={`button ${variant}`}>
+  const attrConcatPattern = /\s+\w+="[^"]*"\s*\+\s*/g;
+  const attrConcatMatches = [...source.matchAll(attrConcatPattern)];
+  if (attrConcatMatches.length > 0) {
+    const firstMatch = attrConcatMatches[0];
+    const lines = source.substring(0, firstMatch.index).split('\n');
+    errors.push({
+      type: 'parse-error',
+      message: `Syntax error: String concatenation in JSX attributes. Use expression syntax: attr={\`...\`}`,
+      line: lines.length,
+      fatal: true,
+    });
+  }
+
+  // ERROR 5 & ERROR 6: TypeScript validation disabled
+  // PSR files now support TypeScript syntax - no longer rejecting type annotations
+  // (TypeScript parameter and return type annotations are allowed in PSR)
+
+  return errors;
+}
+
+/**
+ * Validate JavaScript syntax using acorn parser
+ * Catches syntax errors in generated code before browser sees them
+ */
+export function validateJavaScriptSyntax(code: string, fileName: string): IValidationError[] {
+  const errors: IValidationError[] = [];
+
+  try {
+    // Parse as ESM module with latest ECMAScript features
+    acorn.parse(code, {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      locations: true,
+    });
+  } catch (error: any) {
+    // Acorn SyntaxError has loc property with line/column
+    const line = error.loc?.line;
+    const column = error.loc?.column;
+
+    // DEBUG: Show context around the error
+    if (error.loc && code) {
+      const lines = code.split('\n');
+      const errorLine = lines[error.loc.line - 1];
+      console.log('[ACORN-ERROR-DEBUG] Error in file:', fileName);
+      console.log('[ACORN-ERROR-DEBUG] Error message:', error.message);
+      console.log('[ACORN-ERROR-DEBUG] Error at line', line + ', column', column);
+      console.log('[ACORN-ERROR-DEBUG] Line content:', JSON.stringify(errorLine));
+      if (errorLine && column >= 0) {
+        console.log(
+          '[ACORN-ERROR-DEBUG] Character at position:',
+          JSON.stringify(errorLine[column])
+        );
+        console.log('[ACORN-ERROR-DEBUG] Surrounding context:');
+        console.log(
+          '[ACORN-ERROR-DEBUG]',
+          JSON.stringify(errorLine.substring(Math.max(0, column - 20), column + 20))
+        );
+      }
+    }
+
+    errors.push({
+      type: 'parse-error',
+      message: `JavaScript syntax error: ${error.message}`,
+      line,
+      column,
+      fatal: true,
+    });
+  }
+
+  return errors;
 }
 
 /**
@@ -37,6 +150,25 @@ export function validateTransformationOutput(
 ): IValidationResult {
   const warnings: IValidationWarning[] = [];
   const errors: IValidationError[] = [];
+
+  // CRITICAL: Run input validation first
+  const inputErrors = validateInputSyntax(input, fileName);
+  errors.push(...inputErrors);
+
+  // If input has fatal errors, stop here - don't check output
+  if (inputErrors.some((e) => e.fatal)) {
+    return {
+      valid: false,
+      warnings,
+      errors,
+    };
+  }
+
+  // CRITICAL: Validate JavaScript syntax using acorn parser
+  // NOTE: Disabled - output is TypeScript, not JavaScript
+  // Acorn parser cannot handle TypeScript syntax (interfaces, type annotations)
+  // const jsSyntaxErrors = validateJavaScriptSyntax(output, fileName);  
+  // errors.push(...jsSyntaxErrors);
 
   // Rule 1: Check for suspiciously small output (header-only responses)
   const MIN_OUTPUT_SIZE = 500;
@@ -51,7 +183,8 @@ export function validateTransformationOutput(
   }
 
   // Rule 2: Verify exports exist (if input had export component/function)
-  const inputHasExport = /export\s+(component|function|const|interface)/.test(input);
+  // Note: Interfaces are type-only and have no runtime exports
+  const inputHasExport = /export\s+(component|function|const)/.test(input);
   const outputHasExport = /export\s+(const|function)/.test(output);
 
   if (inputHasExport && !outputHasExport) {
@@ -83,6 +216,10 @@ export function validateTransformationOutput(
       suggestion: 'Possible incomplete transformation or parsing failure.',
     });
   }
+
+  // Rule 5: TypeScript syntax validation disabled
+  // Output is intentionally TypeScript - no validation needed
+  // (All TypeScript syntax patterns are allowed)
 
   return {
     valid: errors.length === 0,
@@ -123,7 +260,7 @@ export function detectUnsupportedOperators(source: string, fileName: string): IV
     { pattern: /<<(?!=)/, name: '<<', suggestion: 'Left shift operator not yet supported' },
     { pattern: />>(?!=)/, name: '>>', suggestion: 'Right shift operator not yet supported' },
     { pattern: />>>/, name: '>>>', suggestion: 'Unsigned right shift operator not yet supported' },
-    { pattern: /\*\*/, name: '**', suggestion: 'Exponentiation operator not yet supported' },
+    // Note: Exponentiation operator (**) IS supported - removed from this list
   ];
 
   unsupportedPatterns.forEach(({ pattern, name, suggestion }) => {

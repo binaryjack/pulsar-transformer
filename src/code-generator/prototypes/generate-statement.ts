@@ -25,7 +25,7 @@ CodeGenerator.prototype.generateStatement = function (this: ICodeGenerator, node
           return code;
         }
 
-        return `export ${code}`;
+        return 'export ' + code;
       }
       // Handle export { Name1, Name2 as Alias } syntax
       if (node.specifiers && node.specifiers.length > 0) {
@@ -44,8 +44,17 @@ CodeGenerator.prototype.generateStatement = function (this: ICodeGenerator, node
 
     case 'ExportDefaultDeclaration':
       if (node.declaration) {
+        // CRITICAL: FunctionDeclaration is a statement, not expression
+        // generateExpression() doesn't handle it, causing malformed output
+        if (node.declaration.type === 'FunctionDeclaration') {
+          const funcCode = this.generateFunction(node.declaration);
+          // Replace "function Name" with "export default function Name"
+          return funcCode.replace(/^function /, 'export default function ');
+        }
+
+        // For expressions (e.g., export default 42)
         const expr = this.generateExpression(node.declaration);
-        return `export default ${expr};`;
+        return 'export default ' + expr + ';';
       }
       return '';
 
@@ -66,7 +75,13 @@ CodeGenerator.prototype.generateStatement = function (this: ICodeGenerator, node
       return this.generateBlockStatement(node);
 
     case 'ReturnStatement':
-      return `${this.indent()}return ${node.argument ? this.generateExpression(node.argument) : ''};`;
+      // Use string concatenation to avoid $ interpolation in template literals
+      return (
+        this.indent() +
+        'return ' +
+        (node.argument ? this.generateExpression(node.argument) : '') +
+        ';'
+      );
 
     case 'IfStatement': {
       const test = this.generateExpression(node.test);
@@ -75,21 +90,58 @@ CodeGenerator.prototype.generateStatement = function (this: ICodeGenerator, node
           ? this.generateBlockStatement(node.consequent)
           : this.generateStatement(node.consequent);
 
-      let result = `${this.indent()}if (${test}) ${consequent}`;
+      let result = this.indent() + 'if (' + test + ') ' + consequent;
 
       if (node.alternate) {
         const alternate =
           node.alternate.type === 'BlockStatement'
-            ? ` else ${this.generateBlockStatement(node.alternate)}`
-            : ` else ${node.alternate.type === 'IfStatement' ? this.generateStatement(node.alternate).trim() : this.generateStatement(node.alternate)}`;
+            ? ' else ' + this.generateBlockStatement(node.alternate)
+            : ' else ' +
+              (node.alternate.type === 'IfStatement'
+                ? this.generateStatement(node.alternate).trim()
+                : this.generateStatement(node.alternate));
         result += alternate;
       }
 
       return result;
     }
 
+    case 'ForStatement': {
+      let init = '';
+      if (node.init) {
+        if (node.init.type === 'VariableDeclaration') {
+          // For variable declarations in for loops, we don't want the trailing semicolon
+          const varDecl = this.generateVariableDeclaration(node.init).trim();
+          init = varDecl.endsWith(';') ? varDecl.slice(0, -1) : varDecl;
+        } else {
+          init = this.generateExpression(node.init);
+        }
+      }
+
+      const test = node.test ? this.generateExpression(node.test) : '';
+      const update = node.update ? this.generateExpression(node.update) : '';
+
+      const body =
+        node.body.type === 'BlockStatement'
+          ? this.generateBlockStatement(node.body)
+          : this.generateStatement(node.body);
+
+      return this.indent() + 'for (' + init + '; ' + test + '; ' + update + ') ' + body;
+    }
+
+    case 'WhileStatement': {
+      const test = this.generateExpression(node.test);
+      const body =
+        node.body.type === 'BlockStatement'
+          ? this.generateBlockStatement(node.body)
+          : this.generateStatement(node.body);
+
+      return this.indent() + 'while (' + test + ') ' + body;
+    }
+
     case 'ExpressionStatement':
-      return `${this.indent()}${this.generateExpression(node.expression)};`;
+      // Use string concatenation to avoid $ interpolation in template literals
+      return this.indent() + this.generateExpression(node.expression) + ';';
 
     default:
       return `/* Unhandled statement: ${node.type} */`;
@@ -156,16 +208,10 @@ CodeGenerator.prototype.generateComponent = function (this: ICodeGenerator, node
     })
     .join(', ');
 
-  // Include return type if present, or default to HTMLElement for components
-  let returnTypeStr = '';
-  if (node.returnType) {
-    returnTypeStr = `: ${this.generateTypeAnnotation(node.returnType)}`;
-  } else {
-    // Components default to HTMLElement return type
-    returnTypeStr = ': HTMLElement';
-  }
+  // Note: Return types are TypeScript-only, not included in JavaScript output
+  // Type information is preserved in .d.ts files
 
-  parts.push(`function ${node.name.name}(${params})${returnTypeStr} {`);
+  parts.push(`function ${node.name.name}(${params}) {`);
   this.indentLevel++;
 
   // Registry wrapper - execute(id, parentId, factory)
@@ -176,7 +222,13 @@ CodeGenerator.prototype.generateComponent = function (this: ICodeGenerator, node
 
   // Body statements
   for (const stmt of node.body.body) {
-    parts.push(this.generateStatement(stmt));
+    const stmtCode = this.generateStatement(stmt);
+    // DEBUG: Check for dollar sign in component body statement
+    if (stmtCode && stmtCode.includes('item.price')) {
+      console.log('[GEN-COMPONENT-DEBUG] Statement in component body:', stmtCode.slice(0, 200));
+      console.log("[GEN-COMPONENT-DEBUG] Contains [$':", stmtCode.includes("['$'"));
+    }
+    parts.push(stmtCode);
   }
 
   this.indentLevel--;
@@ -201,21 +253,14 @@ CodeGenerator.prototype.generateFunction = function (this: ICodeGenerator, node:
     .map((p: any) => {
       const paramName = p.pattern.name;
       // Include type annotation if present
-      if (p.typeAnnotation) {
-        const typeStr = this.generateTypeAnnotation(p.typeAnnotation.typeAnnotation);
-        return `${paramName}: ${typeStr}`;
-      }
+      // Note: Parameter types are TypeScript-only, omitted in JavaScript output
       return paramName;
     })
     .join(', ');
 
-  // Include return type if present
-  let returnTypeStr = '';
-  if (node.returnType) {
-    returnTypeStr = `: ${this.generateTypeAnnotation(node.returnType.typeAnnotation)}`;
-  }
+  // Note: Return types are TypeScript-only, not included in JavaScript output
 
-  parts.push(`function ${name}(${params})${returnTypeStr} {`);
+  parts.push(`function ${name}(${params}) {`);
   this.indentLevel++;
 
   for (const stmt of node.body.body) {
@@ -288,18 +333,13 @@ CodeGenerator.prototype.generateVariableDeclaration = function (
             }
             return result;
           } else {
-            // Simple identifier parameter with optional type annotation
-            const paramName = p.pattern.name;
-            if (p.typeAnnotation) {
-              const typeStr = this.generateTypeAnnotation(p.typeAnnotation);
-              return `${paramName}: ${typeStr}`;
-            }
-            return paramName;
+            // Simple identifier parameter (omit TypeScript type annotations in JavaScript)
+            return p.pattern.name;
           }
         })
         .join(', ');
 
-      const returnType = this.generateTypeAnnotation(decl.init.returnType);
+      // Note: Return types are TypeScript-only, not included in JavaScript output
 
       // Generate body wrapped with $REGISTRY.execute()
       let bodyStatements = '';
@@ -313,18 +353,28 @@ CodeGenerator.prototype.generateVariableDeclaration = function (
         this.indentLevel--;
         this.indentLevel--;
       } else {
-        bodyStatements = `${this.indent()}    return ${this.generateExpression(decl.init.body)};\n`;
+        bodyStatements =
+          this.indent() + '    return ' + this.generateExpression(decl.init.body) + ';\n';
       }
 
-      init = ` = (${params}): ${returnType} => {
-${this.indent()}  return $REGISTRY.execute('component:${pattern}', null, () => {
-${bodyStatements}${this.indent()}  });
-${this.indent()}}`;
+      init =
+        ' = (' +
+        params +
+        ') => {\n' +
+        this.indent() +
+        "  return $REGISTRY.execute('component:" +
+        pattern +
+        "', null, () => {\n" +
+        bodyStatements +
+        this.indent() +
+        '  });\n' +
+        this.indent() +
+        '}';
     } else if (decl.init) {
-      init = ` = ${this.generateExpression(decl.init)}`;
+      init = ' = ' + this.generateExpression(decl.init);
     }
 
-    parts.push(`${this.indent()}${node.kind} ${pattern}${init};`);
+    parts.push(this.indent() + node.kind + ' ' + pattern + init + ';');
   }
 
   return parts.join('\n');
@@ -354,33 +404,34 @@ CodeGenerator.prototype.generateBlockStatement = function (
 
 /**
  * Generate interface declaration
- * export interface ICounterProps { id?: string; }
+ * Interfaces are TypeScript-only with no runtime representation
+ * Skip them in the JavaScript output (they're already in the .d.ts)
  */
 CodeGenerator.prototype.generateInterfaceDeclaration = function (
   this: ICodeGenerator,
   node: any
 ): string {
+  // Interfaces are compile-time only - emit JSDoc comment for documentation
   const parts: string[] = [];
 
-  // Interface header
-  parts.push(`export interface ${node.name.name} {`);
+  parts.push(`/**`);
+  parts.push(` * @interface ${node.name.name}`);
 
-  // Properties
   for (const prop of node.body.properties) {
     const optional = prop.optional ? '?' : '';
 
-    // Handle TypeAnnotation wrapper - the actual type is nested inside
+    // Handle TypeAnnotation wrapper
     let actualTypeNode = prop.typeAnnotation;
     if (actualTypeNode && actualTypeNode.type === 'TypeAnnotation') {
       actualTypeNode = actualTypeNode.typeAnnotation;
     }
 
     const typeStr = this.generateTypeAnnotation(actualTypeNode);
-    parts.push(`  ${prop.key.name}${optional}: ${typeStr};`);
+    const optionalMarker = optional ? '=' : '';
+    parts.push(` * @property {${typeStr}} ${prop.key.name}${optionalMarker}`);
   }
 
-  // Closing brace
-  parts.push('}');
+  parts.push(` */`);
 
   return parts.join('\n');
 };
