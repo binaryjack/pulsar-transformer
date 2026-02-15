@@ -208,16 +208,12 @@ CodeGenerator.prototype.generateComponent = function (this: ICodeGenerator, node
     })
     .join(', ');
 
-  // Note: Return types are TypeScript-only, not included in JavaScript output
-  // Type information is preserved in .d.ts files
-
-  parts.push(`function ${node.name.name}(${params}) {`);
+  // Generate function signature with proper return type annotation
+  parts.push(`function ${node.name.name}(${params}): HTMLElement {`);
   this.indentLevel++;
 
-  // Registry wrapper - execute(id, parentId, factory)
-  parts.push(
-    `${this.indent()}return $REGISTRY.execute('component:${node.name.name}', null, () => {`
-  );
+  // Registry wrapper - execute(id, factory) - FIXED: Removed null parentId argument
+  parts.push(`${this.indent()}return $REGISTRY.execute('component:${node.name.name}', () => {`);
   this.indentLevel++;
 
   // Body statements
@@ -360,11 +356,11 @@ CodeGenerator.prototype.generateVariableDeclaration = function (
       init =
         ' = (' +
         params +
-        ') => {\n' +
+        '): HTMLElement => {\n' +
         this.indent() +
         "  return $REGISTRY.execute('component:" +
         pattern +
-        "', null, () => {\n" +
+        "', () => {\n" +
         bodyStatements +
         this.indent() +
         '  });\n' +
@@ -404,21 +400,21 @@ CodeGenerator.prototype.generateBlockStatement = function (
 
 /**
  * Generate interface declaration
- * Interfaces are TypeScript-only with no runtime representation
- * Skip them in the JavaScript output (they're already in the .d.ts)
+ * Generates proper TypeScript interface syntax
  */
 CodeGenerator.prototype.generateInterfaceDeclaration = function (
   this: ICodeGenerator,
   node: any
 ): string {
-  // Interfaces are compile-time only - emit JSDoc comment for documentation
   const parts: string[] = [];
 
-  parts.push(`/**`);
-  parts.push(` * @interface ${node.name.name}`);
+  // Generate proper TypeScript interface declaration
+  parts.push(`export interface ${node.name.name} {`);
 
+  // Generate interface properties
   for (const prop of node.body.properties) {
     const optional = prop.optional ? '?' : '';
+    const propName = prop.key.name;
 
     // Handle TypeAnnotation wrapper
     let actualTypeNode = prop.typeAnnotation;
@@ -426,12 +422,11 @@ CodeGenerator.prototype.generateInterfaceDeclaration = function (
       actualTypeNode = actualTypeNode.typeAnnotation;
     }
 
-    const typeStr = this.generateTypeAnnotation(actualTypeNode);
-    const optionalMarker = optional ? '=' : '';
-    parts.push(` * @property {${typeStr}} ${prop.key.name}${optionalMarker}`);
+    const typeStr = this.generateTypeAnnotation(actualTypeNode) || 'any';
+    parts.push(`  ${propName}${optional}: ${typeStr};`);
   }
 
-  parts.push(` */`);
+  parts.push('}');
 
   return parts.join('\n');
 };

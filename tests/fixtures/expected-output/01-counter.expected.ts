@@ -5,7 +5,7 @@ export interface ICounterProps {
 }
 
 export function Counter({ id }: ICounterProps): HTMLElement {
-  return $REGISTRY.execute('component:Counter', null, () => {
+  return $REGISTRY.execute('component:Counter', () => {
     const [count, setCount] = createSignal(0);
 
     const increment = () => {

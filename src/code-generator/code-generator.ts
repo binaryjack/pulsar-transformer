@@ -82,7 +82,7 @@ export function CodeGenerator(
   this.indentLevel = 0;
 }
 
-// Assign prototype methods
+// Assign prototype methods (diagnostic methods assigned separately in index.ts)
 Object.assign(CodeGenerator.prototype, {
   generate: undefined,
   generateProgram: undefined,

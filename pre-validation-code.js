@@ -1,15 +1,14 @@
 import { $REGISTRY, t_element, useEffect } from '@pulsar-framework/pulsar.dev';
 import { cn } from '@pulsar-framework/design-tokens';
 
-/**
- * @interface IDrawerProps
- * @property {boolean} open
- * @property {() => void} onClose
- * @property {'left' | 'right'} placement=
- * @property {any} children
- */
-export const Drawer = ({open, onClose, placement = 'right', children}: IDrawerProps) => {
-  return $REGISTRY.execute('component:Drawer', null, () => {
+export interface IDrawerProps {
+  open: boolean;
+  onClose: () => void;
+  placement?: 'left' | 'right';
+  children: any;
+}
+export const Drawer = ({open, onClose, placement = 'right', children}: IDrawerProps): HTMLElement => {
+  return $REGISTRY.execute('component:Drawer', () => {
     useEffect(() => {
       if (!open)       return ;
       const handleEscape = (e: KeyboardEvent) => {

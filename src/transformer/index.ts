@@ -44,6 +44,13 @@ export type { ITransformer } from './transformer.js';
 export * from './transformer.types.js';
 export { Transformer };
 
+// Export diagnostic system components
+export * from './diagnostics.js';
+export * from './state-tracker.js';
+export * from './edge-cases.js';
+export * from './debug-tools.js';
+export * from './warning-recovery.js';
+
 /**
  * Create transformer instance (factory function)
  */
