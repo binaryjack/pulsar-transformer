@@ -8,7 +8,7 @@ export enum EdgeCaseType {
   Ambiguous = 'ambiguous',
   Deprecated = 'deprecated',
   Limitation = 'limitation',
-  Performance = 'performance'
+  Performance = 'performance',
 }
 
 export interface EdgeCase {
@@ -31,7 +31,7 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     reason: 'Unicode identifier parser not yet implemented',
     workaround: 'Use only ASCII characters in identifiers for now',
     example: 'const café = 1; // ❌ Error\nconst cafe = 1; // ✅ Works',
-    severity: 'medium'
+    severity: 'medium',
   },
   {
     type: EdgeCaseType.Unsupported,
@@ -40,7 +40,7 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     reason: 'Complex Unicode escape parser not implemented',
     workaround: 'Use traditional Unicode escapes \\uXXXX or literal characters',
     example: '"\\u{1F600}" // ❌ Error\n"\\uD83D\\uDE00" // ✅ Works\n"😀" // ✅ Works',
-    severity: 'low'
+    severity: 'low',
   },
   {
     type: EdgeCaseType.Unsupported,
@@ -49,7 +49,7 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     reason: 'Private field syntax not in lexer token set',
     workaround: 'Use traditional private conventions (_field)',
     example: 'class A { #private; } // ❌ Error\nclass A { _private; } // ✅ Works',
-    severity: 'high'
+    severity: 'high',
   },
   {
     type: EdgeCaseType.Unsupported,
@@ -58,9 +58,9 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     reason: 'Decorator syntax not supported in PSR',
     workaround: 'Use function calls or higher-order patterns',
     example: '@component class A {} // ❌ Error\nconst A = component(class {}) // ✅ Works',
-    severity: 'medium'
+    severity: 'medium',
   },
-  
+
   // Deprecated syntax
   {
     type: EdgeCaseType.Deprecated,
@@ -69,7 +69,7 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     reason: 'Deprecated in ES5+, confusing with leading zero',
     workaround: 'Use ES6 octal syntax (0o777)',
     example: 'const x = 0777; // ⚠️ Deprecated\nconst x = 0o777; // ✅ Modern',
-    severity: 'low'
+    severity: 'low',
   },
   {
     type: EdgeCaseType.Deprecated,
@@ -77,10 +77,11 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     description: 'function inside if/for blocks',
     reason: 'Non-standard behavior, use let/const + arrow functions',
     workaround: 'Declare functions at scope level or use const fn = () => {}',
-    example: 'if (true) { function f() {} } // ⚠️ Avoid\nif (true) { const f = () => {} } // ✅ Better',
-    severity: 'medium'
+    example:
+      'if (true) { function f() {} } // ⚠️ Avoid\nif (true) { const f = () => {} } // ✅ Better',
+    severity: 'medium',
   },
-  
+
   // Ambiguous patterns
   {
     type: EdgeCaseType.Ambiguous,
@@ -88,8 +89,9 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     description: 'a/b/g could be (a/b)/g or a/b/g regex',
     reason: 'Context-dependent parsing challenges',
     workaround: 'Use clear parentheses or line breaks',
-    example: 'const x = a/b/g; // Ambiguous\nconst x = (a/b)/g; // Clear division\nconst x = /b/g; // Clear regex',
-    severity: 'low'
+    example:
+      'const x = a/b/g; // Ambiguous\nconst x = (a/b)/g; // Clear division\nconst x = /b/g; // Clear regex',
+    severity: 'low',
   },
   {
     type: EdgeCaseType.Ambiguous,
@@ -98,7 +100,7 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     reason: 'JSX state detection may misinterpret comparison operators',
     workaround: 'Use parentheses for complex comparisons',
     example: 'if (a < Component > c) // Ambiguous\nif ((a < Component) > c) // Clear',
-    severity: 'medium'
+    severity: 'medium',
   },
   {
     type: EdgeCaseType.Ambiguous,
@@ -107,9 +109,9 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     reason: 'Whitespace handling around comments varies',
     workaround: 'Use consistent spacing around comments',
     example: 'a/**/b // Minimal\na /* */ b // Spaced',
-    severity: 'low'
+    severity: 'low',
   },
-  
+
   // Limitations
   {
     type: EdgeCaseType.Limitation,
@@ -118,7 +120,7 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     reason: 'jsxDepth tracking has practical performance limits',
     workaround: 'Refactor deeply nested components into smaller pieces',
     example: '<A><B><C>...</C></B></A> // Consider: <A><SubComponent /></A>',
-    severity: 'low'
+    severity: 'low',
   },
   {
     type: EdgeCaseType.Limitation,
@@ -126,8 +128,9 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     description: 'Numbers > Number.MAX_SAFE_INTEGER',
     reason: 'JavaScript number precision limits',
     workaround: 'Use BigInt for very large integers (123n)',
-    example: 'const big = 9007199254740992; // ⚠️ Precision loss\nconst big = 9007199254740992n; // ✅ BigInt',
-    severity: 'medium'
+    example:
+      'const big = 9007199254740992; // ⚠️ Precision loss\nconst big = 9007199254740992n; // ✅ BigInt',
+    severity: 'medium',
   },
   {
     type: EdgeCaseType.Limitation,
@@ -135,10 +138,11 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     description: 'Nested template expressions > 20 levels',
     reason: 'Template depth tracking performance considerations',
     workaround: 'Extract complex expressions to variables',
-    example: '`${a ? `${b ? `${c}` : d}` : e}` // Complex\nconst inner = b ? c : d;\n`${a ? inner : e}` // Cleaner',
-    severity: 'low'
+    example:
+      '`${a ? `${b ? `${c}` : d}` : e}` // Complex\nconst inner = b ? c : d;\n`${a ? inner : e}` // Cleaner',
+    severity: 'low',
   },
-  
+
   // Performance considerations
   {
     type: EdgeCaseType.Performance,
@@ -147,7 +151,7 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     reason: 'Large string processing may impact performance',
     workaround: 'Consider external files or chunking for very large content',
     example: 'const huge = "...10KB of text..."; // Consider external file',
-    severity: 'low'
+    severity: 'low',
   },
   {
     type: EdgeCaseType.Performance,
@@ -156,20 +160,20 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     reason: 'Template depth tracking overhead',
     workaround: 'Consider code generation or bundling strategies',
     example: 'Many `template${expr}` expressions // Consider batching',
-    severity: 'low'
-  }
+    severity: 'low',
+  },
 ];
 
 /**
  * Check if a pattern matches any known edge case
  */
 export function checkEdgeCase(pattern: string): EdgeCase[] {
-  return KNOWN_EDGE_CASES.filter(ec => {
+  return KNOWN_EDGE_CASES.filter((ec) => {
     // Simple string matching first
     if (pattern.toLowerCase().includes(ec.pattern.toLowerCase())) {
       return true;
     }
-    
+
     // Pattern-specific matching
     try {
       switch (ec.pattern) {
@@ -184,7 +188,9 @@ export function checkEdgeCase(pattern: string): EdgeCase[] {
         case 'Octal literals':
           return /\b0[0-7]+\b/.test(pattern) && !/\b0o[0-7]+\b/.test(pattern);
         case 'Regex vs division':
-          return /\/.*\/[gimsuvy]*/.test(pattern) && pattern.includes('/') && !pattern.startsWith('/');
+          return (
+            /\/.*\/[gimsuvy]*/.test(pattern) && pattern.includes('/') && !pattern.startsWith('/')
+          );
         case 'Deep JSX nesting':
           // Count < and > pairs
           const opens = (pattern.match(/</g) || []).length;
@@ -192,7 +198,7 @@ export function checkEdgeCase(pattern: string): EdgeCase[] {
           return opens > 20 && closes > 20;
         case 'Very large numbers':
           const numbers = pattern.match(/\b\d{16,}\b/);
-          return numbers ? numbers.some(n => parseInt(n) > Number.MAX_SAFE_INTEGER) : false;
+          return numbers ? numbers.some((n) => parseInt(n) > Number.MAX_SAFE_INTEGER) : false;
         default:
           return false;
       }
@@ -207,20 +213,20 @@ export function checkEdgeCase(pattern: string): EdgeCase[] {
  */
 export function isKnownUnsupported(char: string, context: string = ''): EdgeCase | undefined {
   const fullPattern = context + char;
-  
+
   // Check specific unsupported patterns
   if (char === '#' && context.includes('class')) {
-    return KNOWN_EDGE_CASES.find(ec => ec.pattern === 'Private fields');
+    return KNOWN_EDGE_CASES.find((ec) => ec.pattern === 'Private fields');
   }
-  
+
   if (char === '@' && /^\s*@\w/.test(context + char)) {
-    return KNOWN_EDGE_CASES.find(ec => ec.pattern === 'Decorators');
+    return KNOWN_EDGE_CASES.find((ec) => ec.pattern === 'Decorators');
   }
-  
+
   if (/[^\x00-\x7F]/.test(char) && /\w/.test(context)) {
-    return KNOWN_EDGE_CASES.find(ec => ec.pattern === 'Unicode identifiers');
+    return KNOWN_EDGE_CASES.find((ec) => ec.pattern === 'Unicode identifiers');
   }
-  
+
   return undefined;
 }
 
@@ -229,16 +235,16 @@ export function isKnownUnsupported(char: string, context: string = ''): EdgeCase
  */
 export function suggestAlternative(pattern: string): string | undefined {
   const matches = checkEdgeCase(pattern);
-  
+
   if (matches.length === 0) return undefined;
-  
+
   // Return the most relevant workaround
-  const highPriority = matches.find(m => m.severity === 'high');
+  const highPriority = matches.find((m) => m.severity === 'high');
   if (highPriority?.workaround) return highPriority.workaround;
-  
-  const mediumPriority = matches.find(m => m.severity === 'medium');
+
+  const mediumPriority = matches.find((m) => m.severity === 'medium');
   if (mediumPriority?.workaround) return mediumPriority.workaround;
-  
+
   return matches[0]?.workaround;
 }
 
@@ -246,14 +252,14 @@ export function suggestAlternative(pattern: string): string | undefined {
  * Get all edge cases by type
  */
 export function getEdgeCasesByType(type: EdgeCaseType): EdgeCase[] {
-  return KNOWN_EDGE_CASES.filter(ec => ec.type === type);
+  return KNOWN_EDGE_CASES.filter((ec) => ec.type === type);
 }
 
 /**
  * Get all high-severity edge cases
  */
 export function getCriticalEdgeCases(): EdgeCase[] {
-  return KNOWN_EDGE_CASES.filter(ec => ec.severity === 'high');
+  return KNOWN_EDGE_CASES.filter((ec) => ec.severity === 'high');
 }
 
 /**
@@ -263,16 +269,16 @@ export function formatEdgeCase(edgeCase: EdgeCase): string {
   const lines = [
     `${edgeCase.type.toUpperCase()}: ${edgeCase.pattern}`,
     `  ${edgeCase.description}`,
-    `  Reason: ${edgeCase.reason}`
+    `  Reason: ${edgeCase.reason}`,
   ];
-  
+
   if (edgeCase.workaround) {
     lines.push(`  Workaround: ${edgeCase.workaround}`);
   }
-  
+
   if (edgeCase.example) {
     lines.push(`  Example: ${edgeCase.example}`);
   }
-  
+
   return lines.join('\n');
 }

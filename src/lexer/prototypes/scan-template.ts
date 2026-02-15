@@ -18,7 +18,7 @@ Lexer.prototype.scanTemplate = function (this: ILexer): void {
   // handleBacktick backtracks, so peek() === '`' means fresh start
   // Otherwise we're continuing after } and pos is already at next content
   const isStart = this.peek(-1) !== '}';
-  
+
   if (isStart && this.peek() === '`') {
     // Fresh start: skip opening backtick
     this.advance();
@@ -34,28 +34,27 @@ Lexer.prototype.scanTemplate = function (this: ILexer): void {
     // Check for interpolation start: ${
     if (ch === '$' && this.peek(1) === '{') {
       // Emit TEMPLATE_HEAD (first ${) or TEMPLATE_MIDDLE (after })
-      const tokenType = isStart
-        ? TokenTypeEnum.TEMPLATE_HEAD 
-        : TokenTypeEnum.TEMPLATE_MIDDLE;
-      
+      const tokenType = isStart ? TokenTypeEnum.TEMPLATE_HEAD : TokenTypeEnum.TEMPLATE_MIDDLE;
+
       this.addToken(tokenType, value);
-      
+
       // Consume ${ - they're structural markers
       this.advance(); // $
       this.advance(); // {
-      
+
       // Expression will be lexed normally
       // When } is hit, handleRightBrace will call us again
       return;
     }
 
     // Check for closing backtick
-    if (ch === '`') {  
+    if (ch === '`') {
       // Simple template (no ${) or final part after last }
-      const tokenType = isStart && this.templateDepth === 0
-        ? TokenTypeEnum.TEMPLATE_LITERAL
-        : TokenTypeEnum.TEMPLATE_TAIL;
-      
+      const tokenType =
+        isStart && this.templateDepth === 0
+          ? TokenTypeEnum.TEMPLATE_LITERAL
+          : TokenTypeEnum.TEMPLATE_TAIL;
+
       this.addToken(tokenType, value);
       this.advance(); // consume `
       this.templateDepth--;
@@ -68,13 +67,26 @@ Lexer.prototype.scanTemplate = function (this: ILexer): void {
       if (!this.isAtEnd()) {
         const escaped = this.peek();
         switch (escaped) {
-          case 'n': value += '\n'; break;
-          case 't': value += '\t'; break;
-          case 'r': value += '\r'; break;
-          case '\\': value += '\\'; break;
-          case '`': value += '`'; break;
-          case '$': value += '$'; break;
-          default: value += escaped;
+          case 'n':
+            value += '\n';
+            break;
+          case 't':
+            value += '\t';
+            break;
+          case 'r':
+            value += '\r';
+            break;
+          case '\\':
+            value += '\\';
+            break;
+          case '`':
+            value += '`';
+            break;
+          case '$':
+            value += '$';
+            break;
+          default:
+            value += escaped;
         }
         this.advance();
       }

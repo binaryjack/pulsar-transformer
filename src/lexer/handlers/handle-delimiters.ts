@@ -15,7 +15,7 @@ export function handleLeftBrace(lexer: ILexer, char: string): void {
 export function handleRightBrace(lexer: ILexer, char: string): void {
   lexer.addToken(TokenTypeEnum.RBRACE, '}');
   JSXStateManager.exitExpression(lexer);
-  
+
   // If we're in a template literal, continue scanning the next part
   if (lexer.templateDepth > 0) {
     lexer.scanTemplate();

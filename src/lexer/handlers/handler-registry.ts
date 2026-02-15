@@ -1,7 +1,7 @@
 /**
  * Token Handler Registry
  * Maps characters to their handler functions (TypeScript compiler pattern)
- * 
+ *
  * This replaces the monolithic 400-line switch statement with
  * separate, testable handler functions.
  */

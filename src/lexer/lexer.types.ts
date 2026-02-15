@@ -166,7 +166,7 @@ export interface ILexer {
   pos: number;
   line: number;
   column: number;
-  
+
   // Output
   tokens: IToken[];
 
@@ -245,7 +245,13 @@ export interface ILexer {
   isInJSX(): boolean;
 
   // Diagnostic methods
-  addDiagnostic(code: string, message: string, line: number, column: number, suggestion?: string): void;
+  addDiagnostic(
+    code: string,
+    message: string,
+    line: number,
+    column: number,
+    suggestion?: string
+  ): void;
   getDiagnostics(): any[];
   hasErrors(): boolean;
 

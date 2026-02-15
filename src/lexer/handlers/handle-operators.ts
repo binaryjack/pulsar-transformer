@@ -141,7 +141,7 @@ export function handleSlash(lexer: ILexer, char: string): void {
   lexer.pos--;
   lexer.column--;
   lexer.advance();
-  
+
   // Check if it's a comment first
   const next = lexer.peek();
   if (next === '/' || next === '*') {

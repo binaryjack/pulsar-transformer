@@ -12,11 +12,11 @@ try {
   console.log('Code length:', result.code?.length || 0);
   console.log('Success:', result.success);
   console.log('Diagnostics:', result.diagnostics?.length || 0);
-  
+
   if (result.diagnostics?.length > 0) {
-    result.diagnostics.forEach(d => console.log(`${d.type}: ${d.message}`));
+    result.diagnostics.forEach((d) => console.log(`${d.type}: ${d.message}`));
   }
-  
+
   if (result.code) {
     console.log('First 200 chars of code:', result.code.substring(0, 200));
   } else {

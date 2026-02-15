@@ -16,14 +16,16 @@ Lexer.prototype.scanNumber = function (this: ILexer): void {
   // Scan integer part with optional underscores
   while (!this.isAtEnd()) {
     const ch = this.peek();
-    
+
     if (isDigit(ch)) {
       lastChar = ch;
       this.advance();
     } else if (ch === '_') {
       // Numeric separator validation
       if (lastChar === '' || lastChar === '_') {
-        throw new Error(`Invalid numeric separator at line ${this.line}, column ${this.column}: cannot start with or have consecutive underscores`);
+        throw new Error(
+          `Invalid numeric separator at line ${this.line}, column ${this.column}: cannot start with or have consecutive underscores`
+        );
       }
       lastChar = ch;
       this.advance();
@@ -34,7 +36,9 @@ Lexer.prototype.scanNumber = function (this: ILexer): void {
 
   // Validate: cannot end with underscore
   if (lastChar === '_') {
-    throw new Error(`Invalid numeric separator at line ${this.line}, column ${this.column}: cannot end with underscore`);
+    throw new Error(
+      `Invalid numeric separator at line ${this.line}, column ${this.column}: cannot end with underscore`
+    );
   }
 
   // Check for decimal point
@@ -47,14 +51,16 @@ Lexer.prototype.scanNumber = function (this: ILexer): void {
     // Scan fractional part with optional underscores
     while (!this.isAtEnd()) {
       const ch = this.peek();
-      
+
       if (isDigit(ch)) {
         lastChar = ch;
         this.advance();
       } else if (ch === '_') {
         // Numeric separator validation
         if (lastChar === '.' || lastChar === '_') {
-          throw new Error(`Invalid numeric separator at line ${this.line}, column ${this.column}: cannot follow decimal point or be consecutive`);
+          throw new Error(
+            `Invalid numeric separator at line ${this.line}, column ${this.column}: cannot follow decimal point or be consecutive`
+          );
         }
         lastChar = ch;
         this.advance();
@@ -65,21 +71,25 @@ Lexer.prototype.scanNumber = function (this: ILexer): void {
 
     // Validate: cannot end with underscore
     if (lastChar === '_') {
-      throw new Error(`Invalid numeric separator at line ${this.line}, column ${this.column}: cannot end with underscore`);
+      throw new Error(
+        `Invalid numeric separator at line ${this.line}, column ${this.column}: cannot end with underscore`
+      );
     }
   }
 
   // Check for BigInt suffix 'n'
   if (!this.isAtEnd() && this.peek() === 'n') {
     if (hasDecimal) {
-      throw new Error(`Invalid BigInt literal at line ${this.line}, column ${this.column}: cannot have decimal point`);
+      throw new Error(
+        `Invalid BigInt literal at line ${this.line}, column ${this.column}: cannot have decimal point`
+      );
     }
     this.advance();
-    
+
     // Strip underscores from value for BigInt
     let value = this.source.substring(start, this.pos);
     value = value.replace(/_/g, ''); // Remove all underscores
-    
+
     this.addToken(TokenTypeEnum.BIGINT, value);
     return;
   }
@@ -87,6 +97,6 @@ Lexer.prototype.scanNumber = function (this: ILexer): void {
   // Regular number - strip underscores from value
   let value = this.source.substring(start, this.pos);
   value = value.replace(/_/g, ''); // Remove all underscores
-  
+
   this.addToken(TokenTypeEnum.NUMBER, value);
 };

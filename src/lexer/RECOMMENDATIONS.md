@@ -23,7 +23,7 @@
 export enum DiagnosticSeverity {
   Error = 0,
   Warning = 1,
-  Info = 2
+  Info = 2,
 }
 
 export enum DiagnosticCode {
@@ -34,16 +34,16 @@ export enum DiagnosticCode {
   UnterminatedTemplate = 'LEX004',
   InvalidNumericSeparator = 'LEX005',
   InvalidBigInt = 'LEX006',
-  
+
   // Warnings
   DeprecatedOctalLiteral = 'LEX101',
   AmbiguousRegexDivision = 'LEX102',
   UnusualCharacterSequence = 'LEX103',
   DeepJSXNesting = 'LEX104',
-  
+
   // Info
   LargeNumber = 'LEX201',
-  ComplexTemplateExpression = 'LEX202'
+  ComplexTemplateExpression = 'LEX202',
 }
 
 export interface LexerDiagnostic {
@@ -58,7 +58,7 @@ export interface LexerDiagnostic {
 
 export class DiagnosticCollector {
   private diagnostics: LexerDiagnostic[] = [];
-  
+
   addError(
     code: DiagnosticCode,
     message: string,
@@ -72,59 +72,50 @@ export class DiagnosticCollector {
       message,
       line,
       column,
-      suggestion
+      suggestion,
     });
   }
-  
-  addWarning(
-    code: DiagnosticCode,
-    message: string,
-    line: number,
-    column: number
-  ): void {
+
+  addWarning(code: DiagnosticCode, message: string, line: number, column: number): void {
     this.diagnostics.push({
       severity: DiagnosticSeverity.Warning,
       code,
       message,
       line,
-      column
+      column,
     });
   }
-  
-  addInfo(
-    code: DiagnosticCode,
-    message: string,
-    line: number,
-    column: number
-  ): void {
+
+  addInfo(code: DiagnosticCode, message: string, line: number, column: number): void {
     this.diagnostics.push({
       severity: DiagnosticSeverity.Info,
       code,
       message,
       line,
-      column
+      column,
     });
   }
-  
+
   hasErrors(): boolean {
-    return this.diagnostics.some(d => d.severity === DiagnosticSeverity.Error);
+    return this.diagnostics.some((d) => d.severity === DiagnosticSeverity.Error);
   }
-  
+
   getDiagnostics(): LexerDiagnostic[] {
     return [...this.diagnostics];
   }
-  
+
   getErrors(): LexerDiagnostic[] {
-    return this.diagnostics.filter(d => d.severity === DiagnosticSeverity.Error);
+    return this.diagnostics.filter((d) => d.severity === DiagnosticSeverity.Error);
   }
-  
+
   getWarnings(): LexerDiagnostic[] {
-    return this.diagnostics.filter(d => d.severity === DiagnosticSeverity.Warning);
+    return this.diagnostics.filter((d) => d.severity === DiagnosticSeverity.Warning);
   }
 }
 ```
 
 **Integration**:
+
 ```typescript
 // lexer.types.ts
 export interface ILexer {
@@ -149,6 +140,7 @@ if (this.isAtEnd()) {
 ```
 
 **Benefits**:
+
 - ✅ Machine-readable error codes
 - ✅ Suggestions for fixes
 - ✅ Warning system (not just errors)
@@ -181,7 +173,7 @@ export interface StateTransition {
 export class StateTransitionTracker {
   private transitions: StateTransition[] = [];
   private maxHistory: number = 100; // Prevent memory bloat
-  
+
   recordTransition(
     from: LexerStateEnum,
     to: LexerStateEnum,
@@ -193,7 +185,7 @@ export class StateTransitionTracker {
   ): void {
     // Only record actual changes
     if (from === to) return;
-    
+
     this.transitions.push({
       from,
       to,
@@ -202,27 +194,27 @@ export class StateTransitionTracker {
       line,
       column,
       token,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-    
+
     // Trim old history
     if (this.transitions.length > this.maxHistory) {
       this.transitions.shift();
     }
   }
-  
+
   getTransitions(): StateTransition[] {
     return [...this.transitions];
   }
-  
+
   getLastTransition(): StateTransition | undefined {
     return this.transitions[this.transitions.length - 1];
   }
-  
+
   getTransitionsForPosition(pos: number): StateTransition[] {
-    return this.transitions.filter(t => t.position === pos);
+    return this.transitions.filter((t) => t.position === pos);
   }
-  
+
   printTrace(): void {
     console.log('\n🔍 STATE TRANSITION TRACE:');
     this.transitions.forEach((t, i) => {
@@ -235,6 +227,7 @@ export class StateTransitionTracker {
 ```
 
 **Integration**:
+
 ```typescript
 // lexer.types.ts
 export interface ILexer {
@@ -246,7 +239,7 @@ export function enterTag(lexer: ILexer): void {
   const oldState = lexer.getState();
   lexer.pushState(LexerStateEnum.InsideJSX);
   lexer.jsxDepth++;
-  
+
   // Track transition
   lexer.stateTracker?.recordTransition(
     oldState,
@@ -261,6 +254,7 @@ export function enterTag(lexer: ILexer): void {
 ```
 
 **Usage**:
+
 ```typescript
 // Enable tracking when debugging
 const lexer = createLexer(code, '<input>', { enableStateTracking: true });
@@ -288,7 +282,7 @@ export enum EdgeCaseType {
   Unsupported = 'unsupported',
   Ambiguous = 'ambiguous',
   Deprecated = 'deprecated',
-  Limitation = 'limitation'
+  Limitation = 'limitation',
 }
 
 export interface EdgeCase {
@@ -304,52 +298,51 @@ export const KNOWN_EDGE_CASES: EdgeCase[] = [
     type: EdgeCaseType.Unsupported,
     pattern: 'Unicode escape sequences in identifiers (\\u{1F600})',
     reason: 'Not yet implemented - requires Unicode identifier parser',
-    workaround: 'Use only ASCII identifiers for now'
+    workaround: 'Use only ASCII identifiers for now',
   },
   {
     type: EdgeCaseType.Ambiguous,
     pattern: 'a/**/b vs a/* */b',
     reason: 'Space handling in block comments can be ambiguous',
-    workaround: 'Use clear spacing: a /* */ b'
+    workaround: 'Use clear spacing: a /* */ b',
   },
   {
     type: EdgeCaseType.Deprecated,
     pattern: 'Octal literals (0777)',
     reason: 'Legacy syntax, use 0o777 instead',
-    workaround: 'Use 0o777 (ES6 octal syntax)'
+    workaround: 'Use 0o777 (ES6 octal syntax)',
   },
   {
     type: EdgeCaseType.Limitation,
     pattern: 'JSX nesting > 50 levels',
     reason: 'jsxDepth tracking has practical limit',
-    workaround: 'Refactor deeply nested components'
-  }
+    workaround: 'Refactor deeply nested components',
+  },
 ];
 
 export function checkEdgeCase(pattern: string): EdgeCase | undefined {
-  return KNOWN_EDGE_CASES.find(ec => 
-    pattern.includes(ec.pattern) || 
-    new RegExp(ec.pattern).test(pattern)
+  return KNOWN_EDGE_CASES.find(
+    (ec) => pattern.includes(ec.pattern) || new RegExp(ec.pattern).test(pattern)
   );
 }
 
 export function isKnownUnsupported(char: string, context: string): EdgeCase | undefined {
-  return KNOWN_EDGE_CASES.find(ec => 
-    ec.type === EdgeCaseType.Unsupported && 
-    ec.pattern.includes(char)
+  return KNOWN_EDGE_CASES.find(
+    (ec) => ec.type === EdgeCaseType.Unsupported && ec.pattern.includes(char)
   );
 }
 ```
 
 **Integration**:
+
 ```typescript
 // scan-token.ts (unexpected character handler)
 const knownCase = isKnownUnsupported(char, 'identifier');
 if (knownCase) {
   throw new Error(
     `${knownCase.reason} at line ${this.line}, column ${this.column}\n` +
-    `Pattern: ${knownCase.pattern}\n` +
-    (knownCase.workaround ? `Workaround: ${knownCase.workaround}` : '')
+      `Pattern: ${knownCase.pattern}\n` +
+      (knownCase.workaround ? `Workaround: ${knownCase.workaround}` : '')
   );
 }
 ```
@@ -389,7 +382,7 @@ export function captureSnapshot(lexer: ILexer): LexerSnapshot {
     templateDepth: lexer.templateDepth,
     expressionDepth: lexer.expressionDepth,
     lastTokens: lexer.tokens.slice(-5),
-    nextChars: lexer.source.slice(lexer.pos, lexer.pos + 20)
+    nextChars: lexer.source.slice(lexer.pos, lexer.pos + 20),
   };
 }
 
@@ -402,7 +395,7 @@ export function printSnapshot(snapshot: LexerSnapshot): void {
   console.log(`  Template Depth: ${snapshot.templateDepth}`);
   console.log(`  Expression Depth: ${snapshot.expressionDepth}`);
   console.log(`  Last 5 Tokens:`);
-  snapshot.lastTokens.forEach(t => {
+  snapshot.lastTokens.forEach((t) => {
     console.log(`    ${t.type}: "${t.value}"`);
   });
   console.log(`  Next 20 chars: "${snapshot.nextChars}"`);
@@ -410,19 +403,19 @@ export function printSnapshot(snapshot: LexerSnapshot): void {
 
 export function compareSnapshots(before: LexerSnapshot, after: LexerSnapshot): void {
   console.log('🔄 SNAPSHOT COMPARISON:');
-  
+
   if (before.state !== after.state) {
     console.log(`  State: ${before.state} → ${after.state}`);
   }
-  
+
   if (before.jsxDepth !== after.jsxDepth) {
     console.log(`  JSX Depth: ${before.jsxDepth} → ${after.jsxDepth}`);
   }
-  
+
   if (before.templateDepth !== after.templateDepth) {
     console.log(`  Template Depth: ${before.templateDepth} → ${after.templateDepth}`);
   }
-  
+
   const tokensDiff = after.lastTokens.length - before.lastTokens.length;
   if (tokensDiff > 0) {
     console.log(`  New Tokens: +${tokensDiff}`);
@@ -438,7 +431,13 @@ export function compareSnapshots(before: LexerSnapshot, after: LexerSnapshot): v
 
 ```typescript
 // scan-number.ts
-if (value.startsWith('0') && value.length > 1 && !value.startsWith('0x') && !value.startsWith('0b') && !value.startsWith('0o')) {
+if (
+  value.startsWith('0') &&
+  value.length > 1 &&
+  !value.startsWith('0x') &&
+  !value.startsWith('0b') &&
+  !value.startsWith('0o')
+) {
   this.diagnostics.addWarning(
     DiagnosticCode.DeprecatedOctalLiteral,
     `Suspected octal literal "${value}". Use 0o${value.slice(1)} instead`,
@@ -521,26 +520,31 @@ export function toLSPDiagnostics(diagnostics: LexerDiagnostic[]): LSPDiagnostic[
 ## IMPLEMENTATION PLAN
 
 **Phase 1 (Week 1)**: Diagnostic System
+
 - [ ] Create `diagnostics.ts`
 - [ ] Integrate into existing error handlers
 - [ ] Update tests to check diagnostics
 
 **Phase 2 (Week 1)**: State Tracking
+
 - [ ] Create `state-tracker.ts`
 - [ ] Integrate into state transitions
 - [ ] Add debug print functions
 
 **Phase 3 (Week 2)**: Edge Cases
+
 - [ ] Document all known edge cases
 - [ ] Add to error messages
 - [ ] Create test cases for each
 
 **Phase 4 (Week 2)**: Debug Tools
+
 - [ ] Snapshot capture
 - [ ] Comparison tools
 - [ ] Interactive debugger
 
 **Phase 5 (Week 3)**: Warnings
+
 - [ ] Deprecated syntax warnings
 - [ ] Ambiguous pattern warnings
 - [ ] Performance warnings
@@ -550,6 +554,7 @@ export function toLSPDiagnostics(diagnostics: LexerDiagnostic[]): LSPDiagnostic[
 ## TESTING STRATEGY
 
 Each improvement should have:
+
 1. ✅ Unit tests for the feature itself
 2. ✅ Integration tests showing it works in real scenarios
 3. ✅ Performance tests showing minimal overhead
@@ -559,15 +564,16 @@ Each improvement should have:
 
 ## ESTIMATED IMPACT
 
-| Improvement | Reliability | Maintainability | Tracking | Effort |
-|------------|-------------|-----------------|----------|--------|
-| Diagnostic System | +1.0 | +0.5 | +2.0 | Medium |
-| State Tracking | +0.5 | +0.0 | +3.0 | Low |
-| Edge Case Registry | +0.5 | +1.0 | +1.5 | Low |
-| Debug Tools | +0.0 | +0.5 | +2.0 | Low |
-| Warning System | +0.5 | +0.0 | +1.0 | Medium |
+| Improvement        | Reliability | Maintainability | Tracking | Effort |
+| ------------------ | ----------- | --------------- | -------- | ------ |
+| Diagnostic System  | +1.0        | +0.5            | +2.0     | Medium |
+| State Tracking     | +0.5        | +0.0            | +3.0     | Low    |
+| Edge Case Registry | +0.5        | +1.0            | +1.5     | Low    |
+| Debug Tools        | +0.0        | +0.5            | +2.0     | Low    |
+| Warning System     | +0.5        | +0.0            | +1.0     | Medium |
 
-**Total Potential**: 
+**Total Potential**:
+
 - Reliability: 8.5 → 10.0 ✅
 - Maintainability: 9.0 → 10.0 ✅
 - Tracking: 6.5 → 10.0 ✅
@@ -577,6 +583,7 @@ Each improvement should have:
 ## CONCLUSION
 
 The lexer is **production-ready** for its current scope, but adding these improvements would make it:
+
 - ✅ **Enterprise-grade** with structured diagnostics
 - ✅ **Developer-friendly** with comprehensive debugging
 - ✅ **Future-proof** with edge case documentation

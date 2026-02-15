@@ -8,9 +8,9 @@ import { DiagnosticCode, DiagnosticCollector } from './diagnostics.js';
 import { checkEdgeCase, isKnownUnsupported, suggestAlternative } from './edge-cases.js';
 
 export enum RecoveryMode {
-  Strict = 'strict',      // Throw on first error (current behavior)
-  Collect = 'collect',    // Collect errors but continue
-  Resilient = 'resilient' // Skip problematic tokens and continue
+  Strict = 'strict', // Throw on first error (current behavior)
+  Collect = 'collect', // Collect errors but continue
+  Resilient = 'resilient', // Skip problematic tokens and continue
 }
 
 export interface LexerOptions {
@@ -19,8 +19,8 @@ export interface LexerOptions {
   enableWarnings: boolean;
   warningFilters: Set<DiagnosticCode>;
   performanceWarnings: boolean;
-  enableStateTracking?: boolean;  // For development/debugging
-  enableDebugger?: boolean;       // For advanced debugging
+  enableStateTracking?: boolean; // For development/debugging
+  enableDebugger?: boolean; // For advanced debugging
 }
 
 export const DEFAULT_LEXER_OPTIONS: LexerOptions = {
@@ -28,22 +28,22 @@ export const DEFAULT_LEXER_OPTIONS: LexerOptions = {
   maxErrors: 100,
   enableWarnings: true,
   warningFilters: new Set(),
-  performanceWarnings: false
+  performanceWarnings: false,
 };
 
 export class WarningSystem {
   private diagnostics: DiagnosticCollector;
   private options: LexerOptions;
   private warningCounts: Map<DiagnosticCode, number> = new Map();
-  
+
   constructor(diagnostics: DiagnosticCollector, options: LexerOptions) {
     this.diagnostics = diagnostics;
     this.options = options;
   }
-  
+
   checkDeprecatedSyntax(lexer: ILexer, pattern: string, value: string): void {
     if (!this.options.enableWarnings) return;
-    
+
     // Octal literal check
     if (/^0[0-7]+$/.test(value) && !value.startsWith('0o')) {
       this.addWarning(
@@ -55,7 +55,7 @@ export class WarningSystem {
         `Replace with 0o${value.slice(1)}`
       );
     }
-    
+
     // Legacy function declarations in blocks (simplified check)
     if (pattern.includes('if') && pattern.includes('function')) {
       this.addWarning(
@@ -66,10 +66,10 @@ export class WarningSystem {
       );
     }
   }
-  
+
   checkAmbiguousPatterns(lexer: ILexer, context: string, char: string): void {
     if (!this.options.enableWarnings) return;
-    
+
     // Regex vs division ambiguity
     if (char === '/' && context.includes('/')) {
       const beforeSlash = context.slice(context.lastIndexOf('/') - 10, context.lastIndexOf('/'));
@@ -82,7 +82,7 @@ export class WarningSystem {
         );
       }
     }
-    
+
     // Unusual spacing in comments
     if (context.includes('/*') && context.includes('*/')) {
       const comment = context.slice(context.indexOf('/*'), context.indexOf('*/') + 2);
@@ -96,10 +96,10 @@ export class WarningSystem {
       }
     }
   }
-  
+
   checkPerformanceConcerns(lexer: ILexer, type: string, value: string): void {
     if (!this.options.performanceWarnings) return;
-    
+
     // Large string literals
     if (type === 'STRING' && value.length > 10000) {
       this.addWarning(
@@ -111,7 +111,7 @@ export class WarningSystem {
         'Move large content to external files'
       );
     }
-    
+
     // Very large numbers
     if (type === 'NUMBER') {
       const num = parseFloat(value.replace(/_/g, ''));
@@ -127,10 +127,10 @@ export class WarningSystem {
       }
     }
   }
-  
+
   checkDepthWarnings(lexer: ILexer): void {
     if (!this.options.enableWarnings) return;
-    
+
     // Deep JSX nesting
     if (lexer.jsxDepth > 20) {
       // Only warn every 10 levels to avoid spam
@@ -145,7 +145,7 @@ export class WarningSystem {
         );
       }
     }
-    
+
     // Deep template nesting
     if (lexer.templateDepth > 10) {
       if (lexer.templateDepth % 5 === 0) {
@@ -160,10 +160,10 @@ export class WarningSystem {
       }
     }
   }
-  
+
   checkUnsupportedFeatures(lexer: ILexer, char: string, context: string): boolean {
     const edgeCase = isKnownUnsupported(char, context);
-    
+
     if (edgeCase) {
       // Add error with detailed explanation
       this.diagnostics.addError(
@@ -176,11 +176,11 @@ export class WarningSystem {
       );
       return true; // Indicates unsupported
     }
-    
+
     // Check for patterns
     const pattern = context + char;
     const edgeCases = checkEdgeCase(pattern);
-    
+
     for (const ec of edgeCases) {
       if (ec.type === 'unsupported') {
         this.diagnostics.addError(
@@ -194,10 +194,10 @@ export class WarningSystem {
         return true;
       }
     }
-    
+
     return false;
   }
-  
+
   private addWarning(
     code: DiagnosticCode,
     message: string,
@@ -210,15 +210,15 @@ export class WarningSystem {
     if (this.options.warningFilters.has(code)) {
       return;
     }
-    
+
     // Throttle repeated warnings
     const count = this.warningCounts.get(code) || 0;
     if (count > 10) {
       return; // Stop spamming after 10 occurrences
     }
-    
+
     this.warningCounts.set(code, count + 1);
-    
+
     // Add throttling notice for repeated warnings
     if (count === 10) {
       this.diagnostics.addInfo(
@@ -229,15 +229,8 @@ export class WarningSystem {
       );
       return;
     }
-    
-    this.diagnostics.addWarning(
-      code,
-      message,
-      line,
-      column,
-      length,
-      suggestion
-    );
+
+    this.diagnostics.addWarning(code, message, line, column, length, suggestion);
   }
 }
 
@@ -245,18 +238,18 @@ export class RecoveryController {
   private options: LexerOptions;
   private diagnostics: DiagnosticCollector;
   private recoveryAttempts: number = 0;
-  
+
   constructor(options: LexerOptions, diagnostics: DiagnosticCollector) {
     this.options = options;
     this.diagnostics = diagnostics;
   }
-  
+
   shouldContinueOnError(error: Error): boolean {
     // In strict mode, always throw
     if (this.options.recoveryMode === RecoveryMode.Strict) {
       return false;
     }
-    
+
     // Check error limits
     if (this.diagnostics.getErrorCount() >= this.options.maxErrors) {
       this.diagnostics.addError(
@@ -269,9 +262,9 @@ export class RecoveryController {
       );
       return false;
     }
-    
+
     this.recoveryAttempts++;
-    
+
     // Prevent infinite recovery loops
     if (this.recoveryAttempts > 50) {
       this.diagnostics.addError(
@@ -282,10 +275,10 @@ export class RecoveryController {
       );
       return false;
     }
-    
+
     return true;
   }
-  
+
   recoverFromError(lexer: ILexer, error: Error): boolean {
     try {
       if (this.options.recoveryMode === RecoveryMode.Collect) {
@@ -295,7 +288,7 @@ export class RecoveryController {
         // Try more sophisticated recovery
         return this.smartRecovery(lexer, error);
       }
-      
+
       return false;
     } catch (recoveryError) {
       // Recovery itself failed
@@ -308,22 +301,22 @@ export class RecoveryController {
       return false;
     }
   }
-  
+
   private skipCharacterRecovery(lexer: ILexer, error: Error): boolean {
     // Add error token and skip the problematic character
     lexer.addToken('ERROR' as any, lexer.source[lexer.pos] || '');
-    
+
     if (lexer.pos < lexer.source.length) {
       lexer.advance(); // Skip the problematic character
       return true;
     }
-    
+
     return false;
   }
-  
+
   private smartRecovery(lexer: ILexer, error: Error): boolean {
     const char = lexer.source[lexer.pos];
-    
+
     // Try to identify what kind of error this is and recover appropriately
     if (error.message.includes('Unterminated string')) {
       return this.recoverFromUnterminatedString(lexer);
@@ -334,16 +327,16 @@ export class RecoveryController {
     } else if (error.message.includes('Unexpected character')) {
       return this.recoverFromUnexpectedCharacter(lexer, char);
     }
-    
+
     // Fallback to simple character skip
     return this.skipCharacterRecovery(lexer, error);
   }
-  
+
   private recoverFromUnterminatedString(lexer: ILexer): boolean {
     // Look for the next quote or end of line
     const quote = lexer.source[lexer.pos - 1]; // The opening quote we failed to close
     let pos = lexer.pos;
-    
+
     while (pos < lexer.source.length) {
       const char = lexer.source[pos];
       if (char === quote || char === '\n') {
@@ -353,19 +346,19 @@ export class RecoveryController {
       }
       pos++;
     }
-    
+
     // Couldn't find end, skip to end of line
     while (lexer.pos < lexer.source.length && lexer.source[lexer.pos] !== '\n') {
       lexer.advance();
     }
-    
+
     return lexer.pos < lexer.source.length;
   }
-  
+
   private recoverFromUnterminatedRegex(lexer: ILexer): boolean {
     // Look for the next / that could close the regex
     let pos = lexer.pos;
-    
+
     while (pos < lexer.source.length) {
       const char = lexer.source[pos];
       if (char === '/' && lexer.source[pos - 1] !== '\\') {
@@ -379,14 +372,14 @@ export class RecoveryController {
       }
       pos++;
     }
-    
+
     return false;
   }
-  
+
   private recoverFromUnterminatedTemplate(lexer: ILexer): boolean {
     // Look for the next backtick
     let pos = lexer.pos;
-    
+
     while (pos < lexer.source.length) {
       const char = lexer.source[pos];
       if (char === '`') {
@@ -396,14 +389,14 @@ export class RecoveryController {
       }
       pos++;
     }
-    
+
     return false;
   }
-  
+
   private recoverFromUnexpectedCharacter(lexer: ILexer, char: string): boolean {
     // Check if this might be part of a known unsupported feature
     const suggestion = suggestAlternative(lexer.source.slice(lexer.pos - 5, lexer.pos + 5));
-    
+
     if (suggestion) {
       this.diagnostics.addInfo(
         DiagnosticCode.PerformanceNote,
@@ -412,15 +405,15 @@ export class RecoveryController {
         lexer.column
       );
     }
-    
+
     // Skip the unexpected character
     return this.skipCharacterRecovery(lexer, new Error(`Unexpected character: ${char}`));
   }
-  
+
   getRecoveryStats(): { attempts: number; errors: number } {
     return {
       attempts: this.recoveryAttempts,
-      errors: this.diagnostics.getErrorCount()
+      errors: this.diagnostics.getErrorCount(),
     };
   }
 }

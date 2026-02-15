@@ -9,13 +9,13 @@ import { JSXStateManager } from './jsx-state-manager.js';
 
 export function handleGreaterThan(lexer: ILexer, char: string): void {
   const state = lexer.getState();
-  
+
   // PRIORITY 1: Check for bitwise shift >> and >>>
-  // Allow in JSXExpression (e.g., {a >> 2}), but NOT in InsideJSX tag  
+  // Allow in JSXExpression (e.g., {a >> 2}), but NOT in InsideJSX tag
   if (state === LexerStateEnum.Normal || state === LexerStateEnum.InsideJSXExpression) {
     if (lexer.peek() === '>') {
       lexer.advance();
-      
+
       // Check for >>> or >>>=
       if (lexer.peek() === '>') {
         lexer.advance();
@@ -28,19 +28,19 @@ export function handleGreaterThan(lexer: ILexer, char: string): void {
         lexer.addToken(TokenTypeEnum.GT_GT_GT, '>>>');
         return;
       }
-      
+
       // Check for >>=
       if (lexer.peek() === '=') {
         lexer.advance();
         lexer.addToken(TokenTypeEnum.GT_GT_EQUALS, '>>=');
         return;
       }
-      
+
       lexer.addToken(TokenTypeEnum.GT_GT, '>>');
       return;
     }
   }
-  
+
   // PRIORITY 2: Check for >=
   if (lexer.match('=')) {
     lexer.addToken(TokenTypeEnum.GT_EQUALS, '>=');

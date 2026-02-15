@@ -9,7 +9,7 @@ import { JSXStateManager } from './jsx-state-manager.js';
 
 export function handleLessThan(lexer: ILexer, char: string): void {
   const state = lexer.getState();
-  
+
   // PRIORITY 1: Check for bitwise shift << and <<=
   // Allow in JSXExpression (e.g., {a << 2}), but NOT in InsideJSX tag
   if (state === LexerStateEnum.Normal || state === LexerStateEnum.InsideJSXExpression) {
@@ -25,8 +25,8 @@ export function handleLessThan(lexer: ILexer, char: string): void {
       return;
     }
   }
-  
-  // PRIORITY 2: Check for <= 
+
+  // PRIORITY 2: Check for <=
   if (lexer.match('=')) {
     lexer.addToken(TokenTypeEnum.LT_EQUALS, '<=');
     return;
@@ -48,18 +48,18 @@ export function handleLessThan(lexer: ILexer, char: string): void {
     if (lexer.peek() === '>') {
       lexer.advance();
       lexer.addToken(TokenTypeEnum.JSX_FRAGMENT_CLOSE, '</>');
-      
+
       // Exit JSX context
       if (lexer.jsxDepth > 0 || lexer.getState() === LexerStateEnum.InsideJSX) {
         JSXStateManager.exitClosingTag(lexer);
       }
       return;
     }
-    
+
     // Regular closing tag: </div
     lexer.addToken(TokenTypeEnum.LT, '<');
     lexer.addToken(TokenTypeEnum.SLASH, '/');
-    
+
     // CRITICAL: Only enter JSX closing tag if we're actually in JSX context
     // This prevents: expressions like (a < /regex/) from breaking jsxDepth tracking
     if (lexer.jsxDepth > 0 || lexer.getState() === LexerStateEnum.InsideJSX) {
@@ -97,26 +97,26 @@ export function handleLessThan(lexer: ILexer, char: string): void {
     // CRITICAL: In JSXExpression, < can be either:
     // 1. Comparison operator: {count < 10}
     // 2. JSX element: {isLoggedIn && <UserProfile />}
-    // 
+    //
     // We detect JSX by checking if the identifier starts with uppercase (component)
     // OR if we're NOT in a comparison context (after identifier/number/paren)
     if (state === LexerStateEnum.InsideJSXExpression) {
       const isUpperCase = nextCh === nextCh.toUpperCase();
       const prevToken = lexer.tokens[lexer.tokens.length - 1];
-      
+
       // After identifier, number, or ) -> likely comparison: x < y, count() < 10
-      const likelyComparison = prevToken && (
-        prevToken.type === TokenTypeEnum.IDENTIFIER ||
-        prevToken.type === TokenTypeEnum.NUMBER ||
-        prevToken.type === TokenTypeEnum.RPAREN
-      );
-      
+      const likelyComparison =
+        prevToken &&
+        (prevToken.type === TokenTypeEnum.IDENTIFIER ||
+          prevToken.type === TokenTypeEnum.NUMBER ||
+          prevToken.type === TokenTypeEnum.RPAREN);
+
       // If lowercase tag AND looks like comparison, treat as operator
       if (!isUpperCase && likelyComparison) {
         lexer.addToken(TokenTypeEnum.LT, '<');
         return;
       }
-      
+
       // Otherwise it's JSX (uppercase component or after &&/||/?)
       // Fall through to JSX handling below
     }
