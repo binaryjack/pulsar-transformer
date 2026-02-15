@@ -219,8 +219,7 @@ function transformChildren(
         // Check if expression is already a function (arrow or function expression)
         // If so, passthrough as-is (used for component props like Index children)
         const isFunction =
-          t.isArrowFunctionExpression(child.expression) ||
-          t.isFunctionExpression(child.expression);
+          t.isArrowFunctionExpression(child.expression) || t.isFunctionExpression(child.expression);
 
         if (isFunction) {
           // Already a function - pass through as-is
