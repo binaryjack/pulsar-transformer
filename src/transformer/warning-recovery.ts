@@ -221,9 +221,11 @@ export class TransformerRecoveryController {
         timestamp: Date.now(),
       });
     } catch (recoveryError) {
+      const errorMsg =
+        recoveryError instanceof Error ? recoveryError.message : String(recoveryError);
       this.logRecoveryAction({
         strategy: 'SKIP_NODE',
-        reason: `Import recovery also failed: ${recoveryError.message}`,
+        reason: `Import recovery also failed: ${errorMsg}`,
         originalNode: programNode,
         diagnostics: [
           {
@@ -394,7 +396,7 @@ export class TransformerRecoveryController {
       value: null,
       start: originalNode.start,
       end: originalNode.end,
-    };
+    } as any;
   }
 
   private createDefaultTransform(node: IASTNode): IASTNode {
@@ -411,7 +413,7 @@ export class TransformerRecoveryController {
         children: [],
         start: node.start,
         end: node.end,
-      };
+      } as any;
     }
     return node; // Pass through for unknown types
   }
@@ -430,7 +432,7 @@ export class TransformerRecoveryController {
 
   private passThrough(node: IASTNode, reason: string): IASTNode {
     // Return original node unchanged
-    return { ...node, _recoveryReason: reason };
+    return { ...node, _recoveryReason: reason } as any;
   }
 
   private createFallbackImplementation(node: IASTNode): IASTNode {

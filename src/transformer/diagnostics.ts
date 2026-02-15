@@ -146,10 +146,31 @@ export class TransformerDiagnosticCollector {
   }
 
   /**
+   * Add a custom diagnostic directly
+   */
+  addDiagnostic(diagnostic: ITransformerDiagnostic): void {
+    this.diagnostics.push(diagnostic);
+  }
+
+  /**
    * Get all diagnostics
    */
   getDiagnostics(): ITransformerDiagnostic[] {
     return [...this.diagnostics];
+  }
+
+  /**
+   * Get all diagnostics (alias)
+   */
+  getAllDiagnostics(): ITransformerDiagnostic[] {
+    return this.getDiagnostics();
+  }
+
+  /**
+   * Get last diagnostic
+   */
+  getLastDiagnostic(): ITransformerDiagnostic | undefined {
+    return this.diagnostics[this.diagnostics.length - 1];
   }
 
   /**

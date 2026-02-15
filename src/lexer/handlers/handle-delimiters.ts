@@ -13,13 +13,18 @@ export function handleLeftBrace(lexer: ILexer, char: string): void {
 }
 
 export function handleRightBrace(lexer: ILexer, char: string): void {
+  // If we're in a template literal, the } closes the interpolation ${...}
+  // It should NOT be emitted as a separate RBRACE token
+  if (lexer.templateDepth > 0) {
+    // CRITICAL FIX: scanTemplate will handle advancing position internally
+    // Do NOT advance here - let scanTemplate manage its own position
+    lexer.scanTemplate();
+    return;
+  }
+
+  // Normal RBRACE token (not in template literal)
   lexer.addToken(TokenTypeEnum.RBRACE, '}');
   JSXStateManager.exitExpression(lexer);
-
-  // If we're in a template literal, continue scanning the next part
-  if (lexer.templateDepth > 0) {
-    lexer.scanTemplate();
-  }
 }
 
 export function handleLeftParen(lexer: ILexer, char: string): void {

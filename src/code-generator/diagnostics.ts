@@ -103,7 +103,7 @@ export interface ICodeGeneratorDiagnosticCollection {
  * Code Generator diagnostic collection implementation
  */
 export const CodeGeneratorDiagnosticCollection = function (
-  this: ICodeGeneratorDiagnosticCollection
+  this: ICodeGeneratorDiagnosticCollection & { diagnostics: CodeGeneratorDiagnostic[] }
 ) {
   this.diagnostics = [];
 } as unknown as { new (): ICodeGeneratorDiagnosticCollection };

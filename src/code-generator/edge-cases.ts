@@ -3,7 +3,7 @@
  * Identifies and handles problematic code generation scenarios
  */
 
-import { DiagnosticCode, DiagnosticSeverity } from './diagnostics';
+import { DiagnosticCode, DiagnosticSeverity } from './diagnostics.js';
 
 export interface IEdgeCaseResult {
   detected: boolean;
@@ -24,6 +24,8 @@ export interface ICodeGeneratorEdgeCases {
   detectIndentationEdgeCases(indentLevel: number): IEdgeCaseResult[];
   detectNamingConflictEdgeCases(name: string, type: 'component' | 'interface'): IEdgeCaseResult[];
   getAllEdgeCases(node: any): IEdgeCaseResult[];
+  calculateJSXDepth(node: any, currentDepth?: number): number;
+  calculateExpressionDepth(node: any, currentDepth?: number): number;
 }
 
 /**

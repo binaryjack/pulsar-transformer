@@ -13,15 +13,15 @@ export interface IBadgeProps {
 }
 
 export const Badge = ({ label, variant = 'primary', icon }: IBadgeProps): HTMLElement => {
-  return $REGISTRY.execute('component:Badge', () => {
+  return $REGISTRY.execute('component:Badge', null, () => {
     const className = cn(
       'inline-flex items-center gap-1',
       variant === 'primary' ? 'bg-blue-600' : 'bg-gray-600'
     );
 
     return t_element('span', { className: className }, [
-      icon && t_element('span', {}, [icon]),
-      t_element('span', {}, [label]),
+      () => icon && t_element('span', {}, [() => icon]),
+      t_element('span', {}, [() => label]),
     ]);
   });
 };

@@ -223,8 +223,12 @@ export function isKnownUnsupported(char: string, context: string = ''): EdgeCase
     return KNOWN_EDGE_CASES.find((ec) => ec.pattern === 'Decorators');
   }
 
-  if (/[^\x00-\x7F]/.test(char) && /\w/.test(context)) {
-    return KNOWN_EDGE_CASES.find((ec) => ec.pattern === 'Unicode identifiers');
+  // Only reject Unicode characters in IDENTIFIER context, not in JSX content or string literals
+  if (/[^\x00-\x7F]/.test(char)) {
+    console.log(`[UNICODE-EDGE-CASE] char='${char}', context='${context}', isIdentifier=${context === 'identifier'}`);
+    if (context === 'identifier') {
+      return KNOWN_EDGE_CASES.find((ec) => ec.pattern === 'Unicode identifiers');
+    }
   }
 
   return undefined;

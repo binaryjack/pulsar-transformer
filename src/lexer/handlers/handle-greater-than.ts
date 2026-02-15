@@ -52,6 +52,9 @@ export function handleGreaterThan(lexer: ILexer, char: string): void {
   // Only handle JSX transitions if currently in InsideJSX tag parsing
   // Do NOT transition when in Normal or InsideJSXExpression (comparison operators!)
   const currentState = lexer.getState();
+  console.log(
+    `[GT-HANDLER] After GT, state=${currentState}, jsxDepth=${lexer.jsxDepth}, nextChar='${lexer.peek()}'`
+  );
   if (currentState !== LexerStateEnum.InsideJSX) {
     return;
   }

@@ -222,7 +222,8 @@ export type IExpression =
   | IArrowFunctionExpression
   | IArrayExpression
   | IObjectExpression
-  | IJSXElement;
+  | IJSXElement
+  | IJSXFragment;
 
 export interface IIdentifier extends IASTNode {
   type: 'Identifier';
@@ -374,6 +375,11 @@ export interface IJSXElement extends IASTNode {
   closingElement: IJSXClosingElement | null;
 }
 
+export interface IJSXFragment extends IASTNode {
+  type: 'JSXFragment';
+  children: IJSXChild[];
+}
+
 export interface IJSXOpeningElement extends IASTNode {
   type: 'JSXOpeningElement';
   name: IJSXIdentifier;
@@ -408,7 +414,7 @@ export interface IJSXText extends IASTNode {
   raw: string;
 }
 
-export type IJSXChild = IJSXElement | IJSXText | IJSXExpressionContainer;
+export type IJSXChild = IJSXElement | IJSXFragment | IJSXText | IJSXExpressionContainer;
 
 /**
  * ==================== TYPE NODES ====================

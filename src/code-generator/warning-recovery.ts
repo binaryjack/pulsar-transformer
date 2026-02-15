@@ -3,8 +3,8 @@
  * Provides robust error recovery and fallback strategies for code generation failures
  */
 
-import { DiagnosticCode, DiagnosticSeverity, CodeGeneratorDiagnostic } from './diagnostics';
-import { ICodeGenerationState } from './state-tracker';
+import { DiagnosticCode, DiagnosticSeverity, CodeGeneratorDiagnostic } from './diagnostics.js';
+import { ICodeGenerationState } from './state-tracker.js';
 
 export interface IRecoveryStrategy {
   code: DiagnosticCode;
@@ -44,6 +44,13 @@ export interface ICodeGeneratorWarningRecovery {
   setMaxRetries(count: number): void;
   getRecoveryStatistics(): RecoveryStatistics;
   clearRecoveryStatistics(): void;
+  createFallbackInterface(node: any): string;
+  createFallbackComponent(node: any): string;
+  createFallbackJSX(node: any): string;
+  createFallbackExpression(node: any): string;
+  createFallbackStatement(node: any): string;
+  createFallbackImport(node: any): string;
+  initializeDefaultStrategies(): void;
 }
 
 export interface RecoveryStatistics {
@@ -58,7 +65,13 @@ export interface RecoveryStatistics {
 /**
  * Code Generator Warning Recovery Implementation
  */
-export const CodeGeneratorWarningRecovery = function (this: ICodeGeneratorWarningRecovery) {
+export const CodeGeneratorWarningRecovery = function (
+  this: ICodeGeneratorWarningRecovery & {
+    strategies: Map<DiagnosticCode, IRecoveryStrategy[]>;
+    maxRetries: number;
+    statistics: RecoveryStatistics;
+  }
+) {
   this.strategies = new Map<DiagnosticCode, IRecoveryStrategy[]>();
   this.maxRetries = 3;
   this.statistics = {
@@ -69,7 +82,7 @@ export const CodeGeneratorWarningRecovery = function (this: ICodeGeneratorWarnin
     fallbacksGenerated: 0,
     mostCommonFailures: [],
   };
-  this.initializeDefaultStrategies();
+  (this as any).initializeDefaultStrategies();
 } as unknown as { new (): ICodeGeneratorWarningRecovery };
 
 CodeGeneratorWarningRecovery.prototype.registerStrategy = function (
@@ -143,7 +156,9 @@ CodeGeneratorWarningRecovery.prototype.attemptRecovery = function (
         line: context.generationState.lineNumber,
         column: context.generationState.columnNumber,
         length: 0,
-        phase: context.generationState.phase,
+        phase: (context.generationState.phase === 'idle'
+          ? 'program'
+          : context.generationState.phase) as any,
       },
     ],
     fallbackUsed: false,
@@ -448,7 +463,9 @@ CodeGeneratorWarningRecovery.prototype.initializeDefaultStrategies = function (
             line: context.generationState.lineNumber,
             column: context.generationState.columnNumber,
             length: 0,
-            phase: context.generationState.phase,
+            phase: (context.generationState.phase === 'idle'
+              ? 'program'
+              : context.generationState.phase) as any,
           },
         ],
         fallbackUsed: false,

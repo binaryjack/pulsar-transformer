@@ -3,8 +3,8 @@
  * Provides detailed debugging capabilities for code generation issues
  */
 
-import { DiagnosticCode, DiagnosticSeverity, CodeGeneratorDiagnostic } from './diagnostics';
-import { ICodeGenerationState } from './state-tracker';
+import { DiagnosticCode, DiagnosticSeverity, CodeGeneratorDiagnostic } from './diagnostics.js';
+import { ICodeGenerationState } from './state-tracker.js';
 
 export interface IDebugSnapshot {
   timestamp: number;
@@ -69,7 +69,7 @@ export interface AnomalyReport {
 /**
  * Code Generator Debug Tools Implementation
  */
-export const CodeGeneratorDebugTools = function (this: ICodeGeneratorDebugTools) {
+export const CodeGeneratorDebugTools = function (this: ICodeGeneratorDebugTools & { verboseLogging: boolean; snapshots: IDebugSnapshot[] }) {
   this.verboseLogging = false;
   this.snapshots = [];
 } as unknown as { new (): ICodeGeneratorDebugTools };

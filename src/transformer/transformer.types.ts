@@ -6,7 +6,7 @@
 import type { IASTNode, IProgramNode } from '../parser/parser.types.js';
 import type { ITransformerDiagnostic } from './diagnostics.js';
 import type { ITransformationSession } from './state-tracker.js';
-import type { IDetectedEdgeCase } from './edge-cases.js';
+import type { ITransformerEdgeCase } from './edge-cases.js';
 
 /**
  * Transform context - shared state during transformation with diagnostic data
@@ -25,7 +25,7 @@ export interface ITransformContext {
     byNodeType: Record<string, number>;
     successRate: number;
   };
-  edgeCases?: IDetectedEdgeCase[];
+  edgeCases?: ITransformerEdgeCase[];
 }
 
 /**

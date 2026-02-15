@@ -25,6 +25,11 @@ export enum TokenTypeEnum {
   ELSE = 'ELSE',
   FOR = 'FOR',
   WHILE = 'WHILE',
+  NEW = 'NEW',
+  THROW = 'THROW',
+  INSTANCEOF = 'INSTANCEOF',
+  TYPEOF = 'TYPEOF',
+  DELETE = 'DELETE',
 
   // Identifiers & Literals
   IDENTIFIER = 'IDENTIFIER',

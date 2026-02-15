@@ -5,7 +5,7 @@ export interface ICounterProps {
 }
 
 export function Counter({ id }: ICounterProps): HTMLElement {
-  return $REGISTRY.execute('component:Counter', () => {
+  return $REGISTRY.execute('component:Counter', null, () => {
     const [count, setCount] = createSignal(0);
 
     const increment = () => {
@@ -17,7 +17,7 @@ export function Counter({ id }: ICounterProps): HTMLElement {
     };
 
     return t_element('div', {}, [
-      t_element('h2', {}, ['Counter: ', count()]),
+      t_element('h2', {}, ['Counter: ', () => count()]),
       t_element('button', { onClick: increment }, ['Increment']),
       t_element('button', { onClick: decrement }, ['Decrement']),
     ]);

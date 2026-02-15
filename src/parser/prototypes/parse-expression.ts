@@ -250,6 +250,18 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
     return this.parseTemplateLiteral(token);
   }
 
+  // Template Head: `start${
+  if (token.type === TokenTypeEnum.TEMPLATE_HEAD) {
+    return this.parseComplexTemplateLiteral();
+  }
+
+  // Template Tail: }end` (should not be standalone in expressions)
+  if (token.type === TokenTypeEnum.TEMPLATE_TAIL) {
+    throw new Error(
+      `Unexpected TEMPLATE_TAIL token - template literals must start with TEMPLATE_HEAD at line ${token.line}, column ${token.column}`
+    );
+  }
+
   // Parenthesized expression
   if (token.type === TokenTypeEnum.LPAREN) {
     this.advance();
@@ -433,9 +445,19 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
     return expr;
   }
 
-  // JSX Element
+  // JSX Fragment: <>
+  if (token.type === TokenTypeEnum.JSX_FRAGMENT_OPEN) {
+    return this.parseJSXFragment();
+  }
+
+  // JSX Element vs Type Parameter disambiguation
   if (token.type === TokenTypeEnum.LT) {
-    return this.parseJSXElement();
+    // Only parse as JSX if it looks like JSX, not a type parameter like <boolean>
+    if (this.isLikelyJSX()) {
+      return this.parseJSXElement();
+    }
+    // Otherwise, it's likely a comparison or type parameter - not handled in primary expression
+    // Fall through to unexpected token error
   }
 
   // Array literal: [1, 2, 3]
@@ -461,6 +483,59 @@ Parser.prototype.parsePrimaryExpression = function (this: IParser): IExpression 
       start: operator.start,
       end: argument.end,
     };
+  }
+
+  // New expression: new Constructor()
+  if (token.type === TokenTypeEnum.NEW) {
+    const newToken = this.advance();
+    const callee = this.parseExpression(11); // High precedence for member access
+
+    // Check for constructor arguments
+    let args: IExpression[] = [];
+    if (this.match(TokenTypeEnum.LPAREN)) {
+      this.advance(); // consume (
+
+      if (!this.match(TokenTypeEnum.RPAREN)) {
+        do {
+          args.push(this.parseExpression());
+          if (this.match(TokenTypeEnum.COMMA)) {
+            this.advance();
+          }
+        } while (this.match(TokenTypeEnum.COMMA) && !this.isAtEnd());
+      }
+
+      const rparenToken = this.expect(TokenTypeEnum.RPAREN);
+
+      return {
+        type: 'NewExpression',
+        callee,
+        arguments: args,
+        start: newToken.start,
+        end: rparenToken.end,
+      } as any;
+    }
+
+    // New without parentheses (e.g., new Array)
+    return {
+      type: 'NewExpression',
+      callee,
+      arguments: [],
+      start: newToken.start,
+      end: callee.end,
+    } as any;
+  }
+
+  // Throw statement: throw expression
+  if (token.type === TokenTypeEnum.THROW) {
+    const throwToken = this.advance();
+    const argument = this.parseExpression();
+
+    return {
+      type: 'ThrowStatement',
+      argument,
+      start: throwToken.start,
+      end: argument.end,
+    } as any;
   }
 
   // Unary expression: !x, -x
@@ -854,5 +929,87 @@ Parser.prototype.parseTemplateLiteral = function (this: IParser, token: IToken):
     expressions,
     start: token.start,
     end: token.end,
+  };
+};
+
+/**
+ * Parse complex template literal with expressions: `start ${expr} middle ${expr2} end`
+ * Handles TEMPLATE_HEAD → expressions → TEMPLATE_MIDDLE → expressions → TEMPLATE_TAIL
+ */
+Parser.prototype.parseComplexTemplateLiteral = function (this: IParser): IExpression {
+  const quasis: any[] = [];
+  const expressions: IExpression[] = [];
+  const start = this.peek().start;
+  let end = start;
+
+  // Parse TEMPLATE_HEAD
+  let token = this.advance();
+  if (token.type !== TokenTypeEnum.TEMPLATE_HEAD) {
+    throw new Error(`Expected TEMPLATE_HEAD, got ${token.type} at line ${token.line}`);
+  }
+
+  // Add first quasi from TEMPLATE_HEAD
+  quasis.push({
+    type: 'TemplateElement',
+    value: {
+      cooked: token.value,
+      raw: token.value,
+    },
+    tail: false,
+    start: token.start,
+    end: token.end,
+  });
+
+  // Parse alternating expressions and template parts
+  while (!this.isAtEnd()) {
+    // Parse expression between ${...}
+    const expression = this.parseExpression();
+    expressions.push(expression);
+    end = expression.end;
+
+    // Expect TEMPLATE_MIDDLE or TEMPLATE_TAIL
+    const nextToken = this.peek();
+    if (nextToken.type === TokenTypeEnum.TEMPLATE_MIDDLE) {
+      this.advance();
+      // Add middle quasi
+      quasis.push({
+        type: 'TemplateElement',
+        value: {
+          cooked: nextToken.value,
+          raw: nextToken.value,
+        },
+        tail: false,
+        start: nextToken.start,
+        end: nextToken.end,
+      });
+      // Continue loop for next expression
+    } else if (nextToken.type === TokenTypeEnum.TEMPLATE_TAIL) {
+      this.advance();
+      // Add final quasi
+      quasis.push({
+        type: 'TemplateElement',
+        value: {
+          cooked: nextToken.value,
+          raw: nextToken.value,
+        },
+        tail: true,
+        start: nextToken.start,
+        end: nextToken.end,
+      });
+      end = nextToken.end;
+      break;
+    } else {
+      throw new Error(
+        `Expected TEMPLATE_MIDDLE or TEMPLATE_TAIL, got ${nextToken.type} at line ${nextToken.line}`
+      );
+    }
+  }
+
+  return {
+    type: 'TemplateLiteral',
+    quasis,
+    expressions,
+    start,
+    end,
   };
 };

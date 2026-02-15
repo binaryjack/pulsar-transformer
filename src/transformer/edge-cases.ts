@@ -5,6 +5,7 @@
 
 export interface ITransformerEdgeCase {
   id: string;
+  code?: string;
   category: 'component' | 'jsx' | 'import' | 'expression' | 'typescript' | 'performance';
   severity: 'critical' | 'high' | 'medium' | 'low';
   description: string;
@@ -236,6 +237,22 @@ export class TransformerEdgeCaseDetector {
     return Array.from(this.detectedCases)
       .map((id) => TRANSFORMER_EDGE_CASES[id])
       .filter(Boolean);
+  }
+
+  /**
+   * Get all detected edge cases (alias)
+   */
+  getDetectedEdgeCases(): ITransformerEdgeCase[] {
+    return this.getDetectedCases();
+  }
+
+  /**
+   * Detect edge case for specific node and phase (alias for checkNode)
+   */
+  detectEdgeCase(node: any, phase: string): ITransformerEdgeCase | null {
+    const caseIds = this.checkNode(node);
+    if (caseIds.length === 0) return null;
+    return TRANSFORMER_EDGE_CASES[caseIds[0]] || null;
   }
 
   /**

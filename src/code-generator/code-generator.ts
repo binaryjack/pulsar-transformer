@@ -43,6 +43,7 @@ export interface ICodeGenerator {
   generateStatement(node: any): string;
   generateExpression(node: any): string;
   generateJSXElement(node: any): string;
+  generateJSXFragment(node: any): string;
   generateCallExpression(node: any): string;
   generateArrowFunction(node: any): string;
   generateObjectExpression(node: any): string;
@@ -90,6 +91,7 @@ Object.assign(CodeGenerator.prototype, {
   generateStatement: undefined,
   generateExpression: undefined,
   generateJSXElement: undefined,
+  generateJSXFragment: undefined,
   indent: undefined,
   addImport: undefined,
   needsRegistryWrap: undefined,

@@ -44,10 +44,13 @@ CodeGenerator.prototype.generateExpression = function (this: ICodeGenerator, nod
       return `${object}${property}`;
 
     case 'BinaryExpression':
-      return `${this.generateExpression(node.left)} ${node.operator} ${this.generateExpression(node.right)}`;
+      // Wrap binary expressions in parentheses to ensure correct precedence
+      // especially when used in member expressions or other binary expressions
+      return `(${this.generateExpression(node.left)} ${node.operator} ${this.generateExpression(node.right)})`;
 
     case 'LogicalExpression':
-      return `${this.generateExpression(node.left)} ${node.operator} ${this.generateExpression(node.right)}`;
+      // Wrap logical expressions in parentheses as well
+      return `(${this.generateExpression(node.left)} ${node.operator} ${this.generateExpression(node.right)})`;
 
     case 'AssignmentExpression':
       return `${this.generateExpression(node.left)} ${node.operator} ${this.generateExpression(node.right)}`;
@@ -74,6 +77,9 @@ CodeGenerator.prototype.generateExpression = function (this: ICodeGenerator, nod
 
     case 'JSXElement':
       return this.generateJSXElement(node);
+
+    case 'JSXFragment':
+      return this.generateJSXFragment(node);
 
     default:
       return `/* Unhandled expression: ${node.type} */`;

@@ -19,7 +19,7 @@ export const Drawer = ({
   placement = 'right',
   children,
 }: IDrawerProps): HTMLElement => {
-  return $REGISTRY.execute('component:Drawer', () => {
+  return $REGISTRY.execute('component:Drawer', null, () => {
     useEffect(() => {
       if (!open) return;
 
@@ -37,6 +37,6 @@ export const Drawer = ({
 
     const drawerClasses = cn('fixed z-50 bg-white', placement === 'left' ? 'left-0' : 'right-0');
 
-    return t_element('div', { className: drawerClasses }, [children]);
+    return t_element('div', { className: drawerClasses }, [() => children]);
   });
 };

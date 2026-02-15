@@ -3,7 +3,7 @@
  * Tracks code generation state, context, and performance metrics
  */
 
-import { DiagnosticCode, DiagnosticSeverity } from './diagnostics';
+import { DiagnosticCode, DiagnosticSeverity } from './diagnostics.js';
 
 export interface ICodeGenerationState {
   phase:
@@ -76,7 +76,7 @@ export interface ICodeGeneratorStateTracker {
 /**
  * Code Generator State Tracker Implementation
  */
-export const CodeGeneratorStateTracker = function (this: ICodeGeneratorStateTracker) {
+export const CodeGeneratorStateTracker = function (this: ICodeGeneratorStateTracker & { state: ICodeGenerationState }) {
   this.state = {
     phase: 'idle',
     currentNode: null,

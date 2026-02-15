@@ -48,12 +48,15 @@ export interface IParser {
   parseReturnStatement(): any;
   parseExpression(precedence?: number): any;
   parseJSXElement(): any;
+  parseJSXFragment(): any;
+  parseJSXChild(): any;
   parsePrimaryExpression(): any;
   parseCallExpression(callee: any): any;
   parseArrowFunction(params: any[]): any;
   parseArrayExpression(): any;
   parseObjectExpression(): any;
   parseTemplateLiteral(token: IToken): any;
+  parseComplexTemplateLiteral(): any;
   parseJSXOpeningElement(): any;
   parseJSXClosingElement(tagName: string): any;
   parseJSXExpressionContainer(): any;
@@ -65,6 +68,7 @@ export interface IParser {
   parseUnionType(): any;
   parsePrimaryType(): any;
   parseTypeParameters(): any[];
+  isLikelyJSX(): boolean;
 }
 
 /**

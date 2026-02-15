@@ -24,6 +24,7 @@ import './prototypes/parse-return-statement.js';
 import './prototypes/parse-statement.js';
 import './prototypes/parse-type-annotation.js';
 import './prototypes/parse-type-parameters.js';
+import './prototypes/is-likely-jsx.js';
 import './prototypes/parse-variable-declaration.js';
 import './prototypes/parse-while-statement.js';
 import './prototypes/parse.js';

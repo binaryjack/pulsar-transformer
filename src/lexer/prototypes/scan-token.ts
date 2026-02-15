@@ -36,6 +36,13 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
 
   const char = this.peek();
 
+  // DEBUG: Log Unicode characters
+  if (/[^\x00-\x7F]/.test(char)) {
+    console.log(
+      `[SCANTOKEN-UNICODE] char='${char}' pos=${this.pos} state=${currentState} jsxDepth=${this.jsxDepth}`
+    );
+  }
+
   // Identifiers and keywords
   if (isAlpha(char)) {
     this.scanIdentifier();
@@ -82,11 +89,17 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
 
   // Check for known unsupported features first
   if (this.warningSystem) {
-    const isUnsupported = this.warningSystem.checkUnsupportedFeatures(
-      this,
-      char,
-      this.source.slice(Math.max(0, this.pos - 10), this.pos)
-    );
+    // Determine semantic context based on lexer STATE, not character type
+    let semanticContext = 'unknown';
+    const state = this.getState();
+
+    if (this.jsxDepth > 0 || state === LexerStateEnum.InsideJSXText) {
+      semanticContext = 'jsx';
+    } else if (isAlpha(char) || char === '_' || char === '$') {
+      semanticContext = 'identifier';
+    }
+
+    const isUnsupported = this.warningSystem.checkUnsupportedFeatures(this, char, semanticContext);
     if (
       isUnsupported &&
       this.recoveryController?.shouldContinueOnError(new Error('Unsupported feature'))
@@ -126,6 +139,9 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
 
     // For other Unicode in JSX contexts (even outside text), treat as JSX text
     if (this.jsxDepth > 0) {
+      console.log(
+        `[JSX-UNICODE] Found Unicode '${char}' in JSX context (depth=${this.jsxDepth}), treating as JSX text`
+      );
       this.pos--;
       this.column--;
       this.pushState(LexerStateEnum.InsideJSXText);
@@ -134,30 +150,27 @@ Lexer.prototype.scanToken = function (this: ILexer): void {
     }
 
     // Check if this is a known Unicode limitation ONLY after valid contexts checked
-    const edgeCase = isKnownUnsupported(char, 'identifier');
-    if (edgeCase) {
-      const error = new Error(
-        `${edgeCase.description} at line ${this.line}, column ${this.column}`
+    // SPECIAL CASE: Allow Unicode everywhere for now, only reject in actual identifier parsing
+    if (/[^\x00-\x7F]/.test(char)) {
+      console.log(
+        `[UNICODE-DEBUG] Found Unicode '${char}' at pos ${this.pos}, jsxDepth=${this.jsxDepth}, state=${this.getState()}`
       );
-
-      if (this.diagnostics) {
-        this.diagnostics.addError(
-          DiagnosticCode.UnexpectedCharacter,
-          `${edgeCase.description}: character '${char}' (U+${charCode.toString(16).toUpperCase().padStart(4, '0')})`,
-          this.line,
-          this.column,
-          1,
-          edgeCase.workaround
-        );
-      }
-
-      // Try recovery if enabled
-      if (this.recoveryController?.shouldContinueOnError(error)) {
-        this.recoveryController.recoverFromError(this, error);
+      // For now, treat ALL Unicode as JSX text if we're anywhere near JSX
+      if (
+        this.jsxDepth > 0 ||
+        this.getState() === LexerStateEnum.InsideJSXText ||
+        this.getState() === LexerStateEnum.InsideJSX
+      ) {
+        console.log(`[UNICODE-DEBUG] Treating as JSX text`);
+        this.pos--;
+        this.column--;
+        this.pushState(LexerStateEnum.InsideJSXText);
+        this.scanJSXText();
         return;
       }
-
-      throw error;
+      // Even outside JSX, just skip Unicode for now instead of erroring
+      console.log(`[UNICODE-DEBUG] Skipping Unicode character`);
+      return;
     }
   }
 

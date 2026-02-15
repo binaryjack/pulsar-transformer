@@ -20,8 +20,8 @@ import type {
 import type { ITransformContext, ITransformResult } from './transformer.types.js';
 
 // Enterprise diagnostic system imports
-import { getTransformerDiagnosticCollector } from './diagnostics.js';
-import { getTransformationStateTracker } from './state-tracker.js';
+import { getTransformerDiagnostics } from './diagnostics.js';
+import { getTransformationTracker } from './state-tracker.js';
 import { getTransformerEdgeCaseDetector } from './edge-cases.js';
 import { getTransformerDebugger } from './debug-tools.js';
 import { getTransformerRecoveryController } from './warning-recovery.js';
@@ -37,8 +37,8 @@ export interface ITransformer {
   context: ITransformContext;
 
   // Diagnostic system components
-  diagnostics: ReturnType<typeof getTransformerDiagnosticCollector>;
-  stateTracker: ReturnType<typeof getTransformationStateTracker>;
+  diagnostics: ReturnType<typeof getTransformerDiagnostics>;
+  stateTracker: ReturnType<typeof getTransformationTracker>;
   edgeDetector: ReturnType<typeof getTransformerEdgeCaseDetector>;
   debugger: ReturnType<typeof getTransformerDebugger>;
   recovery: ReturnType<typeof getTransformerRecoveryController>;
@@ -65,14 +65,15 @@ export interface ITransformer {
 
   // Utilities with diagnostics
   addError(type: string, message: string, node: IASTNode): void;
+  countASTNodes(node: any): number;
 
   // Diagnostic utilities
-  diagnosticTransform<T extends IASTNode>(
-    node: T,
-    transformFn: (node: T) => T,
+  diagnosticTransform<TIn extends IASTNode, TOut extends IASTNode = TIn>(
+    node: TIn,
+    transformFn: (node: TIn) => TOut,
     phase: string,
     method: string
-  ): T;
+  ): TOut;
 }
 
 /**
@@ -93,15 +94,14 @@ export const Transformer: ITransformer = function (
 
   // Initialize enterprise diagnostic systems (with fallback for compatibility)
   try {
-    this.diagnostics = getTransformerDiagnosticCollector();
-    this.stateTracker = getTransformationStateTracker();
+    this.diagnostics = getTransformerDiagnostics();
+    this.stateTracker = getTransformationTracker();
     this.edgeDetector = getTransformerEdgeCaseDetector();
     this.debugger = getTransformerDebugger();
     this.recovery = getTransformerRecoveryController();
 
     // Start transformation session if diagnostics available
-    this.stateTracker.startSession(`transform_${Date.now()}`, {
-      sourceFile: this.context.sourceFile,
+    this.stateTracker.startSession(this.context.sourceFile, {
       astNodeCount: this.countASTNodes(ast),
       timestamp: Date.now(),
     });
@@ -136,13 +136,16 @@ Transformer.prototype.countASTNodes = function (node: any): number {
   return count;
 };
 
-Transformer.prototype.diagnosticTransform = function <T extends IASTNode>(
+Transformer.prototype.diagnosticTransform = function <
+  TIn extends IASTNode,
+  TOut extends IASTNode = TIn,
+>(
   this: ITransformer,
-  node: T,
-  transformFn: (node: T) => T,
+  node: TIn,
+  transformFn: (node: TIn) => TOut,
   phase: string,
   method: string
-): T {
+): TOut {
   // If diagnostic systems not available, fall back to simple transformation
   if (
     !this.stateTracker ||
@@ -169,14 +172,19 @@ Transformer.prototype.diagnosticTransform = function <T extends IASTNode>(
   const edgeCase = this.edgeDetector.detectEdgeCase(node, phase);
   if (edgeCase && edgeCase.severity === 'critical') {
     this.diagnostics.addDiagnostic({
-      code: edgeCase.code,
+      code: (edgeCase.code || edgeCase.id) as any,
       type: 'error',
       severity: 'critical',
       phase: phase as any,
       message: `Critical edge case detected: ${edgeCase.description}`,
       node,
     });
-    return this.recovery.attemptRecovery(this, node, new Error(edgeCase.description), method);
+    return this.recovery.attemptRecovery(
+      this,
+      node,
+      new Error(edgeCase.description),
+      method
+    ) as TOut;
   }
 
   // Log transformation step start
@@ -186,16 +194,17 @@ Transformer.prototype.diagnosticTransform = function <T extends IASTNode>(
     node.type,
     node,
     undefined,
-    edgeCase ? [this.diagnostics.getLastDiagnostic()!] : []
+    edgeCase && this.diagnostics.getLastDiagnostic() ? [this.diagnostics.getLastDiagnostic()!] : []
   );
 
   try {
     // Record step start
     this.stateTracker.recordStep({
-      method,
+      stepId: `${phase}_${method}_${Date.now()}`,
       phase: phase as any,
       nodeType: node.type,
-      startTime: performance.now(),
+      description: `${method} on ${node.type}`,
+      inputData: node,
     });
 
     // Apply transformation
@@ -203,7 +212,8 @@ Transformer.prototype.diagnosticTransform = function <T extends IASTNode>(
 
     // Record step completion
     this.stateTracker.completeCurrentStep({
-      transformedNode: result,
+      success: true,
+      outputData: result,
       endTime: performance.now(),
     });
 
@@ -236,7 +246,7 @@ Transformer.prototype.diagnosticTransform = function <T extends IASTNode>(
       node,
       error instanceof Error ? error : new Error(String(error)),
       method
-    );
+    ) as TOut;
   }
 };
 

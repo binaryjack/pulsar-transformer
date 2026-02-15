@@ -131,14 +131,6 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
         continue; // Don't add comments to output
       }
 
-      // DEBUG: Check template literal processing
-      if (JSON.stringify(child.expression).includes('product.price')) {
-        console.log(
-          '[JSX-DEBUG] Template literal expression:',
-          JSON.stringify(child.expression.type)
-        );
-      }
-
       // Check if expression is reactive (contains function call)
       const isReactive = this.isReactiveExpression(child.expression);
 
@@ -149,28 +141,14 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
 
       if (isReactive && !isComponent) {
         // For HTML elements with reactive expressions
-        // Simple reactive expressions (count(), signal.value) can be used directly
-        // Complex reactive expressions need insert() approach
-        if (this.isSimpleReactiveExpression(child.expression)) {
-          // Simple reactive: use directly in array
-          const expr = this.generateExpression(child.expression);
-          // DEBUG
-          if (expr.includes('product.price')) {
-            console.log('[JSX-DEBUG] Simple reactive path, expression:', expr);
-          }
-          children.push(expr);
-        } else {
-          // Complex reactive: use insert() approach
-          const expr = this.generateExpression(child.expression);
-          const wrappedExpr = '() => ' + expr; // Use string concatenation to avoid template literal evaluation
-          // DEBUG
-          if (expr.includes('product.price')) {
-            console.log('[JSX-DEBUG] Complex reactive path, expression:', expr);
-            console.log('[JSX-DEBUG] Complex reactive path, wrapped:', wrappedExpr);
-          }
-          reactiveChildren.push({ index: children.length, expression: wrappedExpr });
-          children.push("'__REACTIVE__'"); // Placeholder for reactive content (unique to avoid conflicts)
-        }
+        // ALL reactive expressions need insert() approach because t_element children are static
+        // unless t_element is modified to handle functions
+
+        // Complex reactive: use insert() approach
+        const expr = this.generateExpression(child.expression);
+        const wrappedExpr = '() => ' + expr; // Use string concatenation to avoid template literal evaluation
+        reactiveChildren.push({ index: children.length, expression: wrappedExpr });
+        children.push("'__REACTIVE__'"); // Placeholder for reactive content (unique to avoid conflicts)
       } else {
         // For components or non-reactive: use as-is
         const expr = this.generateExpression(child.expression);
@@ -222,7 +200,8 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
         .join(' ');
 
       return (
-        "(() => { const _el$ = t_element('" +
+        '((() => { const _el$ = ' +
+        "t_element('" +
         tagName +
         "', " +
         attrs +
@@ -230,7 +209,7 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
         staticChildrenArray +
         '); ' +
         insertCalls +
-        ' return _el$; })()'
+        ' return _el$; })())'
       );
     }
 
@@ -238,4 +217,31 @@ CodeGenerator.prototype.generateJSXElement = function (this: ICodeGenerator, nod
     const result = "t_element('" + tagName + "', " + attrs + ', ' + childrenArray + ')';
     return result;
   }
+};
+
+/**
+ * Generate JSX Fragment: <>...</> becomes a children array
+ */
+CodeGenerator.prototype.generateJSXFragment = function (this: ICodeGenerator, node: any): string {
+  if (node.children.length === 0) {
+    return '[]';
+  }
+
+  const childrenCode = node.children
+    .map((child: any) => {
+      if (child.type === 'JSXText') {
+        const trimmed = child.value.trim();
+        return trimmed ? JSON.stringify(trimmed) : null;
+      } else if (child.type === 'JSXExpressionContainer') {
+        return this.generateExpression(child.expression);
+      } else if (child.type === 'JSXElement') {
+        return this.generateJSXElement(child);
+      } else if (child.type === 'JSXFragment') {
+        return this.generateJSXFragment(child);
+      }
+      return null;
+    })
+    .filter((c: any) => c !== null);
+
+  return childrenCode.length === 1 ? childrenCode[0] : '[' + childrenCode.join(', ') + ']';
 };

@@ -70,8 +70,8 @@ export function handleLessThan(lexer: ILexer, char: string): void {
 
   const nextCh = lexer.peek();
 
-  // PRIORITY 5: Check for generic type parameter: <T>
-  if (isAlpha(nextCh) && nextCh === nextCh.toUpperCase()) {
+  // PRIORITY 5: Check for generic type parameter: <T> or <boolean>
+  if (isAlpha(nextCh)) {
     let lookAhead = nextCh;
     let i = 1;
     while (i < 30 && lexer.pos + i < lexer.source.length) {
@@ -83,8 +83,17 @@ export function handleLessThan(lexer: ILexer, char: string): void {
       i++;
     }
 
-    // If generic pattern, treat as operator
-    if (lookAhead.match(/^[A-Z][a-zA-Z0-9]*\s*(>|,|extends|=)/)) {
+    // Check for TypeScript generic patterns:
+    // 1. Uppercase types: <T>, <MyType>
+    // 2. Built-in types: <boolean>, <string>, <number>
+    // 3. Complex types: <T extends U>, <boolean | null>
+    const isGenericPattern =
+      lookAhead.match(/^[A-Z][a-zA-Z0-9]*\s*(>|,|extends|=)/) ||
+      lookAhead.match(
+        /^(boolean|string|number|void|null|undefined|any|unknown|never|bigint|symbol|object)\s*(>|,|\|)/
+      );
+
+    if (isGenericPattern) {
       lexer.addToken(TokenTypeEnum.LT, '<');
       return;
     }

@@ -15,14 +15,20 @@ import { TokenTypeEnum } from '../lexer.types.js';
  * 2. After } in template via handleRightBrace - pos is AFTER the }
  */
 Lexer.prototype.scanTemplate = function (this: ILexer): void {
+  console.log(
+    `[TEMPLATE-DEBUG] scanTemplate called, pos=${this.pos}, char='${this.peek()}', templateDepth=${this.templateDepth}`
+  );
+
   // handleBacktick backtracks, so peek() === '`' means fresh start
   // Otherwise we're continuing after } and pos is already at next content
   const isStart = this.peek(-1) !== '}';
+  console.log(`[TEMPLATE-DEBUG] isStart=${isStart}, prevChar='${this.peek(-1)}'`);
 
   if (isStart && this.peek() === '`') {
     // Fresh start: skip opening backtick
     this.advance();
     this.templateDepth++;
+    console.log(`[TEMPLATE-DEBUG] Started new template, depth now ${this.templateDepth}`);
   }
 
   let value = '';

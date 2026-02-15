@@ -240,31 +240,87 @@ CodeGenerator.prototype.generateComponent = function (this: ICodeGenerator, node
  * Generate function declaration
  */
 CodeGenerator.prototype.generateFunction = function (this: ICodeGenerator, node: any): string {
+  if (!node) return '';
   const parts: string[] = [];
 
-  const name = node.id ? node.id.name : '';
+  const name = node.id && node.id.name ? node.id.name : '';
 
-  // Generate parameters with type annotations if present
+  // Helper to generate patterns recursively
+  // We need to implement this because ICodeGenerator doesn't guarantee generatePattern exists
+  // and we need to handle destructured parameters correctly
+  const generatePattern = (p: any): string => {
+    if (!p) return '';
+
+    // Identifier: name
+    if (p.type === 'Identifier') {
+      return p.name;
+    }
+
+    // AssignmentPattern: left = right
+    if (p.type === 'AssignmentPattern') {
+      const left = generatePattern(p.left);
+
+      // Use generateExpression if available on 'this', otherwise fallback (should exist)
+      // Note: 'this' inside this closure refers to correct context if defined as arrow function
+      // but 'this' is ICodeGenerator instance
+      const right = this.generateExpression(p.right);
+      return `${left} = ${right}`;
+    }
+
+    // ObjectPattern: { key, key: value }
+    if (p.type === 'ObjectPattern') {
+      const props = p.properties
+        .map((prop: any) => {
+          if (prop.type === 'RestElement') {
+            return `...${prop.argument.name}`;
+          }
+
+          // Key might be Identifier or Literal
+          const key = prop.key.type === 'Identifier' ? prop.key.name : prop.key.value;
+          const value = generatePattern(prop.value);
+
+          // Shorthand: { key } (where key === value)
+          // But value might be complex, so simple check:
+          if (prop.shorthand) {
+            return key;
+          }
+          return `${key}: ${value}`;
+        })
+        .join(', ');
+      return `{ ${props} }`;
+    }
+
+    // ArrayPattern: [a, b]
+    if (p.type === 'ArrayPattern') {
+      const elements = p.elements.map((e: any) => (e ? generatePattern(e) : '')).join(', ');
+      return `[${elements}]`;
+    }
+
+    // RestElement: ...arg
+    if (p.type === 'RestElement') {
+      return `...${p.argument.name}`;
+    }
+
+    return '';
+  };
+
+  // Generate parameters using our local helper
   const params = node.params
-    .map((p: any) => {
-      const paramName = p.pattern.name;
-      // Include type annotation if present
-      // Note: Parameter types are TypeScript-only, omitted in JavaScript output
-      return paramName;
-    })
+    .map((p: any) => generatePattern(p))
+    .filter((p: string) => p !== '')
     .join(', ');
-
-  // Note: Return types are TypeScript-only, not included in JavaScript output
 
   parts.push(`function ${name}(${params}) {`);
   this.indentLevel++;
 
-  for (const stmt of node.body.body) {
-    parts.push(this.generateStatement(stmt));
+  if (node.body && node.body.body) {
+    for (const stmt of node.body.body) {
+      parts.push(this.indent() + this.generateStatement(stmt).trim());
+    }
   }
 
   this.indentLevel--;
-  parts.push('}');
+  parts.push(this.indent() + '}');
 
   return parts.join('\n');
 };

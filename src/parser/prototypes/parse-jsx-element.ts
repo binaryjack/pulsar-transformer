@@ -490,3 +490,31 @@ Parser.prototype.parseJSXExpressionContainer = function (this: IParser): any {
     end: endToken.end,
   };
 };
+
+/**
+ * Parse JSX Fragment: <>...</>
+ */
+Parser.prototype.parseJSXFragment = function (this: IParser): any {
+  const start = this.peek().start;
+
+  // Consume the <>
+  this.expect(TokenTypeEnum.JSX_FRAGMENT_OPEN);
+
+  // Parse children
+  const children: IJSXChild[] = [];
+
+  while (!this.match(TokenTypeEnum.JSX_FRAGMENT_CLOSE) && !this.isAtEnd()) {
+    const child = this.parseJSXChild();
+    if (child) children.push(child);
+  }
+
+  // Consume the </>
+  const endToken = this.expect(TokenTypeEnum.JSX_FRAGMENT_CLOSE);
+
+  return {
+    type: 'JSXFragment',
+    children,
+    start,
+    end: endToken.end,
+  };
+};

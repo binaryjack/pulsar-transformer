@@ -55,7 +55,10 @@ export class TransformationStateTracker {
   /**
    * Start new transformation session
    */
-  startSession(sourceFile: string): string {
+  startSession(
+    sourceFile: string,
+    options?: { astNodeCount?: number; timestamp?: number }
+  ): string {
     const sessionId = `transform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const session: ITransformationSession = {
@@ -64,7 +67,7 @@ export class TransformationStateTracker {
       startTime: performance.now(),
       phases: new Map(),
       metadata: {
-        totalNodes: 0,
+        totalNodes: options?.astNodeCount || 0,
         transformedNodes: 0,
         componentCount: 0,
         jsxElementCount: 0,
@@ -188,6 +191,45 @@ export class TransformationStateTracker {
    */
   getCurrentSession(): ITransformationSession | null {
     return this.activeSession;
+  }
+
+  /**
+   * Record transformation step (alias for startStep)
+   */
+  recordStep(options: {
+    stepId: string;
+    phase: TransformationPhase;
+    nodeType: string;
+    description: string;
+    inputData?: any;
+  }): void {
+    this.startStep(
+      options.stepId,
+      options.description,
+      options.phase,
+      options.nodeType,
+      options.inputData
+    );
+  }
+
+  /**
+   * Complete current step (simplified wrapper)
+   */
+  completeCurrentStep(options: {
+    success?: boolean;
+    error?: Error;
+    endTime?: number;
+    outputData?: any;
+    metadata?: Record<string, any>;
+  }): void {
+    if (!this.activeSession?.currentStep) return;
+
+    const stepId = this.activeSession.currentStep.id;
+    if (options.error || options.success === false) {
+      this.failStep(stepId, options.error?.message);
+    } else {
+      this.completeStep(stepId, options.outputData, options.metadata);
+    }
   }
 
   /**

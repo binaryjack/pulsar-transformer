@@ -31,32 +31,33 @@ export function transform(this: ITransformer): ITransformResult {
  * Transform with full diagnostic tracking
  */
 function transformWithDiagnostics(this: ITransformer): ITransformResult {
-  const session = this.stateTracker.getCurrentSession();
+  const session = this.stateTracker?.getCurrentSession() || null;
   if (!session) {
     throw new Error('No active transformation session found');
   }
 
-  this.diagnostics.addDiagnostic({
+  this.diagnostics?.addDiagnostic({
     code: 'TRF001',
     type: 'info',
     severity: 'low',
-    phase: 'program',
+    phase: 'component' as any,
     message: `Starting transformation for ${this.context.sourceFile}`,
     node: this.ast,
   });
 
   try {
     // Step 1: Collect imports used in original AST (with diagnostics)
-    this.stateTracker.recordStep({
-      method: 'collectUsedImports',
-      phase: 'import',
+    this.stateTracker?.recordStep({
+      stepId: `collect_${Date.now()}`,
+      phase: 'IMPORT_COLLECTION',
       nodeType: 'Program',
-      startTime: performance.now(),
+      description: 'collectUsedImports',
+      inputData: this.ast,
     });
 
     this.collectUsedImports(this.ast);
 
-    this.stateTracker.completeCurrentStep({
+    this.stateTracker?.completeCurrentStep({
       endTime: performance.now(),
       metadata: {
         collectedImports: Array.from(this.context.usedImports),
@@ -73,17 +74,18 @@ function transformWithDiagnostics(this: ITransformer): ITransformResult {
     );
 
     // Step 3: Add framework imports at top (with diagnostics)
-    this.stateTracker.recordStep({
-      method: 'addFrameworkImports',
-      phase: 'import',
+    this.stateTracker?.recordStep({
+      stepId: `add_imports_${Date.now()}`,
+      phase: 'IMPORT_INJECTION',
       nodeType: 'Program',
-      startTime: performance.now(),
+      description: 'addFrameworkImports',
+      inputData: transformedAst,
     });
 
     try {
       this.addFrameworkImports(transformedAst);
 
-      this.stateTracker.completeCurrentStep({
+      this.stateTracker?.completeCurrentStep({
         endTime: performance.now(),
         metadata: {
           finalImportCount: transformedAst.body.filter((stmt) => stmt.type === 'ImportDeclaration')
@@ -91,7 +93,7 @@ function transformWithDiagnostics(this: ITransformer): ITransformResult {
         },
       });
     } catch (importError) {
-      this.diagnostics.addDiagnostic({
+      this.diagnostics?.addDiagnostic({
         code: 'TRF201',
         type: 'warning',
         severity: 'medium',
@@ -107,32 +109,32 @@ function transformWithDiagnostics(this: ITransformer): ITransformResult {
         importError instanceof Error ? importError : new Error(String(importError))
       );
 
-      this.stateTracker.completeCurrentStep({
+      this.stateTracker?.completeCurrentStep({
         error: importError instanceof Error ? importError : new Error(String(importError)),
         endTime: performance.now(),
       });
     }
 
     // Step 4: Finalize session and generate comprehensive report
-    const finalSession = this.stateTracker.endSession();
+    const finalSession = this.stateTracker?.endSession();
 
-    this.diagnostics.addDiagnostic({
+    this.diagnostics?.addDiagnostic({
       code: 'TRF002',
       type: 'info',
       severity: 'low',
-      phase: 'program',
-      message: `Transformation completed successfully. Duration: ${finalSession.totalDuration}ms`,
+      phase: 'component' as any,
+      message: `Transformation completed successfully. Duration: ${finalSession?.totalDuration}ms`,
       node: transformedAst,
     });
 
     // Log completion with all diagnostic data
     this.debugger.logTransformationComplete(
-      finalSession.sessionId,
+      finalSession?.sessionId || 'unknown',
       {
         ast: transformedAst,
         context: this.context,
       },
-      finalSession
+      finalSession!
     );
 
     // Step 5: Return comprehensive result with diagnostic data
@@ -141,8 +143,8 @@ function transformWithDiagnostics(this: ITransformer): ITransformResult {
       context: {
         ...this.context,
         // Add diagnostic information to context
-        diagnostics: this.diagnostics.getAllDiagnostics(),
-        session: finalSession,
+        diagnostics: this.diagnostics?.getAllDiagnostics(),
+        session: finalSession || undefined,
         recoveryStats: this.recovery.getRecoveryStats(),
         edgeCases: this.edgeDetector.getDetectedEdgeCases(),
       },
@@ -151,19 +153,19 @@ function transformWithDiagnostics(this: ITransformer): ITransformResult {
     return result;
   } catch (transformationError) {
     // Handle catastrophic transformation failure
-    this.diagnostics.addDiagnostic({
+    this.diagnostics?.addDiagnostic({
       code: 'TRF505',
       type: 'error',
       severity: 'critical',
-      phase: 'program',
+      phase: 'component' as any,
       message: `Critical transformation failure: ${transformationError instanceof Error ? transformationError.message : String(transformationError)}`,
       node: this.ast,
     });
 
-    const failedSession = this.stateTracker.endSession();
+    const failedSession = this.stateTracker?.endSession();
 
     throw new Error(
-      `Transformation failed after ${failedSession.totalDuration}ms: ${transformationError instanceof Error ? transformationError.message : String(transformationError)}`
+      `Transformation failed after ${failedSession?.totalDuration || 0}ms: ${transformationError instanceof Error ? transformationError.message : String(transformationError)}`
     );
   }
 }

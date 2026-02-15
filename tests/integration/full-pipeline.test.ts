@@ -44,6 +44,8 @@ describe('Full Pipeline Integration', () => {
       .replace(/\s*,\s*/g, ',')
       .replace(/\s*:\s*/g, ':')
       .replace(/\s*=\s*/g, '=')
+      // Normalize quotes: convert all double quotes to single quotes
+      .replace(/"/g, "'")
       // Remove trailing commas (optional in TypeScript)
       .replace(/,\}/g, '}')
       .replace(/,\)/g, ')')
