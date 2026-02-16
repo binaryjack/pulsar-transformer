@@ -23,7 +23,8 @@ export function createJSXTransform(t: typeof BabelTypes): VisitorObj {
       if (isComponent) {
         // Component call: Component(props)
         const componentName = getComponentName(openingElement.name, t);
-        const attributes = transformAttributes(openingElement.attributes, t);
+        const componentNameStr = t.isIdentifier(componentName) ? componentName.name : '';
+        const attributes = transformAttributes(openingElement.attributes, t, componentNameStr);
         const children = transformChildren(element.children, t);
 
         // Add children to props if present
@@ -56,7 +57,7 @@ export function createJSXTransform(t: typeof BabelTypes): VisitorObj {
       } else {
         // HTML element: t_element('div', props, children)
         const tagName = getTagName(openingElement.name, t);
-        const attributes = transformAttributes(openingElement.attributes, t);
+        const attributes = transformAttributes(openingElement.attributes, t, '');
         const children = transformChildren(element.children, t);
 
         // Build t_element call: t_element(tagName, attributes, children)
@@ -143,9 +144,14 @@ function getComponentName(
 
 function transformAttributes(
   attributes: Array<BabelTypes.JSXAttribute | BabelTypes.JSXSpreadAttribute>,
-  t: typeof BabelTypes
+  t: typeof BabelTypes,
+  componentName: string = ''
 ): BabelTypes.ObjectExpression {
   const properties: Array<BabelTypes.ObjectProperty | BabelTypes.SpreadElement> = [];
+  
+  // Control flow components that need reactive props unwrapped
+  const needsEachUnwrap = ['ForRegistry', 'Index'];
+  const needsWhenUnwrap = ['ShowRegistry'];
 
   for (const attr of attributes) {
     if (t.isJSXSpreadAttribute(attr)) {
@@ -164,6 +170,24 @@ function transformAttributes(
       } else if (t.isJSXExpressionContainer(attr.value)) {
         if (t.isExpression(attr.value.expression)) {
           value = attr.value.expression;
+          
+          // Special handling for 'each' attribute on ForRegistry/Index
+          // If user wrote each={items()}, unwrap to each={items} (pass getter, not array)
+          if (needsEachUnwrap.includes(componentName) && keyName === 'each' && t.isCallExpression(value)) {
+            // Check if it's a simple call with no arguments (likely a signal getter)
+            if (value.arguments.length === 0 && t.isIdentifier(value.callee)) {
+              value = value.callee; // Unwrap: items() -> items
+            }
+          }
+          
+          // Special handling for 'when' attribute on ShowRegistry
+          // If user wrote when={isVisible()}, unwrap to when={isVisible} (pass getter, not boolean)
+          if (needsWhenUnwrap.includes(componentName) && keyName === 'when' && t.isCallExpression(value)) {
+            // Check if it's a simple call with no arguments (likely a signal getter)
+            if (value.arguments.length === 0 && t.isIdentifier(value.callee)) {
+              value = value.callee; // Unwrap: isVisible() -> isVisible
+            }
+          }
           
           // Special handling for style attribute with object expression
           if (keyName === 'style' && t.isObjectExpression(value)) {
