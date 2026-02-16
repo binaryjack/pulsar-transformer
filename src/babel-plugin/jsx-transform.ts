@@ -164,6 +164,36 @@ function transformAttributes(
       } else if (t.isJSXExpressionContainer(attr.value)) {
         if (t.isExpression(attr.value.expression)) {
           value = attr.value.expression;
+          
+          // Special handling for style attribute with object expression
+          if (keyName === 'style' && t.isObjectExpression(value)) {
+            // Process style object properties to wrap reactive values
+            const styleProps = value.properties.map((prop) => {
+              if (t.isObjectProperty(prop) && t.isExpression(prop.value)) {
+                // Wrap CallExpressions (like bgColor()) in arrow functions for reactivity
+                if (t.isCallExpression(prop.value)) {
+                  return t.objectProperty(
+                    prop.key,
+                    t.arrowFunctionExpression([], prop.value),
+                    prop.computed,
+                    prop.shorthand
+                  );
+                }
+                
+                // Wrap TemplateLiterals (like `${fontSize()}px`) in arrow functions for reactivity
+                if (t.isTemplateLiteral(prop.value) && prop.value.expressions.length > 0) {
+                  return t.objectProperty(
+                    prop.key,
+                    t.arrowFunctionExpression([], prop.value),
+                    prop.computed,
+                    prop.shorthand
+                  );
+                }
+              }
+              return prop;
+            });
+            value = t.objectExpression(styleProps);
+          }
         } else {
           value = t.nullLiteral();
         }
