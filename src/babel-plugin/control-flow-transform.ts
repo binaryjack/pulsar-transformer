@@ -9,8 +9,8 @@
  * - <Switch fallback={<div/>}><Match when={x}>{content}</Match></Switch> → ternary chain
  */
 
-import type { NodePath } from '@babel/traverse';
-import type * as BabelTypes from '@babel/types';
+import type { NodePath } from '@babel/traverse'
+import type * as BabelTypes from '@babel/types'
 
 export function createControlFlowTransform(t: typeof BabelTypes) {
   return {
@@ -20,14 +20,19 @@ export function createControlFlowTransform(t: typeof BabelTypes) {
 
       if (!tagName) return;
 
-      // Handle <Show> / <ShowRegistry>
-      if (tagName === 'Show' || tagName === 'ShowRegistry') {
+      // Handle <Show> (compile-time - transform to ternary)
+      if (tagName === 'Show') {
         transformShow(path, t);
         return;
       }
 
-      // Handle <For> / <ForRegistry>
-      if (tagName === 'For' || tagName === 'ForRegistry') {
+      // Skip ShowRegistry, ForRegistry, Index - let JSX transform handle them as components
+      if (tagName === 'ShowRegistry' || tagName === 'ForRegistry' || tagName === 'Index') {
+        return; // Let JSX transform handle these as regular component calls
+      }
+
+      // Handle <For> (compile-time - transform to .map())
+      if (tagName === 'For') {
         transformFor(path, t);
         return;
       }
@@ -268,4 +273,230 @@ function getJSXElementName(
     }
   }
   return null;
+}
+
+/**
+ * Transform <ShowRegistry when={condition} fallback={fallback}>{children}</ShowRegistry>
+ * To: ShowRegistry({ when: condition, fallback: () => fallback, children: () => children })
+ */
+function transformShowRegistry(path: NodePath<BabelTypes.JSXElement>, t: typeof BabelTypes) {
+  const openingElement = path.node.openingElement;
+  const attributes = openingElement.attributes;
+
+  // Extract "when" attribute
+  const whenAttr = attributes.find(
+    (attr): attr is BabelTypes.JSXAttribute =>
+      t.isJSXAttribute(attr) && t.isJSXIdentifier(attr.name) && attr.name.name === 'when'
+  );
+
+  if (!whenAttr || !whenAttr.value) {
+    return;
+  }
+
+  let whenExpr: BabelTypes.Expression;
+  if (t.isJSXExpressionContainer(whenAttr.value)) {
+    whenExpr = whenAttr.value.expression as BabelTypes.Expression;
+  } else {
+    return;
+  }
+
+  const props: BabelTypes.ObjectProperty[] = [
+    t.objectProperty(t.identifier('when'), whenExpr),
+  ];
+
+  // Extract "fallback" attribute (optional)
+  const fallbackAttr = attributes.find(
+    (attr): attr is BabelTypes.JSXAttribute =>
+      t.isJSXAttribute(attr) && t.isJSXIdentifier(attr.name) && attr.name.name === 'fallback'
+  );
+
+  if (fallbackAttr && fallbackAttr.value && t.isJSXExpressionContainer(fallbackAttr.value)) {
+    const fallbackExpr = fallbackAttr.value.expression as BabelTypes.Expression;
+    // Wrap fallback in arrow function for deferred evaluation
+    const fallbackFn = t.arrowFunctionExpression([], fallbackExpr);
+    props.push(t.objectProperty(t.identifier('fallback'), fallbackFn));
+  }
+
+  // Extract children and wrap in arrow function
+  const children = path.node.children.filter(
+    (child) => !t.isJSXText(child) || child.value.trim() !== ''
+  );
+
+  let childrenExpr: BabelTypes.Expression;
+  if (children.length === 0) {
+    childrenExpr = t.nullLiteral();
+  } else if (children.length === 1) {
+    const child = children[0];
+    if (t.isJSXElement(child) || t.isJSXFragment(child)) {
+      childrenExpr = child as any;
+    } else if (t.isJSXExpressionContainer(child)) {
+      childrenExpr = child.expression as BabelTypes.Expression;
+    } else {
+      childrenExpr = t.nullLiteral();
+    }
+  } else {
+    childrenExpr = t.jsxFragment(t.jsxOpeningFragment(), t.jsxClosingFragment(), children as any[]);
+  }
+
+  // Wrap children in arrow function for deferred evaluation
+  const childrenFn = t.arrowFunctionExpression([], childrenExpr);
+  props.push(t.objectProperty(t.identifier('children'), childrenFn));
+
+  // Create ShowRegistry({ ... }) call
+  const propsObject = t.objectExpression(props);
+  const showRegistryCall = t.callExpression(t.identifier('ShowRegistry'), [propsObject]);
+
+  path.replaceWith(showRegistryCall as any);
+}
+
+/**
+ * Transform <ForRegistry each={items()}>{(item) => <div>{item}</div>}</ForRegistry>
+ * To: ForRegistry({ each: items(), children: (item) => <div>{item}</div> })
+ */
+function transformForRegistry(path: NodePath<BabelTypes.JSXElement>, t: typeof BabelTypes) {
+  const openingElement = path.node.openingElement;
+  const attributes = openingElement.attributes;
+
+  // Extract "each" attribute
+  const eachAttr = attributes.find(
+    (attr): attr is BabelTypes.JSXAttribute =>
+      t.isJSXAttribute(attr) && t.isJSXIdentifier(attr.name) && attr.name.name === 'each'
+  );
+
+  if (!eachAttr || !eachAttr.value) {
+    return;
+  }
+
+  let eachExpr: BabelTypes.Expression;
+  if (t.isJSXExpressionContainer(eachAttr.value)) {
+    eachExpr = eachAttr.value.expression as BabelTypes.Expression;
+  } else {
+    return;
+  }
+
+  const props: BabelTypes.ObjectProperty[] = [
+    t.objectProperty(t.identifier('each'), eachExpr),
+  ];
+
+  // Extract "fallback" attribute (optional)
+  const fallbackAttr = attributes.find(
+    (attr): attr is BabelTypes.JSXAttribute =>
+      t.isJSXAttribute(attr) && t.isJSXIdentifier(attr.name) && attr.name.name === 'fallback'
+  );
+
+  if (fallbackAttr && fallbackAttr.value && t.isJSXExpressionContainer(fallbackAttr.value)) {
+    const fallbackExpr = fallbackAttr.value.expression as BabelTypes.Expression;
+    // Wrap fallback in arrow function for deferred evaluation
+    const fallbackFn = t.arrowFunctionExpression([], fallbackExpr);
+    props.push(t.objectProperty(t.identifier('fallback'), fallbackFn));
+  }
+
+  // Extract children - should be a callback function like {(item) => <div>{item}</div>}
+  const children = path.node.children.filter(
+    (child) => !t.isJSXText(child) || child.value.trim() !== ''
+  );
+
+  if (children.length === 0) {
+    return;
+  }
+
+  const firstChild = children[0];
+  let childrenCallback: BabelTypes.Expression;
+
+  if (t.isJSXExpressionContainer(firstChild) && firstChild.expression) {
+    // Children is already an expression (arrow function)
+    childrenCallback = firstChild.expression as BabelTypes.Expression;
+  } else {
+    // If not a function, wrap in arrow function: (item) => child
+    const itemParam = t.identifier('item');
+    if (t.isJSXElement(firstChild) || t.isJSXFragment(firstChild)) {
+      childrenCallback = t.arrowFunctionExpression([itemParam], firstChild as any);
+    } else {
+      return;
+    }
+  }
+
+  props.push(t.objectProperty(t.identifier('children'), childrenCallback));
+
+  // Create ForRegistry({ ... }) call
+  const propsObject = t.objectExpression(props);
+  const forRegistryCall = t.callExpression(t.identifier('ForRegistry'), [propsObject]);
+
+  path.replaceWith(forRegistryCall as any);}
+
+/**
+ * Transform <Index each={colors()}>{(color, index) => <div>{color()}</div>}</Index>
+ * To: Index({ each: colors(), children: (color, index) => <div>{color()}</div> })
+ */
+function transformIndexComponent(path: NodePath<BabelTypes.JSXElement>, t: typeof BabelTypes) {
+  const openingElement = path.node.openingElement;
+  const attributes = openingElement.attributes;
+
+  // Extract "each" attribute
+  const eachAttr = attributes.find(
+    (attr): attr is BabelTypes.JSXAttribute =>
+      t.isJSXAttribute(attr) && t.isJSXIdentifier(attr.name) && attr.name.name === 'each'
+  );
+
+  if (!eachAttr || !eachAttr.value) {
+    return;
+  }
+
+  let eachExpr: BabelTypes.Expression;
+  if (t.isJSXExpressionContainer(eachAttr.value)) {
+    eachExpr = eachAttr.value.expression as BabelTypes.Expression;
+  } else {
+    return;
+  }
+
+  const props: BabelTypes.ObjectProperty[] = [
+    t.objectProperty(t.identifier('each'), eachExpr),
+  ];
+
+  // Extract "fallback" attribute (optional)
+  const fallbackAttr = attributes.find(
+    (attr): attr is BabelTypes.JSXAttribute =>
+      t.isJSXAttribute(attr) && t.isJSXIdentifier(attr.name) && attr.name.name === 'fallback'
+  );
+
+  if (fallbackAttr && fallbackAttr.value && t.isJSXExpressionContainer(fallbackAttr.value)) {
+    const fallbackExpr = fallbackAttr.value.expression as BabelTypes.Expression;
+    // Wrap fallback in arrow function for deferred evaluation
+    const fallbackFn = t.arrowFunctionExpression([], fallbackExpr);
+    props.push(t.objectProperty(t.identifier('fallback'), fallbackFn));
+  }
+
+  // Extract children - should be a callback function like {(item, index) => <div>...</div>}
+  const children = path.node.children.filter(
+    (child) => !t.isJSXText(child) || child.value.trim() !== ''
+  );
+
+  if (children.length === 0) {
+    return;
+  }
+
+  const firstChild = children[0];
+  let childrenCallback: BabelTypes.Expression;
+
+  if (t.isJSXExpressionContainer(firstChild) && firstChild.expression) {
+    // Children is already an expression (arrow function)
+    childrenCallback = firstChild.expression as BabelTypes.Expression;
+  } else {
+    // If not a function, wrap in arrow function: (item, index) => child
+    const itemParam = t.identifier('item');
+    const indexParam = t.identifier('index');
+    if (t.isJSXElement(firstChild) || t.isJSXFragment(firstChild)) {
+      childrenCallback = t.arrowFunctionExpression([itemParam, indexParam], firstChild as any);
+    } else {
+      return;
+    }
+  }
+
+  props.push(t.objectProperty(t.identifier('children'), childrenCallback));
+
+  // Create Index({ ... }) call
+  const propsObject = t.objectExpression(props);
+  const indexCall = t.callExpression(t.identifier('Index'), [propsObject]);
+
+  path.replaceWith(indexCall as any);
 }

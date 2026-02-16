@@ -3,8 +3,8 @@
  * Pattern: Official TypeScript Compiler API integration
  */
 
-import type * as ts from 'typescript';
-import type { ITransformationTracker } from './transformation-tracker.types.js';
+import type * as ts from 'typescript'
+import type { ITransformationTracker } from './transformation-tracker.types.js'
 
 export interface IPSRTransformerOptions {
   readonly filePath?: string;
@@ -77,7 +77,7 @@ export interface IPSRTransformer {
 
   // Control flow transformations
   transformControlFlowComponent(node: ts.JsxElement): ts.Expression;
-  transformShowComponent(node: ts.JsxElement): ts.ConditionalExpression;
+  transformShowComponent(node: ts.JsxElement): ts.CallExpression;
   transformForComponent(node: ts.JsxElement): ts.CallExpression;
   transformIndexComponent(node: ts.JsxElement): ts.CallExpression;
 
@@ -92,7 +92,7 @@ export interface IPSRTransformer {
   // JSX helper methods
   getJSXTagName(node: ts.JsxElement | ts.JsxSelfClosingElement): string;
   transformJSXAttributes(attributes: ts.JsxAttributes): ts.Expression;
-  transformJSXChildren(children: ts.NodeArray<ts.JsxChild>): ts.Expression;
+  transformJSXChildren(children: ts.NodeArray<ts.JsxChild>): ts.ArrayLiteralExpression;
 
   // Import management
   addFrameworkImport(importName: string): void;

@@ -3,9 +3,9 @@
  * Pattern: Utility functions for transformation operations
  */
 
-import * as ts from 'typescript';
-import type { IPSRTransformer } from './psr-transformer.types.js';
-import { TransformationPhaseEnum } from './transformation-tracker.types.js';
+import * as ts from 'typescript'
+import type { IPSRTransformer } from './psr-transformer.types.js'
+import { TransformationPhaseEnum } from './transformation-tracker.types.js'
 
 /**
  * Transform JSX self-closing element
@@ -97,12 +97,18 @@ export function transformControlFlowComponent(
 }
 
 /**
- * Transform ShowRegistry component to conditional expression
+ * Transform ShowRegistry component to function call
+ * <ShowRegistry when={condition} fallback={<div>fallback</div>}>
+ *   <div>content</div>
+ * </ShowRegistry>
+ * 
+ * Becomes:
+ * ShowRegistry({ when: condition, fallback: () => <div>fallback</div>, children: () => <div>content</div> })
  */
 export function transformShowComponent(
   this: IPSRTransformer,
   node: ts.JsxElement
-): ts.ConditionalExpression {
+): ts.CallExpression {
   const stepId = `show-component-${++this.transformationCount!}`;
 
   if (this.tracker) {
@@ -114,33 +120,236 @@ export function transformShowComponent(
     );
   }
 
+  this.addFrameworkImport('ShowRegistry');
+
   // Get 'when' attribute
   const whenAttr = this.getJSXAttributeValue(node, 'when');
   if (!whenAttr) {
     throw new Error('ShowRegistry component requires "when" attribute');
   }
 
-  // Get 'fallback' attribute (optional)
+  const propsProperties: ts.ObjectLiteralElementLike[] = [
+    ts.factory.createPropertyAssignment('when', whenAttr),
+  ];
+
+  // Get 'fallback' attribute (optional) and wrap in arrow function
   const fallbackAttr = this.getJSXAttributeValue(node, 'fallback');
-  const fallbackExpression = fallbackAttr || ts.factory.createNull();
+  if (fallbackAttr) {
+    const fallbackFunction = ts.factory.createArrowFunction(
+      undefined,
+      undefined,
+      [],
+      undefined,
+      ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+      fallbackAttr
+    );
+    propsProperties.push(ts.factory.createPropertyAssignment('fallback', fallbackFunction));
+  }
 
-  // Transform children
-  const childrenArray = this.transformJSXChildren(node.children);
+  // Transform children and wrap in arrow function for deferred evaluation
+  const childrenArray: ts.ArrayLiteralExpression = this.transformJSXChildren(node.children);
+  const childrenExpression = childrenArray.elements.length === 1 
+    ? childrenArray.elements[0]
+    : childrenArray;
+  
+  const childrenFunction = ts.factory.createArrowFunction(
+    undefined,
+    undefined,
+    [],
+    undefined,
+    ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+    childrenExpression
+  );
+  propsProperties.push(ts.factory.createPropertyAssignment('children', childrenFunction));
 
-  // Create conditional: when ? children : fallback
-  const conditionalExpression = ts.factory.createConditionalExpression(
-    whenAttr,
-    ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-    childrenArray,
-    ts.factory.createToken(ts.SyntaxKind.ColonToken),
-    fallbackExpression
+  const propsObject = ts.factory.createObjectLiteralExpression(propsProperties, true);
+
+  const callExpression = ts.factory.createCallExpression(
+    ts.factory.createIdentifier('ShowRegistry'),
+    undefined,
+    [propsObject]
   );
 
   if (this.tracker) {
-    this.tracker.completeStep(stepId, 'ConditionalExpression', { hasFallback: !!fallbackAttr });
+    this.tracker.completeStep(stepId, 'CallExpression (ShowRegistry)', { hasFallback: !!fallbackAttr });
   }
 
-  return conditionalExpression;
+  return callExpression;
+}
+
+/**
+ * Transform ForRegistry component to function call
+ * <ForRegistry each={items()} fallback={<div>empty</div>}>
+ *   {(item) => <div>{item.name}</div>}
+ * </ForRegistry>
+ * 
+ * Becomes:
+ * ForRegistry({ each: items(), fallback: () => <div>empty</div>, children: (item) => t_element('div', {}, [item.name]) })
+ */
+export function transformForComponent(
+  this: IPSRTransformer,
+  node: ts.JsxElement
+): ts.CallExpression {
+  const stepId = `for-component-${++this.transformationCount!}`;
+
+  if (this.tracker) {
+    this.tracker.startStep(
+      stepId,
+      'Transform ForRegistry component',
+      TransformationPhaseEnum.CONTROL_FLOW,
+      'JsxElement (ForRegistry)'
+    );
+  }
+
+  this.addFrameworkImport('ForRegistry');
+
+  // Get 'each' attribute
+  const eachAttr = this.getJSXAttributeValue(node, 'each');
+  if (!eachAttr) {
+    throw new Error('ForRegistry component requires "each" attribute');
+  }
+
+  const propsProperties: ts.ObjectLiteralElementLike[] = [
+    ts.factory.createPropertyAssignment('each', eachAttr),
+  ];
+
+  // Get 'fallback' attribute (optional) and wrap in arrow function
+  const fallbackAttr = this.getJSXAttributeValue(node, 'fallback');
+  if (fallbackAttr) {
+    const fallbackFunction = ts.factory.createArrowFunction(
+      undefined,
+      undefined,
+      [],
+      undefined,
+      ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+      fallbackAttr
+    );
+    propsProperties.push(ts.factory.createPropertyAssignment('fallback', fallbackFunction));
+  }
+
+  // Extract children - should be a callback function like {(item) => <div>{item}</div>}
+  // The children should already be an arrow function in the JSX expression
+  const children = node.children.filter(
+    (child) => !ts.isJsxText(child) || child.text.trim() !== ''
+  );
+
+  if (children.length === 0) {
+    throw new Error('ForRegistry requires children callback');
+  }
+
+  // First child should be JSX expression containing the callback
+  const firstChild = children[0];
+  let childrenCallback: ts.Expression;
+
+  if (ts.isJsxExpression(firstChild) && firstChild.expression) {
+    // Children is already an expression (arrow function)
+    childrenCallback = firstChild.expression;
+  } else {
+    throw new Error('ForRegistry children must be a function: {(item) => <div>...</div>}');
+  }
+
+  propsProperties.push(ts.factory.createPropertyAssignment('children', childrenCallback));
+
+  const propsObject = ts.factory.createObjectLiteralExpression(propsProperties, true);
+
+  const callExpression = ts.factory.createCallExpression(
+    ts.factory.createIdentifier('ForRegistry'),
+    undefined,
+    [propsObject]
+  );
+
+  if (this.tracker) {
+    this.tracker.completeStep(stepId, 'CallExpression (ForRegistry)', { hasFallback: !!fallbackAttr });
+  }
+
+  return callExpression;
+}
+
+/**
+ * Transform Index component to function call
+ * <Index each={colors()}>
+ *   {(color, index) => <div>Index: {index} - {color()}</div>}
+ * </Index>
+ * 
+ * Becomes:
+ * Index({ each: colors(), children: (color, index) => t_element('div', {}, ['Index: ', index, ' - ', color()]) })
+ */
+export function transformIndexComponent(
+  this: IPSRTransformer,
+  node: ts.JsxElement
+): ts.CallExpression {
+  const stepId = `index-component-${++this.transformationCount!}`;
+
+  if (this.tracker) {
+    this.tracker.startStep(
+      stepId,
+      'Transform Index component',
+      TransformationPhaseEnum.CONTROL_FLOW,
+      'JsxElement (Index)'
+    );
+  }
+
+  this.addFrameworkImport('Index');
+
+  // Get 'each' attribute
+  const eachAttr = this.getJSXAttributeValue(node, 'each');
+  if (!eachAttr) {
+    throw new Error('Index component requires "each" attribute');
+  }
+
+  const propsProperties: ts.ObjectLiteralElementLike[] = [
+    ts.factory.createPropertyAssignment('each', eachAttr),
+  ];
+
+  // Get 'fallback' attribute (optional) and wrap in arrow function
+  const fallbackAttr = this.getJSXAttributeValue(node, 'fallback');
+  if (fallbackAttr) {
+    const fallbackFunction = ts.factory.createArrowFunction(
+      undefined,
+      undefined,
+      [],
+      undefined,
+      ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+      fallbackAttr
+    );
+    propsProperties.push(ts.factory.createPropertyAssignment('fallback', fallbackFunction));
+  }
+
+  // Extract children - should be a callback function like {(item, index) => <div>...</div>}
+  const children = node.children.filter(
+    (child) => !ts.isJsxText(child) || child.text.trim() !== ''
+  );
+
+  if (children.length === 0) {
+    throw new Error('Index requires children callback');
+  }
+
+  // First child should be JSX expression containing the callback
+  const firstChild = children[0];
+  let childrenCallback: ts.Expression;
+
+  if (ts.isJsxExpression(firstChild) && firstChild.expression) {
+    // Children is already an expression (arrow function)
+    childrenCallback = firstChild.expression;
+  } else {
+    throw new Error('Index children must be a function: {(item, index) => <div>...</div>}');
+  }
+
+  propsProperties.push(ts.factory.createPropertyAssignment('children', childrenCallback));
+
+  const propsObject = ts.factory.createObjectLiteralExpression(propsProperties, true);
+
+  const callExpression = ts.factory.createCallExpression(
+    ts.factory.createIdentifier('Index'),
+    undefined,
+    [propsObject]
+  );
+
+  if (this.tracker) {
+    this.tracker.completeStep(stepId, 'CallExpression (Index)', { hasFallback: !!fallbackAttr });
+  }
+
+  return callExpression;
 }
 
 /**

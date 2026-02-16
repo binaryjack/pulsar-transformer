@@ -3,8 +3,8 @@
  * Transforms JSX elements into t_element() runtime calls
  */
 
-import type { NodePath } from '@babel/traverse';
-import type * as BabelTypes from '@babel/types';
+import type { NodePath } from '@babel/traverse'
+import type * as BabelTypes from '@babel/types'
 
 interface VisitorObj {
   JSXElement: (path: NodePath<BabelTypes.JSXElement>) => void;
@@ -196,18 +196,32 @@ function transformChildren(
       // Get raw text value - preserve meaningful whitespace
       const text = child.value;
 
-      // Don't trim if text contains non-whitespace mixed with spaces
-      // e.g., "Counter: " should keep the trailing space
-      const hasLeadingContent = /^\S/.test(text);
-      const hasTrailingContent = /\S$/.test(text);
+      // Check if text contains any non-whitespace content
+      const hasContent = /\S/.test(text);
 
-      let processedText = text;
-      if (!hasLeadingContent && !hasTrailingContent) {
-        // Pure whitespace - skip it
-        processedText = text.trim();
+      let processedText: string;
+      if (!hasContent) {
+        // Pure whitespace - only preserve if it's on a single line (between inline elements)
+        // Multi-line whitespace (between block elements) should be skipped
+        const hasNewline = /[\n\r]/.test(text);
+        if (!hasNewline && text.length > 0) {
+          processedText = ' '; // Single space between inline elements like <strong>A:</strong> {x}
+        } else {
+          processedText = ''; // Skip multi-line whitespace
+        }
       } else {
-        // Has content - trim only surrounding newlines/tabs but keep meaningful spaces
-        processedText = text.replace(/^[\n\r\t]+|[\n\r\t]+$/g, '').replace(/\s+/g, ' ');
+        // Has content - trim surrounding newlines/tabs, collapse multiple spaces
+        processedText = text
+          .replace(/^[\n\r\t]+|[\n\r\t]+$/g, '') // Remove leading/trailing newlines/tabs
+          .replace(/\s+/g, ' ')                   // Collapse multiple spaces to single space
+          .trim();                                // Remove leading/trailing spaces after normalization
+        
+        // CRITICAL: If original text ended with space before an expression, preserve it
+        // e.g., "Index: {expr}" should keep the space: "Index: " not "Index:"
+        const endsWithSpace = /\s$/.test(text.replace(/[\n\r\t]+$/g, ''));
+        if (endsWithSpace && processedText) {
+          processedText += ' ';
+        }
       }
 
       if (processedText) {

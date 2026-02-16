@@ -3,14 +3,14 @@
  * Pattern: Official TypeScript Compiler API with detailed tracking
  */
 
-import * as ts from 'typescript';
+import * as ts from 'typescript'
 import type {
   IPSRTransformer,
   IPSRTransformerOptions,
   IPSRTransformResult,
-} from './psr-transformer.types.js';
-import { createTransformationTracker } from './transformation-tracker.js';
-import { TransformationPhaseEnum } from './transformation-tracker.types.js';
+} from './psr-transformer.types.js'
+import { createTransformationTracker } from './transformation-tracker.js'
+import { TransformationPhaseEnum } from './transformation-tracker.types.js'
 
 /**
  * PSRTransformer constructor (prototype-based)
@@ -332,6 +332,8 @@ import {
   getJSXAttributeValue,
   injectImports,
   transformControlFlowComponent,
+  transformForComponent,
+  transformIndexComponent,
   transformJSXAttributes,
   transformJSXChildren,
   transformJSXFragment,
@@ -339,7 +341,7 @@ import {
   transformShowComponent,
   transformStyleObject,
   transformStyleProperty,
-} from './psr-transformer-methods.js';
+} from './psr-transformer-methods.js'
 
 // Assign prototype methods
 Object.assign(PSRTransformer.prototype, {
@@ -355,6 +357,8 @@ Object.assign(PSRTransformer.prototype, {
   transformJSXFragment,
   transformControlFlowComponent,
   transformShowComponent,
+  transformForComponent,
+  transformIndexComponent,
   transformStyleObject,
   transformStyleProperty,
   transformJSXAttributes,
