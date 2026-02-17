@@ -3,9 +3,9 @@
  * Transforms JSX elements into t_element() runtime calls
  */
 
-import type { NodePath } from '@babel/traverse'
-import type * as BabelTypes from '@babel/types'
-import { needsReactiveWrapper } from './needs-reactive-wrapper.js'
+import type { NodePath } from '@babel/traverse';
+import type * as BabelTypes from '@babel/types';
+import { needsReactiveWrapper } from './needs-reactive-wrapper.js';
 
 interface VisitorObj {
   JSXElement: (path: NodePath<BabelTypes.JSXElement>) => void;
@@ -149,7 +149,7 @@ function transformAttributes(
   componentName: string = ''
 ): BabelTypes.ObjectExpression {
   const properties: Array<BabelTypes.ObjectProperty | BabelTypes.SpreadElement> = [];
-  
+
   // Control flow components that need reactive props unwrapped
   const needsEachUnwrap = new Set(['ForRegistry', 'Index']);
   const needsWhenUnwrap = new Set(['ShowRegistry']);
@@ -171,25 +171,33 @@ function transformAttributes(
       } else if (t.isJSXExpressionContainer(attr.value)) {
         if (t.isExpression(attr.value.expression)) {
           value = attr.value.expression;
-          
+
           // Special handling for 'each' attribute on ForRegistry/Index
           // If user wrote each={items()}, unwrap to each={items} (pass getter, not array)
-          if (needsEachUnwrap.has(componentName) && keyName === 'each' && t.isCallExpression(value)) {
+          if (
+            needsEachUnwrap.has(componentName) &&
+            keyName === 'each' &&
+            t.isCallExpression(value)
+          ) {
             // Check if it's a simple call with no arguments (likely a signal getter)
             if (value.arguments.length === 0 && t.isIdentifier(value.callee)) {
               value = value.callee; // Unwrap: items() -> items
             }
           }
-          
+
           // Special handling for 'when' attribute on ShowRegistry
           // If user wrote when={isVisible()}, unwrap to when={isVisible} (pass getter, not boolean)
-          if (needsWhenUnwrap.has(componentName) && keyName === 'when' && t.isCallExpression(value)) {
+          if (
+            needsWhenUnwrap.has(componentName) &&
+            keyName === 'when' &&
+            t.isCallExpression(value)
+          ) {
             // Check if it's a simple call with no arguments (likely a signal getter)
             if (value.arguments.length === 0 && t.isIdentifier(value.callee)) {
               value = value.callee; // Unwrap: isVisible() -> isVisible
             }
           }
-          
+
           // Special handling for style attribute with object expression
           if (keyName === 'style' && t.isObjectExpression(value)) {
             // Process style object properties to wrap reactive values
@@ -204,7 +212,7 @@ function transformAttributes(
                     prop.shorthand
                   );
                 }
-                
+
                 // Wrap TemplateLiterals (like `${fontSize()}px`) in arrow functions for reactivity
                 if (t.isTemplateLiteral(prop.value) && prop.value.expressions.length > 0) {
                   return t.objectProperty(
@@ -259,9 +267,9 @@ function transformChildren(
         // Has content - trim surrounding newlines/tabs, collapse multiple spaces
         processedText = text
           .replaceAll(/^[\n\r\t]+|[\n\r\t]+$/g, '') // Remove leading/trailing newlines/tabs
-          .replaceAll(/\s+/g, ' ')                    // Collapse multiple spaces to single space
-          .trim();                                     // Remove leading/trailing spaces after normalization
-        
+          .replaceAll(/\s+/g, ' ') // Collapse multiple spaces to single space
+          .trim(); // Remove leading/trailing spaces after normalization
+
         // CRITICAL: If original text ended with space before an expression, preserve it
         // e.g., "Index: {expr}" should keep the space: "Index: " not "Index:"
         const endsWithSpace = /\s$/.test(text.replaceAll(/[\n\r\t]+$/g, ''));

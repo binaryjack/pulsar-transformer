@@ -11,10 +11,7 @@ import type * as BabelTypes from '@babel/types';
  * @param t - Babel types helper
  * @returns true if expression needs arrow function wrapping for reactivity
  */
-export function needsReactiveWrapper(
-  node: BabelTypes.Expression,
-  t: typeof BabelTypes
-): boolean {
+export function needsReactiveWrapper(node: BabelTypes.Expression, t: typeof BabelTypes): boolean {
   // Direct call expression: count()
   if (t.isCallExpression(node)) return true;
 
@@ -32,9 +29,7 @@ export function needsReactiveWrapper(
 
   // Template literal with expressions: `${count()}`
   if (t.isTemplateLiteral(node)) {
-    return node.expressions.some(expr =>
-      t.isExpression(expr) && needsReactiveWrapper(expr, t)
-    );
+    return node.expressions.some((expr) => t.isExpression(expr) && needsReactiveWrapper(expr, t));
   }
 
   // Binary/logical with calls: count() + 1, count() || 'default'
@@ -61,14 +56,12 @@ export function needsReactiveWrapper(
 
   // Array expression: [count(), 'static']
   if (t.isArrayExpression(node)) {
-    return node.elements.some(
-      el => el && t.isExpression(el) && needsReactiveWrapper(el, t)
-    );
+    return node.elements.some((el) => el && t.isExpression(el) && needsReactiveWrapper(el, t));
   }
 
   // Object expression: { value: count() }
   if (t.isObjectExpression(node)) {
-    return node.properties.some(prop => {
+    return node.properties.some((prop) => {
       if (t.isObjectProperty(prop) && t.isExpression(prop.value)) {
         return needsReactiveWrapper(prop.value, t);
       }
@@ -78,7 +71,7 @@ export function needsReactiveWrapper(
 
   // Sequence expression: (a(), b())
   if (t.isSequenceExpression(node)) {
-    return node.expressions.some(expr => needsReactiveWrapper(expr, t));
+    return node.expressions.some((expr) => needsReactiveWrapper(expr, t));
   }
 
   // Static values don't need wrapping
