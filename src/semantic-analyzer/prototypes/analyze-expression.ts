@@ -92,3 +92,4 @@ export function analyzeExpression(this: ISemanticAnalyzer, node: any): void {
       break;
   }
 }
+

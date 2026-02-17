@@ -17,3 +17,4 @@ export function analyzeBlockStatement(this: ISemanticAnalyzer, node: any): void 
   // Exit block scope
   this.exitScope();
 }
+

@@ -45,3 +45,4 @@ export function addWarning(
 
   this.warnings.push(warning);
 }
+

@@ -146,3 +146,4 @@ export interface ITraceSnapshot {
   reason: 'error' | 'breakpoint' | 'manual';
   channels: Record<string, TraceEvent[]>;
 }
+

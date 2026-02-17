@@ -2,7 +2,7 @@
  * Transform Function Declaration - Pass through but transform body
  */
 
-import type { IFunctionDeclaration } from '../../parser/parser.types.js';
+import type { IFunctionDeclaration } from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -18,3 +18,4 @@ export function transformFunctionDeclaration(
     body: this.transformBlockStatement(node.body),
   };
 }
+

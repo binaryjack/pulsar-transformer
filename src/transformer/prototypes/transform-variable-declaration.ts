@@ -2,7 +2,7 @@
  * Transform Variable Declaration - Pass through but transform initializer
  */
 
-import type { IVariableDeclaration } from '../../parser/parser.types.js';
+import type { IVariableDeclaration } from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -29,3 +29,4 @@ export function transformVariableDeclaration(
     declarations: transformedDeclarations,
   };
 }
+

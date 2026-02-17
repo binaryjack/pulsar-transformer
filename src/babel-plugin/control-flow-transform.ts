@@ -500,3 +500,4 @@ function transformIndexComponent(path: NodePath<BabelTypes.JSXElement>, t: typeo
 
   path.replaceWith(indexCall as any);
 }
+

@@ -3,7 +3,7 @@
  * Context, results, and error types for AST transformation with enterprise diagnostics
  */
 
-import type { IASTNode, IProgramNode } from '../parser/parser.types.js';
+import type { IASTNode, IProgramNode } from '../ast.types.js';
 import type { ITransformerDiagnostic } from './diagnostics.js';
 import type { ITransformationSession } from './state-tracker.js';
 import type { ITransformerEdgeCase } from './edge-cases.js';
@@ -65,3 +65,4 @@ export interface ITransformResult {
     qualityScore?: number; // 0-100 based on diagnostic severity
   };
 }
+

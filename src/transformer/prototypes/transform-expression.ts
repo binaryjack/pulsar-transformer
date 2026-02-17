@@ -2,7 +2,7 @@
  * Transform Expression - Preserve reactivity calls unchanged
  */
 
-import type { IExpression } from '../../parser/parser.types.js';
+import type { IExpression } from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -24,3 +24,4 @@ export function transformExpression(this: ITransformer, node: IExpression): IExp
   // All other expressions pass through unchanged
   return node;
 }
+

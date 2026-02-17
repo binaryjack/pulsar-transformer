@@ -41,3 +41,4 @@ export function exitScope(this: ISemanticAnalyzer): void {
     this.symbolTable.currentScope = this.symbolTable.currentScope.parent;
   }
 }
+

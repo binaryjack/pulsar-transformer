@@ -68,204 +68,252 @@ export const TRANSFORMER_DIAGNOSTIC_CODES = {
 } as const;
 
 /**
- * Transformer diagnostic collector with structured error reporting
+ * Transformer diagnostic collector with structured error reporting (prototype-based)
  */
-export class TransformerDiagnosticCollector {
-  private diagnostics: ITransformerDiagnostic[] = [];
-  private context: {
+export const TransformerDiagnosticCollector = function (
+  this: TransformerDiagnosticCollector,
+  context: { sourceFile: string; phase?: string; componentName?: string }
+) {
+  // Define private diagnostics property
+  Object.defineProperty(this, 'diagnostics', {
+    value: [],
+    writable: true,
+    enumerable: false,
+    configurable: false,
+  });
+
+  // Define private context property
+  Object.defineProperty(this, 'context', {
+    value: {
+      sourceFile: context.sourceFile,
+      phase: context.phase || 'unknown',
+      componentName: context.componentName,
+    },
+    writable: true,
+    enumerable: false,
+    configurable: false,
+  });
+} as any as {
+  new (context: {
+    sourceFile: string;
+    phase?: string;
+    componentName?: string;
+  }): TransformerDiagnosticCollector;
+};
+
+// Type alias for TransformerDiagnosticCollector instance
+interface TransformerDiagnosticCollector {
+  diagnostics: ITransformerDiagnostic[];
+  context: {
     sourceFile: string;
     phase: string;
     componentName?: string;
   };
-
-  constructor(context: { sourceFile: string; phase?: string; componentName?: string }) {
-    this.context = {
-      sourceFile: context.sourceFile,
-      phase: context.phase || 'unknown',
-      componentName: context.componentName,
-    };
-  }
-
-  /**
-   * Add error diagnostic
-   */
   addError(
     code: keyof typeof TRANSFORMER_DIAGNOSTIC_CODES,
     message: string,
     node?: any,
     suggestion?: string
-  ): void {
-    this.diagnostics.push({
-      code,
-      type: 'error',
-      severity: this.getSeverity(code),
-      phase: this.getPhase(code),
-      message,
-      node,
-      location: node ? this.extractLocation(node) : undefined,
-      suggestion,
-      documentation: `https://docs.pulsar.dev/diagnostics/${code}`,
-    });
-  }
-
-  /**
-   * Add warning diagnostic
-   */
+  ): void;
   addWarning(
     code: keyof typeof TRANSFORMER_DIAGNOSTIC_CODES,
     message: string,
     node?: any,
     suggestion?: string
-  ): void {
-    this.diagnostics.push({
-      code,
-      type: 'warning',
-      severity: this.getSeverity(code),
-      phase: this.getPhase(code),
-      message,
-      node,
-      location: node ? this.extractLocation(node) : undefined,
-      suggestion,
-      documentation: `https://docs.pulsar.dev/diagnostics/${code}`,
-    });
-  }
-
-  /**
-   * Add info diagnostic
-   */
-  addInfo(code: keyof typeof TRANSFORMER_DIAGNOSTIC_CODES, message: string, node?: any): void {
-    this.diagnostics.push({
-      code,
-      type: 'info',
-      severity: 'low',
-      phase: this.getPhase(code),
-      message,
-      node,
-      location: node ? this.extractLocation(node) : undefined,
-    });
-  }
-
-  /**
-   * Add a custom diagnostic directly
-   */
-  addDiagnostic(diagnostic: ITransformerDiagnostic): void {
-    this.diagnostics.push(diagnostic);
-  }
-
-  /**
-   * Get all diagnostics
-   */
-  getDiagnostics(): ITransformerDiagnostic[] {
-    return [...this.diagnostics];
-  }
-
-  /**
-   * Get all diagnostics (alias)
-   */
-  getAllDiagnostics(): ITransformerDiagnostic[] {
-    return this.getDiagnostics();
-  }
-
-  /**
-   * Get last diagnostic
-   */
-  getLastDiagnostic(): ITransformerDiagnostic | undefined {
-    return this.diagnostics[this.diagnostics.length - 1];
-  }
-
-  /**
-   * Get diagnostics by type
-   */
-  getDiagnosticsByType(type: 'error' | 'warning' | 'info'): ITransformerDiagnostic[] {
-    return this.diagnostics.filter((d) => d.type === type);
-  }
-
-  /**
-   * Get diagnostics by phase
-   */
-  getDiagnosticsByPhase(phase: ITransformerDiagnostic['phase']): ITransformerDiagnostic[] {
-    return this.diagnostics.filter((d) => d.phase === phase);
-  }
-
-  /**
-   * Has any errors
-   */
-  hasErrors(): boolean {
-    return this.diagnostics.some((d) => d.type === 'error');
-  }
-
-  /**
-   * Get diagnostic summary
-   */
+  ): void;
+  addInfo(code: keyof typeof TRANSFORMER_DIAGNOSTIC_CODES, message: string, node?: any): void;
+  addDiagnostic(diagnostic: ITransformerDiagnostic): void;
+  getDiagnostics(): ITransformerDiagnostic[];
+  getAllDiagnostics(): ITransformerDiagnostic[];
+  getLastDiagnostic(): ITransformerDiagnostic | undefined;
+  getDiagnosticsByType(type: 'error' | 'warning' | 'info'): ITransformerDiagnostic[];
+  getDiagnosticsByPhase(phase: ITransformerDiagnostic['phase']): ITransformerDiagnostic[];
+  hasErrors(): boolean;
   getSummary(): {
     total: number;
     errors: number;
     warnings: number;
     info: number;
     byPhase: Record<string, number>;
-  } {
-    const summary = {
-      total: this.diagnostics.length,
-      errors: 0,
-      warnings: 0,
-      info: 0,
-      byPhase: {} as Record<string, number>,
-    };
-
-    this.diagnostics.forEach((d) => {
-      if (d.type === 'error') summary.errors++;
-      else if (d.type === 'warning') summary.warnings++;
-      else if (d.type === 'info') summary.info++;
-
-      summary.byPhase[d.phase] = (summary.byPhase[d.phase] || 0) + 1;
-    });
-
-    return summary;
-  }
-
-  /**
-   * Clear all diagnostics
-   */
-  clear(): void {
-    this.diagnostics = [];
-  }
-
-  /**
-   * Get severity for diagnostic code
-   */
-  private getSeverity(code: string): ITransformerDiagnostic['severity'] {
-    if (code.startsWith('TRF5') || code.endsWith('01')) return 'critical';
-    if (code.startsWith('TRF1') || code.startsWith('TRF2')) return 'high';
-    if (code.startsWith('TRF3')) return 'medium';
-    return 'low';
-  }
-
-  /**
-   * Get phase for diagnostic code
-   */
-  private getPhase(code: string): ITransformerDiagnostic['phase'] {
-    if (code.startsWith('TRF0') || code.startsWith('TRF00')) return 'component';
-    if (code.startsWith('TRF1')) return 'jsx';
-    if (code.startsWith('TRF2')) return 'import';
-    if (code.startsWith('TRF3')) return 'expression';
-    if (code.startsWith('TRF4')) return 'statement';
-    return 'component';
-  }
-
-  /**
-   * Extract location information from AST node
-   */
-  private extractLocation(node: any): ITransformerDiagnostic['location'] | undefined {
-    if (!node) return undefined;
-
-    return {
-      start: node.start || 0,
-      end: node.end || 0,
-      line: node.loc?.start?.line,
-      column: node.loc?.start?.column,
-    };
-  }
+  };
+  clear(): void;
+  getSeverity(code: string): ITransformerDiagnostic['severity'];
+  getPhase(code: string): ITransformerDiagnostic['phase'];
+  extractLocation(node: any): ITransformerDiagnostic['location'] | undefined;
 }
+
+// Attach prototype methods
+TransformerDiagnosticCollector.prototype.addError = function (
+  this: TransformerDiagnosticCollector,
+  code: keyof typeof TRANSFORMER_DIAGNOSTIC_CODES,
+  message: string,
+  node?: any,
+  suggestion?: string
+): void {
+  this.diagnostics.push({
+    code,
+    type: 'error',
+    severity: this.getSeverity(code),
+    phase: this.getPhase(code),
+    message,
+    node,
+    location: node ? this.extractLocation(node) : undefined,
+    suggestion,
+    documentation: `https://docs.pulsar.dev/diagnostics/${code}`,
+  });
+};
+
+TransformerDiagnosticCollector.prototype.addWarning = function (
+  this: TransformerDiagnosticCollector,
+  code: keyof typeof TRANSFORMER_DIAGNOSTIC_CODES,
+  message: string,
+  node?: any,
+  suggestion?: string
+): void {
+  this.diagnostics.push({
+    code,
+    type: 'warning',
+    severity: this.getSeverity(code),
+    phase: this.getPhase(code),
+    message,
+    node,
+    location: node ? this.extractLocation(node) : undefined,
+    suggestion,
+    documentation: `https://docs.pulsar.dev/diagnostics/${code}`,
+  });
+};
+
+TransformerDiagnosticCollector.prototype.addInfo = function (
+  this: TransformerDiagnosticCollector,
+  code: keyof typeof TRANSFORMER_DIAGNOSTIC_CODES,
+  message: string,
+  node?: any
+): void {
+  this.diagnostics.push({
+    code,
+    type: 'info',
+    severity: 'low',
+    phase: this.getPhase(code),
+    message,
+    node,
+    location: node ? this.extractLocation(node) : undefined,
+  });
+};
+
+TransformerDiagnosticCollector.prototype.addDiagnostic = function (
+  this: TransformerDiagnosticCollector,
+  diagnostic: ITransformerDiagnostic
+): void {
+  this.diagnostics.push(diagnostic);
+};
+
+TransformerDiagnosticCollector.prototype.getDiagnostics = function (
+  this: TransformerDiagnosticCollector
+): ITransformerDiagnostic[] {
+  return [...this.diagnostics];
+};
+
+TransformerDiagnosticCollector.prototype.getAllDiagnostics = function (
+  this: TransformerDiagnosticCollector
+): ITransformerDiagnostic[] {
+  return this.getDiagnostics();
+};
+
+TransformerDiagnosticCollector.prototype.getLastDiagnostic = function (
+  this: TransformerDiagnosticCollector
+): ITransformerDiagnostic | undefined {
+  return this.diagnostics[this.diagnostics.length - 1];
+};
+
+TransformerDiagnosticCollector.prototype.getDiagnosticsByType = function (
+  this: TransformerDiagnosticCollector,
+  type: 'error' | 'warning' | 'info'
+): ITransformerDiagnostic[] {
+  return this.diagnostics.filter((d) => d.type === type);
+};
+
+TransformerDiagnosticCollector.prototype.getDiagnosticsByPhase = function (
+  this: TransformerDiagnosticCollector,
+  phase: ITransformerDiagnostic['phase']
+): ITransformerDiagnostic[] {
+  return this.diagnostics.filter((d) => d.phase === phase);
+};
+
+TransformerDiagnosticCollector.prototype.hasErrors = function (
+  this: TransformerDiagnosticCollector
+): boolean {
+  return this.diagnostics.some((d) => d.type === 'error');
+};
+
+TransformerDiagnosticCollector.prototype.getSummary = function (
+  this: TransformerDiagnosticCollector
+): {
+  total: number;
+  errors: number;
+  warnings: number;
+  info: number;
+  byPhase: Record<string, number>;
+} {
+  const summary = {
+    total: this.diagnostics.length,
+    errors: 0,
+    warnings: 0,
+    info: 0,
+    byPhase: {} as Record<string, number>,
+  };
+
+  this.diagnostics.forEach((d) => {
+    if (d.type === 'error') summary.errors++;
+    else if (d.type === 'warning') summary.warnings++;
+    else if (d.type === 'info') summary.info++;
+
+    summary.byPhase[d.phase] = (summary.byPhase[d.phase] || 0) + 1;
+  });
+
+  return summary;
+};
+
+TransformerDiagnosticCollector.prototype.clear = function (
+  this: TransformerDiagnosticCollector
+): void {
+  this.diagnostics = [];
+};
+
+(TransformerDiagnosticCollector.prototype as any).getSeverity = function (
+  this: TransformerDiagnosticCollector,
+  code: string
+): ITransformerDiagnostic['severity'] {
+  if (code.startsWith('TRF5') || code.endsWith('01')) return 'critical';
+  if (code.startsWith('TRF1') || code.startsWith('TRF2')) return 'high';
+  if (code.startsWith('TRF3')) return 'medium';
+  return 'low';
+};
+
+(TransformerDiagnosticCollector.prototype as any).getPhase = function (
+  this: TransformerDiagnosticCollector,
+  code: string
+): ITransformerDiagnostic['phase'] {
+  if (code.startsWith('TRF0') || code.startsWith('TRF00')) return 'component';
+  if (code.startsWith('TRF1')) return 'jsx';
+  if (code.startsWith('TRF2')) return 'import';
+  if (code.startsWith('TRF3')) return 'expression';
+  if (code.startsWith('TRF4')) return 'statement';
+  return 'component';
+};
+
+(TransformerDiagnosticCollector.prototype as any).extractLocation = function (
+  this: TransformerDiagnosticCollector,
+  node: any
+): ITransformerDiagnostic['location'] | undefined {
+  if (!node) return undefined;
+
+  return {
+    start: node.start || 0,
+    end: node.end || 0,
+    line: node.loc?.start?.line,
+    column: node.loc?.start?.column,
+  };
+};
 
 /**
  * Global transformer diagnostic collector
@@ -281,8 +329,8 @@ export function initializeTransformerDiagnostics(context: {
   phase?: string;
   componentName?: string;
 }): TransformerDiagnosticCollector {
-  globalDiagnosticCollector = new TransformerDiagnosticCollector(context);
-  return globalDiagnosticCollector;
+  globalDiagnosticCollector = new (TransformerDiagnosticCollector as any)(context);
+  return globalDiagnosticCollector!;
 }
 
 export function clearTransformerDiagnostics(): void {

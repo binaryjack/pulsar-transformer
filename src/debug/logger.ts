@@ -194,3 +194,4 @@ export const getLogger = (): ILogger => {
 export const setGlobalLogger = (logger: ILogger): void => {
   globalLogger = logger;
 };
+

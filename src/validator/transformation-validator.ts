@@ -4,7 +4,19 @@
  */
 
 import * as acorn from 'acorn';
-import type { IToken } from '../lexer/lexer.types.js';
+import type { IToken } from '../ast.types.js';
+
+/**
+ * Type guard for Acorn syntax errors
+ */
+interface AcornError extends Error {
+  loc?: { line: number; column: number };
+  pos?: number;
+}
+
+function isAcornError(error: unknown): error is AcornError {
+  return error instanceof Error && 'loc' in error && typeof (error as any).loc === 'object';
+}
 
 export interface IValidationResult {
   valid: boolean;
@@ -102,20 +114,21 @@ export function validateJavaScriptSyntax(code: string, fileName: string): IValid
       sourceType: 'module',
       locations: true,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Acorn SyntaxError has loc property with line/column
-    const line = error.loc?.line;
-    const column = error.loc?.column;
+    const line = isAcornError(error) ? error.loc?.line : undefined;
+    const column = isAcornError(error) ? error.loc?.column : undefined;
 
     // DEBUG: Show context around the error
-    if (error.loc && code) {
+    if (isAcornError(error) && error.loc && code) {
+      const errorLoc = error.loc;
       const lines = code.split('\n');
-      const errorLine = lines[error.loc.line - 1];
+      const errorLine = lines[errorLoc.line - 1];
       console.log('[ACORN-ERROR-DEBUG] Error in file:', fileName);
       console.log('[ACORN-ERROR-DEBUG] Error message:', error.message);
       console.log('[ACORN-ERROR-DEBUG] Error at line', line + ', column', column);
       console.log('[ACORN-ERROR-DEBUG] Line content:', JSON.stringify(errorLine));
-      if (errorLine && column >= 0) {
+      if (errorLine && column && column >= 0) {
         console.log(
           '[ACORN-ERROR-DEBUG] Character at position:',
           JSON.stringify(errorLine[column])
@@ -128,9 +141,10 @@ export function validateJavaScriptSyntax(code: string, fileName: string): IValid
       }
     }
 
+    const errorMessage = error instanceof Error ? error.message : String(error);
     errors.push({
       type: 'parse-error',
-      message: `JavaScript syntax error: ${error.message}`,
+      message: `JavaScript syntax error: ${errorMessage}`,
       line,
       column,
       fatal: true,
@@ -167,7 +181,7 @@ export function validateTransformationOutput(
   // CRITICAL: Validate JavaScript syntax using acorn parser
   // NOTE: Disabled - output is TypeScript, not JavaScript
   // Acorn parser cannot handle TypeScript syntax (interfaces, type annotations)
-  // const jsSyntaxErrors = validateJavaScriptSyntax(output, fileName);  
+  // const jsSyntaxErrors = validateJavaScriptSyntax(output, fileName);
   // errors.push(...jsSyntaxErrors);
 
   // Rule 1: Check for suspiciously small output (header-only responses)

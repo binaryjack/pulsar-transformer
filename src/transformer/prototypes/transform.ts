@@ -189,3 +189,4 @@ function transformWithoutDiagnostics(this: ITransformer): ITransformResult {
     context: this.context,
   };
 }
+

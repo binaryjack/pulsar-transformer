@@ -83,3 +83,4 @@ Object.assign(PSRPreprocessor.prototype, {
 export function createPSRPreprocessor(): IPSRPreprocessor {
   return new (PSRPreprocessor as any)();
 }
+

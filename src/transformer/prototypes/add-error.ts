@@ -2,7 +2,7 @@
  * Add Error - Track transformation errors
  */
 
-import type { IASTNode } from '../../parser/parser.types.js';
+import type { IASTNode } from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 import type { ITransformError } from '../transformer.types.js';
 
@@ -18,3 +18,4 @@ export function addError(this: ITransformer, type: string, message: string, node
 
   this.context.errors.push(error);
 }
+

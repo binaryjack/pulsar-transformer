@@ -110,3 +110,4 @@ export function wrapTracedMethod(
   const tracedDescriptor = traced(channel)({}, methodName, descriptor);
   Object.defineProperty(prototype, methodName, tracedDescriptor);
 }
+

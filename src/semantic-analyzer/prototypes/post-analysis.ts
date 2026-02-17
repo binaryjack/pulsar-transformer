@@ -36,3 +36,4 @@ export function checkDeadCode(this: ISemanticAnalyzer): void {
   // - Unreachable branches
   // - Unused functions
 }
+

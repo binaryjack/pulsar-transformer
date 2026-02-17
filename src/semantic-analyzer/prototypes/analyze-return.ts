@@ -10,3 +10,4 @@ export function analyzeReturnStatement(this: ISemanticAnalyzer, node: any): void
     this.analyzeExpression(node.argument);
   }
 }
+

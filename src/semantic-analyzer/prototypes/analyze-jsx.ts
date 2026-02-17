@@ -41,3 +41,4 @@ export function analyzeJSXElement(this: ISemanticAnalyzer, node: any): void {
     }
   }
 }
+

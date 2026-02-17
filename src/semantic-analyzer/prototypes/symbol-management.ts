@@ -71,3 +71,4 @@ export function markSymbolUsed(this: ISemanticAnalyzer, name: string): void {
     symbol.isUsed = true;
   }
 }
+

@@ -69,3 +69,4 @@ SemanticAnalyzerPrototype.checkDeadCode = checkDeadCode;
 export type { ISemanticAnalyzer } from './semantic-analyzer.js';
 export * from './semantic-analyzer.types.js';
 export { SemanticAnalyzer };
+

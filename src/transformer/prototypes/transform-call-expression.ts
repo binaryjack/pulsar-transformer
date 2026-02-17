@@ -2,7 +2,7 @@
  * Transform Call Expression - Preserve but track reactivity imports
  */
 
-import type { ICallExpression } from '../../parser/parser.types.js';
+import type { ICallExpression, IIdentifier } from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -16,7 +16,7 @@ export function transformCallExpression(
 ): ICallExpression {
   // Check if this is a reactivity function call
   if (node.callee.type === 'Identifier') {
-    const calleeName = node.callee.name;
+    const calleeName = (node.callee as IIdentifier).name;
     const reactivityFunctions = [
       'createSignal',
       'useEffect',
@@ -34,3 +34,4 @@ export function transformCallExpression(
   // Pass through unchanged - these are runtime calls
   return node;
 }
+

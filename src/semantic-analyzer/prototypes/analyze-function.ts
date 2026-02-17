@@ -46,3 +46,4 @@ export function analyzeFunctionDeclaration(this: ISemanticAnalyzer, node: any): 
   // Exit function scope
   this.exitScope();
 }
+

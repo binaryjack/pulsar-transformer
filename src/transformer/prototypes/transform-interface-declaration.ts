@@ -3,7 +3,7 @@
  * TypeScript handles interface declarations natively
  */
 
-import type { IInterfaceDeclaration } from '../../parser/parser.types.js';
+import type { IInterfaceDeclaration } from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -16,3 +16,4 @@ export function transformInterfaceDeclaration(
 ): IInterfaceDeclaration {
   return node;
 }
+

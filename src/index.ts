@@ -170,11 +170,8 @@ export function createPipeline(options: IPipelineOptions = {}) {
   };
 }
 
-// Export for backwards compatibility
-export { createCodeGenerator } from './code-generator/index.js';
+// Export active utilities only
 export { createLogger, type ILogger, type LogChannel, type LogLevel } from './debug/logger.js';
-export { createLexer } from './lexer/index.js';
-export { createParser } from './parser/index.js';
 export {
   detectBOM,
   detectInvisibleCharacters,

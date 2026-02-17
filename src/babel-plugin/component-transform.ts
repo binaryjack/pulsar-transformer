@@ -148,3 +148,4 @@ function addRegistryImport(program: NodePath<BabelTypes.Program>, t: typeof Babe
     program.node.body.unshift(importDecl);
   }
 }
+

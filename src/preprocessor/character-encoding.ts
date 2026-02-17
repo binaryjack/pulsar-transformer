@@ -252,3 +252,4 @@ export function formatEncodingIssues(issues: ICharacterEncodingIssue[]): string 
 
   return lines.join('\n');
 }
+

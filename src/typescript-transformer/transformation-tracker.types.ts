@@ -117,3 +117,4 @@ export interface ITransformationTracker {
   generateSummaryReport(): string;
   exportTrackingData(): ITransformationContext;
 }
+

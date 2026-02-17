@@ -182,3 +182,4 @@ export function walkNode(this: ISemanticAnalyzer, node: any, callback: (node: an
     }
   }
 }
+

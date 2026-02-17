@@ -3,7 +3,7 @@
  * Defines symbol tables, scopes, and semantic error types
  */
 
-import type { IASTNode } from '../parser/parser.types.js';
+import type { IASTNode } from '../ast.types.js';
 
 /**
  * Symbol Table Entry - represents a declared identifier
@@ -91,3 +91,4 @@ export interface ISemanticAnalysisResult {
   errors: ISemanticError[];
   warnings: ISemanticError[];
 }
+

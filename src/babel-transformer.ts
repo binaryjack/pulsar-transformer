@@ -1,8 +1,9 @@
+import * as _generator from '@babel/generator';
 import parser from '@babel/parser';
 import * as _traverse from '@babel/traverse';
-import * as _generator from '@babel/generator';
 import * as t from '@babel/types';
-import { IPipelineResult, IPipelineOptions, IDiagnostic } from './types.js';
+import { preprocessComponentKeywordSafe } from './preprocessor/component-keyword-transform.js';
+import { IDiagnostic, IPipelineOptions, IPipelineResult } from './types.js';
 
 // ESM Interop
 // @ts-ignore
@@ -18,12 +19,9 @@ export async function transformWithBabel(
   const diagnostics: IDiagnostic[] = [];
 
   try {
-    // 1. Pre-process
-    let preprocessed = source
-      // export component Name -> export function Name
-      .replace(/export\s+component\s+([A-Z]\w*)/g, 'export function $1')
-      // component Name -> function Name
-      .replace(/component\s+([A-Z]\w*)/g, 'function $1');
+    // 1. Pre-process: Transform 'component' keyword to 'function'
+    // Uses AST-aware preprocessor to avoid transforming inside strings/comments
+    const preprocessed = preprocessComponentKeywordSafe(source);
 
     // 2. Parse
     // @ts-ignore
@@ -36,32 +34,46 @@ export async function transformWithBabel(
     const jsxVisitor = {
       Program: {
         exit(path: any) {
-           // Ensure @pulsar-framework/pulsar.dev imports exist
-           let hasPulsarDevImport = false;
-           path.node.body.forEach((node: any) => {
-               if (t.isImportDeclaration(node) && node.source.value === '@pulsar-framework/pulsar.dev') {
-                   hasPulsarDevImport = true;
-                   // Ensure component import
-                   const hasComponent = node.specifiers.some((s: any) => t.isImportSpecifier(s) && (s.imported as any).name === 'component');
-                   if (!hasComponent) {
-                       node.specifiers.push(t.importSpecifier(t.identifier('component'), t.identifier('component')));
-                   }
-                   // Ensure t_element import
-                   const hasTElement = node.specifiers.some((s: any) => t.isImportSpecifier(s) && (s.imported as any).name === 't_element');
-                   if (!hasTElement) {
-                       node.specifiers.push(t.importSpecifier(t.identifier('t_element'), t.identifier('t_element')));
-                   }
-               }
-           });
-           
-           if (!hasPulsarDevImport) {
-               const importDecl = t.importDeclaration([
-                   t.importSpecifier(t.identifier('component'), t.identifier('component')),
-                   t.importSpecifier(t.identifier('t_element'), t.identifier('t_element'))
-               ], t.stringLiteral('@pulsar-framework/pulsar.dev'));
-               path.node.body.unshift(importDecl);
-           }
-        }
+          // Ensure @pulsar-framework/pulsar.dev imports exist
+          let hasPulsarDevImport = false;
+          path.node.body.forEach((node: any) => {
+            if (
+              t.isImportDeclaration(node) &&
+              node.source.value === '@pulsar-framework/pulsar.dev'
+            ) {
+              hasPulsarDevImport = true;
+              // Ensure component import
+              const hasComponent = node.specifiers.some(
+                (s: any) => t.isImportSpecifier(s) && (s.imported as any).name === 'component'
+              );
+              if (!hasComponent) {
+                node.specifiers.push(
+                  t.importSpecifier(t.identifier('component'), t.identifier('component'))
+                );
+              }
+              // Ensure t_element import
+              const hasTElement = node.specifiers.some(
+                (s: any) => t.isImportSpecifier(s) && (s.imported as any).name === 't_element'
+              );
+              if (!hasTElement) {
+                node.specifiers.push(
+                  t.importSpecifier(t.identifier('t_element'), t.identifier('t_element'))
+                );
+              }
+            }
+          });
+
+          if (!hasPulsarDevImport) {
+            const importDecl = t.importDeclaration(
+              [
+                t.importSpecifier(t.identifier('component'), t.identifier('component')),
+                t.importSpecifier(t.identifier('t_element'), t.identifier('t_element')),
+              ],
+              t.stringLiteral('@pulsar-framework/pulsar.dev')
+            );
+            path.node.body.unshift(importDecl);
+          }
+        },
       },
       JSXElement: {
         exit(path: any) {

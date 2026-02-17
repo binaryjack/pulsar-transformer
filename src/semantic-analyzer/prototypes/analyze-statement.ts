@@ -71,3 +71,4 @@ export function analyzeStatement(this: ISemanticAnalyzer, node: any): void {
       break;
   }
 }
+

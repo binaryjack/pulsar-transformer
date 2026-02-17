@@ -27,3 +27,4 @@ export function analyzeCallExpression(this: ISemanticAnalyzer, node: any): void 
     }
   }
 }
+

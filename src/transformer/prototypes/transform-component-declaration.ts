@@ -16,7 +16,7 @@ import type {
   IStringLiteral,
   IVariableDeclaration,
   IVariableDeclarator,
-} from '../../parser/parser.types.js';
+} from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -86,7 +86,7 @@ function doTransformComponentDeclaration(
   };
 
   // Component identifier argument
-  const componentId = `component:${name.name}`;
+  const componentId = `component:${(name as IIdentifier).name}`;
   const componentIdLiteral: IStringLiteral = {
     type: 'Literal',
     value: componentId,
@@ -146,7 +146,7 @@ function doTransformComponentDeclaration(
     type: 'VariableDeclarator',
     id: {
       type: 'Identifier',
-      name: name.name,
+      name: (name as IIdentifier).name,
       start,
       end,
     } as IIdentifier,
@@ -171,3 +171,4 @@ function doTransformComponentDeclaration(
 
   return variableDeclaration;
 }
+

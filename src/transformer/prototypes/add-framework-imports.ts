@@ -8,7 +8,7 @@ import type {
   IImportSpecifier,
   IProgramNode,
   IStringLiteral,
-} from '../../parser/parser.types.js';
+} from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -119,3 +119,4 @@ export function addFrameworkImports(this: ITransformer, program: IProgramNode): 
     program.body.unshift(...imports);
   }
 }
+

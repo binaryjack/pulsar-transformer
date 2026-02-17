@@ -113,3 +113,4 @@ export interface IPSRTransformer {
   // Tracking
   trackTransformation(nodeType: PSRNodeTypeEnum, inputNode: ts.Node, outputNode: ts.Node): void;
 }
+

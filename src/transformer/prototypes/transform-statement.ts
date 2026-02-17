@@ -2,7 +2,7 @@
  * Transform Statement - Route statement to appropriate transformer
  */
 
-import type { IStatementNode } from '../../parser/parser.types.js';
+import type { IStatementNode } from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -38,3 +38,4 @@ export function transformStatement(this: ITransformer, node: IStatementNode): IS
       return node;
   }
 }
+

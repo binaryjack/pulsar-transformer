@@ -327,3 +327,4 @@ export function createTransformationTracker(
 ): ITransformationTracker {
   return new (TransformationTracker as any)(filePath, sourceText);
 }
+

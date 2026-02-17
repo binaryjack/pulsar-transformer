@@ -42,3 +42,4 @@ export function analyzeVariableDeclaration(this: ISemanticAnalyzer, node: any): 
     }
   }
 }
+

@@ -21,3 +21,4 @@ export function analyzeIfStatement(this: ISemanticAnalyzer, node: any): void {
     this.analyzeStatement(node.alternate);
   }
 }
+

@@ -36,3 +36,4 @@ export interface IPipelineMetrics {
   statementCount?: number;
   outputSize?: number;
 }
+

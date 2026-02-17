@@ -38,3 +38,4 @@ export function generateSnapshotId(): string {
 export function resetIdGenerator(): void {
   counter = 0;
 }
+

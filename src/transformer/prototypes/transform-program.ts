@@ -2,7 +2,7 @@
  * Transform Program - Transform root AST node
  */
 
-import type { IProgramNode } from '../../parser/parser.types.js';
+import type { IProgramNode } from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -17,3 +17,4 @@ export function transformProgram(this: ITransformer, node: IProgramNode): IProgr
     body: transformedBody,
   };
 }
+

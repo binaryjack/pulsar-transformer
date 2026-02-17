@@ -3,7 +3,7 @@
  * Handle exported components and other declarations
  */
 
-import type { IExportNamedDeclaration } from '../../parser/parser.types.js';
+import type { IExportNamedDeclaration } from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -37,3 +37,4 @@ export function transformExportNamedDeclaration(
   // For other declarations, pass through
   return node;
 }
+

@@ -21,3 +21,4 @@ export function analyze(this: ISemanticAnalyzer): ISemanticAnalysisResult {
     warnings: this.warnings,
   };
 }
+

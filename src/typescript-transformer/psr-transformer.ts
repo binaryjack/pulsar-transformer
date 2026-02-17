@@ -377,3 +377,4 @@ Object.assign(PSRTransformer.prototype, {
 export function createPSRTransformer(options?: IPSRTransformerOptions): IPSRTransformer {
   return new (PSRTransformer as any)(options);
 }
+

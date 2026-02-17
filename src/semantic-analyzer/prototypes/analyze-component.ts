@@ -37,3 +37,4 @@ export function analyzeComponentDeclaration(this: ISemanticAnalyzer, node: any):
   // Exit component scope
   this.exitScope();
 }
+

@@ -3,7 +3,20 @@
  * Pattern: Prototype-based class
  */
 
-import type { IProgramNode } from '../parser/parser.types.js';
+import type {
+  IASTNode,
+  IBlockStatement,
+  ICallExpression,
+  IComponentDeclaration,
+  IExpression,
+  IFunctionDeclaration,
+  IIfStatement,
+  IJSXElement,
+  IProgramNode,
+  IReturnStatement,
+  IStatementNode,
+  IVariableDeclaration,
+} from '../ast.types.js';
 import type {
   IScope,
   ISemanticAnalysisResult,
@@ -32,39 +45,39 @@ export interface ISemanticAnalyzer {
   // Symbol table management
   enterScope(type: 'global' | 'function' | 'block' | 'component'): IScope;
   exitScope(): void;
-  declareSymbol(name: string, kind: string, type: string | null, node: any): ISymbol;
+  declareSymbol(name: string, kind: string, type: string | null, node: IASTNode): ISymbol;
   resolveSymbol(name: string): ISymbol | null;
   markSymbolUsed(name: string): void;
 
   // Validation methods
   analyzeProgram(node: IProgramNode): void;
-  analyzeStatement(node: any): void;
-  analyzeComponentDeclaration(node: any): void;
-  analyzeFunctionDeclaration(node: any): void;
-  analyzeVariableDeclaration(node: any): void;
-  analyzeInterfaceDeclaration(node: any): void;
-  analyzeExpression(node: any): void;
-  analyzeBlockStatement(node: any): void;
-  analyzeIfStatement(node: any): void;
-  analyzeReturnStatement(node: any): void;
-  analyzeCallExpression(node: any): void;
-  analyzeJSXElement(node: any): void;
+  analyzeStatement(node: IStatementNode): void;
+  analyzeComponentDeclaration(node: IComponentDeclaration): void;
+  analyzeFunctionDeclaration(node: IFunctionDeclaration): void;
+  analyzeVariableDeclaration(node: IVariableDeclaration): void;
+  analyzeInterfaceDeclaration(node: IASTNode): void;
+  analyzeExpression(node: IExpression): void;
+  analyzeBlockStatement(node: IBlockStatement): void;
+  analyzeIfStatement(node: IIfStatement): void;
+  analyzeReturnStatement(node: IReturnStatement): void;
+  analyzeCallExpression(node: ICallExpression): void;
+  analyzeJSXElement(node: IJSXElement): void;
 
   // Type checking
-  checkType(node: any, expectedType: string | null): boolean;
-  inferType(node: any): string | null;
+  checkType(node: IASTNode, expectedType: string | null): boolean;
+  inferType(node: IASTNode): string | null;
 
   // Reactivity validation
-  validateReactivity(node: any): void;
-  checkSignalDependencies(node: any): void;
-  checkEffectDependencies(node: any): void;
-  extractCapturedVariables(node: any): string[];
-  extractDependencies(node: any): string[];
-  walkNode(node: any, callback: (node: any) => void): void;
+  validateReactivity(node: IASTNode): void;
+  checkSignalDependencies(node: IASTNode): void;
+  checkEffectDependencies(node: IASTNode): void;
+  extractCapturedVariables(node: IASTNode): string[];
+  extractDependencies(node: IASTNode): string[];
+  walkNode(node: IASTNode, callback: (node: IASTNode) => void): void;
 
   // Error reporting
-  addError(type: string, message: string, node: any): void;
-  addWarning(type: string, message: string, node: any): void;
+  addError(type: string, message: string, node: IASTNode): void;
+  addWarning(type: string, message: string, node: IASTNode): void;
 
   // Post-analysis checks
   checkUnusedSymbols(): void;
@@ -135,7 +148,7 @@ SemanticAnalyzer.prototype.analyzeProgram = function (node: IProgramNode): void 
 /**
  * Analyze statement nodes
  */
-SemanticAnalyzer.prototype.analyzeStatement = function (node: any): void {
+SemanticAnalyzer.prototype.analyzeStatement = function (node: IStatementNode): void {
   switch (node.type) {
     case 'VariableDeclaration':
       this.analyzeVariableDeclaration(node);
@@ -172,7 +185,7 @@ SemanticAnalyzer.prototype.analyzeStatement = function (node: any): void {
 /**
  * Analyze variable declaration
  */
-SemanticAnalyzer.prototype.analyzeVariableDeclaration = function (node: any): void {
+SemanticAnalyzer.prototype.analyzeVariableDeclaration = function (node: IVariableDeclaration): void {
   for (const declarator of node.declarations) {
     if (declarator.id && declarator.id.type === 'Identifier') {
       const name = declarator.id.name;
@@ -448,3 +461,4 @@ SemanticAnalyzer.prototype.analyzeJSXElement = function (): void {
 
 // Export prototype for method registration
 export const SemanticAnalyzerPrototype = SemanticAnalyzer.prototype;
+

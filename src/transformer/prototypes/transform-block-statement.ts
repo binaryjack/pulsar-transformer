@@ -2,7 +2,7 @@
  * Transform Block Statement - Transform all statements in block
  */
 
-import type { IBlockStatement } from '../../parser/parser.types.js';
+import type { IBlockStatement } from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -20,3 +20,4 @@ export function transformBlockStatement(
     body: transformedBody,
   };
 }
+

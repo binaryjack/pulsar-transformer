@@ -12,3 +12,4 @@ export function analyzeInterfaceDeclaration(this: ISemanticAnalyzer, node: any):
   // Interface properties don't create their own scope
   // They're type-level only, so we don't need to validate their members deeply
 }
+

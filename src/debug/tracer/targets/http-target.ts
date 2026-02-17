@@ -109,3 +109,4 @@ HttpTarget.prototype.close = function (this: IHttpTarget): void {
 export function createHttpTarget(config: IHttpTargetConfig): IHttpTarget {
   return new (HttpTarget as unknown as new (config: IHttpTargetConfig) => IHttpTarget)(config);
 }
+

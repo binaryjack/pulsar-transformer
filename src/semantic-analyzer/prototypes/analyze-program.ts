@@ -3,7 +3,7 @@
  * Prototype pattern implementation
  */
 
-import type { IProgramNode } from '../../parser/parser.types.js';
+import type { IProgramNode } from '../../ast.types.js';
 import type { ISemanticAnalyzer } from '../semantic-analyzer.js';
 
 export function analyzeProgram(this: ISemanticAnalyzer, node: IProgramNode): void {
@@ -12,3 +12,4 @@ export function analyzeProgram(this: ISemanticAnalyzer, node: IProgramNode): voi
     this.analyzeStatement(statement);
   }
 }
+

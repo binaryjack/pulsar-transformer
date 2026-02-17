@@ -98,3 +98,4 @@ RingBuffer.prototype.isFull = function (this: RingBuffer): boolean {
 export function createRingBuffer(capacity: number): IRingBuffer {
   return new (RingBuffer as unknown as new (capacity: number) => IRingBuffer)(capacity);
 }
+

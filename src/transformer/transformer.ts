@@ -16,7 +16,7 @@ import type {
   IProgramNode,
   IStatementNode,
   IVariableDeclaration,
-} from '../parser/parser.types.js';
+} from '../ast.types.js';
 import type { ITransformContext, ITransformResult } from './transformer.types.js';
 
 // Enterprise diagnostic system imports
@@ -254,3 +254,5 @@ Transformer.prototype.diagnosticTransform = function <
  * Export prototype for registration
  */
 export const TransformerPrototype = Transformer.prototype;
+
+

@@ -6,7 +6,7 @@
 import type * as BabelTypes from '@babel/types';
 import { createComponentTransform } from './component-transform.js';
 import { createControlFlowTransform } from './control-flow-transform.js';
-import { createJSXTransform } from './jsx-transform.js';
+import { createJSXTransform } from './jsx-transform/index.js';
 import { createSignalTransform } from './signal-transform.js';
 
 interface PluginAPI {

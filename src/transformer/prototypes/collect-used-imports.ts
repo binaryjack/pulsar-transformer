@@ -2,7 +2,7 @@
  * Collect Used Imports - Traverse AST and track function usage
  */
 
-import type { IASTNode } from '../../parser/parser.types.js';
+import type { IASTNode } from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -60,3 +60,4 @@ export function collectUsedImports(this: ITransformer, node: IASTNode): void {
     }
   }
 }
+

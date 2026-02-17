@@ -30,3 +30,4 @@ export function getTraceWindowSize(): number {
   const size = parseInt(process.env.PULSAR_TRACE_WINDOW || '1000', 10);
   return isNaN(size) ? 1000 : Math.max(100, Math.min(size, 10000));
 }
+

@@ -1,6 +1,7 @@
 /**
  * Transformer Edge Cases - Registry of known limitations and edge cases
  * Similar to lexer edge cases but for AST transformation scenarios
+ * Converted to prototype-based pattern
  */
 
 export interface ITransformerEdgeCase {
@@ -186,142 +187,178 @@ export const TRANSFORMER_EDGE_CASES: Record<string, ITransformerEdgeCase> = {
 };
 
 /**
- * Edge case detector for transformer
+ * Edge case detector for transformer (prototype-based)
  */
-export class TransformerEdgeCaseDetector {
-  private detectedCases: Set<string> = new Set();
+export const TransformerEdgeCaseDetector = function (this: TransformerEdgeCaseDetector) {
+  // Define private detectedCases property
+  Object.defineProperty(this, 'detectedCases', {
+    value: new Set<string>(),
+    writable: true,
+    enumerable: false,
+    configurable: false,
+  });
+} as any as { new (): TransformerEdgeCaseDetector };
 
-  /**
-   * Check if AST node represents known edge case
-   */
-  checkNode(node: any): string[] {
-    const detectedEdgeCases: string[] = [];
-
-    if (!node) return detectedEdgeCases;
-
-    // Check for nested arrow functions
-    if (this.hasNestedArrowFunctions(node)) {
-      detectedEdgeCases.push('COMPONENT_NESTED_ARROW_FUNCTIONS');
-    }
-
-    // Check for async patterns
-    if (this.hasAsyncPatterns(node)) {
-      detectedEdgeCases.push('COMPONENT_ASYNC_PATTERNS');
-    }
-
-    // Check for complex JSX expressions
-    if (this.hasComplexJSXExpressions(node)) {
-      detectedEdgeCases.push('JSX_COMPLEX_EXPRESSIONS');
-    }
-
-    // Check for conditional rendering
-    if (this.hasConditionalRendering(node)) {
-      detectedEdgeCases.push('JSX_CONDITIONAL_RENDER');
-    }
-
-    // Check for generic components
-    if (this.hasGenericComponents(node)) {
-      detectedEdgeCases.push('TYPESCRIPT_GENERIC_COMPONENTS');
-    }
-
-    // Track detected cases
-    detectedEdgeCases.forEach((caseId) => this.detectedCases.add(caseId));
-
-    return detectedEdgeCases;
-  }
-
-  /**
-   * Get all detected edge cases
-   */
-  getDetectedCases(): ITransformerEdgeCase[] {
-    return Array.from(this.detectedCases)
-      .map((id) => TRANSFORMER_EDGE_CASES[id])
-      .filter(Boolean);
-  }
-
-  /**
-   * Get all detected edge cases (alias)
-   */
-  getDetectedEdgeCases(): ITransformerEdgeCase[] {
-    return this.getDetectedCases();
-  }
-
-  /**
-   * Detect edge case for specific node and phase (alias for checkNode)
-   */
-  detectEdgeCase(node: any, phase: string): ITransformerEdgeCase | null {
-    const caseIds = this.checkNode(node);
-    if (caseIds.length === 0) return null;
-    return TRANSFORMER_EDGE_CASES[caseIds[0]] || null;
-  }
-
-  /**
-   * Check if case is known to be unsupported
-   */
-  isKnownUnsupported(input: string, nodeType?: string): boolean {
-    // Quick checks for known unsupported patterns
-    if (input.includes('export component') && input.includes('<T>')) {
-      return true; // Generic components
-    }
-    if (input.includes('async') && nodeType === 'ComponentDeclaration') {
-      return true; // Async components
-    }
-    return false;
-  }
-
-  /**
-   * Get workaround for detected edge case
-   */
-  getWorkaround(caseId: string): string | undefined {
-    return TRANSFORMER_EDGE_CASES[caseId]?.workaround;
-  }
-
-  /**
-   * Clear detected cases
-   */
-  clear(): void {
-    this.detectedCases.clear();
-  }
-
-  // Private detection methods
-  private hasNestedArrowFunctions(node: any): boolean {
-    if (!node || typeof node !== 'object') return false;
-
-    // Simple heuristic: look for ArrowFunctionExpression nested in other functions
-    return (
-      JSON.stringify(node).includes('ArrowFunctionExpression') &&
-      (node.type === 'FunctionDeclaration' || node.type === 'ArrowFunctionExpression')
-    );
-  }
-
-  private hasAsyncPatterns(node: any): boolean {
-    if (!node) return false;
-    return node.async === true || JSON.stringify(node).includes('await');
-  }
-
-  private hasComplexJSXExpressions(node: any): boolean {
-    if (!node) return false;
-    const str = JSON.stringify(node);
-    return (
-      str.includes('JSXExpressionContainer') &&
-      (str.includes('ConditionalExpression') || str.includes('LogicalExpression'))
-    );
-  }
-
-  private hasConditionalRendering(node: any): boolean {
-    if (!node) return false;
-    const str = JSON.stringify(node);
-    return str.includes('ConditionalExpression') && str.includes('JSXElement');
-  }
-
-  private hasGenericComponents(node: any): boolean {
-    if (!node) return false;
-    return (
-      node.type === 'ComponentDeclaration' &&
-      (node.typeParameters?.length > 0 || JSON.stringify(node).includes('TypeParameter'))
-    );
-  }
+// Type alias for TransformerEdgeCaseDetector instance
+interface TransformerEdgeCaseDetector {
+  detectedCases: Set<string>;
+  checkNode(node: any): string[];
+  getDetectedCases(): ITransformerEdgeCase[];
+  getDetectedEdgeCases(): ITransformerEdgeCase[];
+  detectEdgeCase(node: any, phase: string): ITransformerEdgeCase | null;
+  isKnownUnsupported(input: string, nodeType?: string): boolean;
+  getWorkaround(caseId: string): string | undefined;
+  clear(): void;
+  hasNestedArrowFunctions(node: any): boolean;
+  hasAsyncPatterns(node: any): boolean;
+  hasComplexJSXExpressions(node: any): boolean;
+  hasConditionalRendering(node: any): boolean;
+  hasGenericComponents(node: any): boolean;
 }
+
+// Attach prototype methods
+TransformerEdgeCaseDetector.prototype.checkNode = function (
+  this: TransformerEdgeCaseDetector,
+  node: any
+): string[] {
+  const detectedEdgeCases: string[] = [];
+
+  if (!node) return detectedEdgeCases;
+
+  // Check for nested arrow functions
+  if (this.hasNestedArrowFunctions(node)) {
+    detectedEdgeCases.push('COMPONENT_NESTED_ARROW_FUNCTIONS');
+  }
+
+  // Check for async patterns
+  if (this.hasAsyncPatterns(node)) {
+    detectedEdgeCases.push('COMPONENT_ASYNC_PATTERNS');
+  }
+
+  // Check for complex JSX expressions
+  if (this.hasComplexJSXExpressions(node)) {
+    detectedEdgeCases.push('JSX_COMPLEX_EXPRESSIONS');
+  }
+
+  // Check for conditional rendering
+  if (this.hasConditionalRendering(node)) {
+    detectedEdgeCases.push('JSX_CONDITIONAL_RENDER');
+  }
+
+  // Check for generic components
+  if (this.hasGenericComponents(node)) {
+    detectedEdgeCases.push('TYPESCRIPT_GENERIC_COMPONENTS');
+  }
+
+  // Track detected cases
+  detectedEdgeCases.forEach((caseId) => this.detectedCases.add(caseId));
+
+  return detectedEdgeCases;
+};
+
+TransformerEdgeCaseDetector.prototype.getDetectedCases = function (
+  this: TransformerEdgeCaseDetector
+): ITransformerEdgeCase[] {
+  return Array.from(this.detectedCases)
+    .map((id) => TRANSFORMER_EDGE_CASES[id])
+    .filter(Boolean);
+};
+
+TransformerEdgeCaseDetector.prototype.getDetectedEdgeCases = function (
+  this: TransformerEdgeCaseDetector
+): ITransformerEdgeCase[] {
+  return this.getDetectedCases();
+};
+
+TransformerEdgeCaseDetector.prototype.detectEdgeCase = function (
+  this: TransformerEdgeCaseDetector,
+  node: any,
+  phase: string
+): ITransformerEdgeCase | null {
+  const caseIds = this.checkNode(node);
+  if (caseIds.length === 0) return null;
+  return TRANSFORMER_EDGE_CASES[caseIds[0]] || null;
+};
+
+TransformerEdgeCaseDetector.prototype.isKnownUnsupported = function (
+  this: TransformerEdgeCaseDetector,
+  input: string,
+  nodeType?: string
+): boolean {
+  // Quick checks for known unsupported patterns
+  if (input.includes('export component') && input.includes('<T>')) {
+    return true; // Generic components
+  }
+  if (input.includes('async') && nodeType === 'ComponentDeclaration') {
+    return true; // Async components
+  }
+  return false;
+};
+
+TransformerEdgeCaseDetector.prototype.getWorkaround = function (
+  this: TransformerEdgeCaseDetector,
+  caseId: string
+): string | undefined {
+  return TRANSFORMER_EDGE_CASES[caseId]?.workaround;
+};
+
+TransformerEdgeCaseDetector.prototype.clear = function (this: TransformerEdgeCaseDetector): void {
+  this.detectedCases.clear();
+};
+
+// Private detection methods
+(TransformerEdgeCaseDetector.prototype as any).hasNestedArrowFunctions = function (
+  this: TransformerEdgeCaseDetector,
+  node: any
+): boolean {
+  if (!node || typeof node !== 'object') return false;
+
+  // Simple heuristic: look for ArrowFunctionExpression nested in other functions
+  return (
+    JSON.stringify(node).includes('ArrowFunctionExpression') &&
+    (node.type === 'FunctionDeclaration' || node.type === 'ArrowFunctionExpression')
+  );
+};
+
+(TransformerEdgeCaseDetector.prototype as any).hasAsyncPatterns = function (
+  this: TransformerEdgeCaseDetector,
+  node: any
+): boolean {
+  if (!node) return false;
+  return node.async === true || JSON.stringify(node).includes('await');
+};
+
+(TransformerEdgeCaseDetector.prototype as any).hasComplexJSXExpressions = function (
+  this: TransformerEdgeCaseDetector,
+  node: any
+): boolean {
+  if (!node) return false;
+  const str = JSON.stringify(node);
+  return (
+    str.includes('JSXExpressionContainer') &&
+    (str.includes('ConditionalExpression') || str.includes('LogicalExpression'))
+  );
+};
+
+(TransformerEdgeCaseDetector.prototype as any).hasConditionalRendering = function (
+  this: TransformerEdgeCaseDetector,
+  node: any
+): boolean {
+  if (!node) return false;
+  const str = JSON.stringify(node);
+  return str.includes('ConditionalExpression') && str.includes('JSXElement');
+};
+
+(TransformerEdgeCaseDetector.prototype as any).hasGenericComponents = function (
+  this: TransformerEdgeCaseDetector,
+  node: any
+): boolean {
+  if (!node) return false;
+  return (
+    node.type === 'ComponentDeclaration' &&
+    (node.typeParameters?.length > 0 || JSON.stringify(node).includes('TypeParameter'))
+  );
+};
 
 /**
  * Global edge case detector instance
@@ -330,11 +367,12 @@ let globalEdgeCaseDetector: TransformerEdgeCaseDetector | null = null;
 
 export function getTransformerEdgeCaseDetector(): TransformerEdgeCaseDetector {
   if (!globalEdgeCaseDetector) {
-    globalEdgeCaseDetector = new TransformerEdgeCaseDetector();
+    globalEdgeCaseDetector = new (TransformerEdgeCaseDetector as any)();
   }
-  return globalEdgeCaseDetector;
+  return globalEdgeCaseDetector!;
 }
 
 export function clearTransformerEdgeCaseDetector(): void {
   globalEdgeCaseDetector = null;
 }
+

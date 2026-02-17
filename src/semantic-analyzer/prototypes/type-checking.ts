@@ -114,3 +114,4 @@ export function inferType(this: ISemanticAnalyzer, node: any): string | null {
       return null;
   }
 }
+

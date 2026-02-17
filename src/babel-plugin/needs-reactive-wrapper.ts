@@ -77,3 +77,4 @@ export function needsReactiveWrapper(node: BabelTypes.Expression, t: typeof Babe
   // Static values don't need wrapping
   return false;
 }
+

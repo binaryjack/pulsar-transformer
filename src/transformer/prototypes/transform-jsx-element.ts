@@ -3,7 +3,7 @@
  * CodeGenerator handles JSX → t_element() transformation
  */
 
-import type { IJSXElement } from '../../parser/parser.types.js';
+import type { IJSXElement } from '../../ast.types.js';
 import type { ITransformer } from '../transformer.js';
 
 /**
@@ -18,3 +18,4 @@ export function transformJSXElement(this: ITransformer, node: IJSXElement): IJSX
   // Pass through unchanged
   return node;
 }
+
