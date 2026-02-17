@@ -34,4 +34,3 @@ export function transformCallExpression(
   // Pass through unchanged - these are runtime calls
   return node;
 }
-

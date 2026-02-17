@@ -10,7 +10,6 @@ import type {
   ICallExpression,
   IComponentDeclaration,
   IIdentifier,
-  ILiteral,
   IMemberExpression,
   IReturnStatement,
   IStringLiteral,
@@ -171,4 +170,3 @@ function doTransformComponentDeclaration(
 
   return variableDeclaration;
 }
-

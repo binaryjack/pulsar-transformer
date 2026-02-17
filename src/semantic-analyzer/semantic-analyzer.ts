@@ -185,7 +185,9 @@ SemanticAnalyzer.prototype.analyzeStatement = function (node: IStatementNode): v
 /**
  * Analyze variable declaration
  */
-SemanticAnalyzer.prototype.analyzeVariableDeclaration = function (node: IVariableDeclaration): void {
+SemanticAnalyzer.prototype.analyzeVariableDeclaration = function (
+  node: IVariableDeclaration
+): void {
   for (const declarator of node.declarations) {
     if (declarator.id && declarator.id.type === 'Identifier') {
       const name = declarator.id.name;
@@ -461,4 +463,3 @@ SemanticAnalyzer.prototype.analyzeJSXElement = function (): void {
 
 // Export prototype for method registration
 export const SemanticAnalyzerPrototype = SemanticAnalyzer.prototype;
-
