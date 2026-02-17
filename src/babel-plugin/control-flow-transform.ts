@@ -265,19 +265,37 @@ function transformFor(path: NodePath<BabelTypes.JSXElement>, t: typeof BabelType
     return;
   }
 
-  // First child should be the callback function
-  const firstChild = children[0];
+  // Find first non-whitespace child - it should be the callback function
+  const nonTextChildren = children.filter((child) => !t.isJSXText(child) || child.value.trim());
+
+  if (nonTextChildren.length === 0) {
+    path.replaceWith(t.arrayExpression([]));
+    return;
+  }
+
+  const firstChild = nonTextChildren[0];
   let callback: BabelTypes.Expression;
 
   if (t.isJSXExpressionContainer(firstChild)) {
-    callback = firstChild.expression as BabelTypes.Expression;
+    const expr = firstChild.expression;
+    // Check if it's already a function (arrow or regular)
+    if (t.isArrowFunctionExpression(expr) || t.isFunctionExpression(expr)) {
+      // Use the function directly - it already has parameters
+      callback = expr as BabelTypes.Expression;
+    } else if (t.isExpression(expr)) {
+      // It's an expression, wrap in arrow function
+      const itemParam = t.identifier('item');
+      callback = t.arrowFunctionExpression([itemParam], expr);
+    } else {
+      // Fallback - empty array
+      path.replaceWith(t.arrayExpression([]));
+      return;
+    }
   } else {
     // If not a function, wrap children in arrow function
     // (item) => children
     const itemParam = t.identifier('item');
-    const childrenArray = children.filter(
-      (child) => !t.isJSXText(child) || child.value.trim()
-    ) as any[];
+    const childrenArray = nonTextChildren as any[];
 
     if (childrenArray.length === 1) {
       const child = childrenArray[0];
@@ -334,11 +352,20 @@ function transformRegistryList(
         continue;
       }
 
-      // Other props (including "each")
+      // Other props - wrap reactive expressions for "each" attribute
       if (attr.value) {
         let value: BabelTypes.Expression;
         if (t.isJSXExpressionContainer(attr.value)) {
-          value = attr.value.expression as BabelTypes.Expression;
+          const expr = attr.value.expression as BabelTypes.Expression;
+          
+          // Special handling for "each" attribute - wrap in arrow function for reactivity
+          if (name === 'each') {
+            // Check if already a function
+            const isFunc = t.isArrowFunctionExpression(expr) || t.isFunctionExpression(expr);
+            value = isFunc ? expr : t.arrowFunctionExpression([], expr);
+          } else {
+            value = expr;
+          }
         } else if (t.isStringLiteral(attr.value)) {
           value = attr.value;
         } else {

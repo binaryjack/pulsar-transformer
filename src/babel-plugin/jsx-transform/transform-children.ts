@@ -100,6 +100,10 @@ export function transformChildren(
     } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
       // Will be transformed by visitor
       elements.push(child);
+    } else if (t.isExpression(child)) {
+      // Handle expressions injected by previous transformations (e.g., ShowRegistry CallExpression)
+      // These have already been transformed by control flow or other passes
+      elements.push(child);
     }
   }
 
