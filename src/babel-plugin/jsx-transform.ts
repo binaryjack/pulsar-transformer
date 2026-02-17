@@ -5,6 +5,7 @@
 
 import type { NodePath } from '@babel/traverse'
 import type * as BabelTypes from '@babel/types'
+import { needsReactiveWrapper } from './needs-reactive-wrapper.js'
 
 interface VisitorObj {
   JSXElement: (path: NodePath<BabelTypes.JSXElement>) => void;
@@ -150,8 +151,8 @@ function transformAttributes(
   const properties: Array<BabelTypes.ObjectProperty | BabelTypes.SpreadElement> = [];
   
   // Control flow components that need reactive props unwrapped
-  const needsEachUnwrap = ['ForRegistry', 'Index'];
-  const needsWhenUnwrap = ['ShowRegistry'];
+  const needsEachUnwrap = new Set(['ForRegistry', 'Index']);
+  const needsWhenUnwrap = new Set(['ShowRegistry']);
 
   for (const attr of attributes) {
     if (t.isJSXSpreadAttribute(attr)) {
@@ -173,7 +174,7 @@ function transformAttributes(
           
           // Special handling for 'each' attribute on ForRegistry/Index
           // If user wrote each={items()}, unwrap to each={items} (pass getter, not array)
-          if (needsEachUnwrap.includes(componentName) && keyName === 'each' && t.isCallExpression(value)) {
+          if (needsEachUnwrap.has(componentName) && keyName === 'each' && t.isCallExpression(value)) {
             // Check if it's a simple call with no arguments (likely a signal getter)
             if (value.arguments.length === 0 && t.isIdentifier(value.callee)) {
               value = value.callee; // Unwrap: items() -> items
@@ -182,7 +183,7 @@ function transformAttributes(
           
           // Special handling for 'when' attribute on ShowRegistry
           // If user wrote when={isVisible()}, unwrap to when={isVisible} (pass getter, not boolean)
-          if (needsWhenUnwrap.includes(componentName) && keyName === 'when' && t.isCallExpression(value)) {
+          if (needsWhenUnwrap.has(componentName) && keyName === 'when' && t.isCallExpression(value)) {
             // Check if it's a simple call with no arguments (likely a signal getter)
             if (value.arguments.length === 0 && t.isIdentifier(value.callee)) {
               value = value.callee; // Unwrap: isVisible() -> isVisible
@@ -254,7 +255,20 @@ function transformChildren(
       const hasContent = /\S/.test(text);
 
       let processedText: string;
-      if (!hasContent) {
+      if (hasContent) {
+        // Has content - trim surrounding newlines/tabs, collapse multiple spaces
+        processedText = text
+          .replaceAll(/^[\n\r\t]+|[\n\r\t]+$/g, '') // Remove leading/trailing newlines/tabs
+          .replaceAll(/\s+/g, ' ')                    // Collapse multiple spaces to single space
+          .trim();                                     // Remove leading/trailing spaces after normalization
+        
+        // CRITICAL: If original text ended with space before an expression, preserve it
+        // e.g., "Index: {expr}" should keep the space: "Index: " not "Index:"
+        const endsWithSpace = /\s$/.test(text.replaceAll(/[\n\r\t]+$/g, ''));
+        if (endsWithSpace && processedText) {
+          processedText += ' ';
+        }
+      } else {
         // Pure whitespace - only preserve if it's on a single line (between inline elements)
         // Multi-line whitespace (between block elements) should be skipped
         const hasNewline = /[\n\r]/.test(text);
@@ -262,19 +276,6 @@ function transformChildren(
           processedText = ' '; // Single space between inline elements like <strong>A:</strong> {x}
         } else {
           processedText = ''; // Skip multi-line whitespace
-        }
-      } else {
-        // Has content - trim surrounding newlines/tabs, collapse multiple spaces
-        processedText = text
-          .replace(/^[\n\r\t]+|[\n\r\t]+$/g, '') // Remove leading/trailing newlines/tabs
-          .replace(/\s+/g, ' ')                   // Collapse multiple spaces to single space
-          .trim();                                // Remove leading/trailing spaces after normalization
-        
-        // CRITICAL: If original text ended with space before an expression, preserve it
-        // e.g., "Index: {expr}" should keep the space: "Index: " not "Index:"
-        const endsWithSpace = /\s$/.test(text.replace(/[\n\r\t]+$/g, ''));
-        if (endsWithSpace && processedText) {
-          processedText += ' ';
         }
       }
 
@@ -292,10 +293,13 @@ function transformChildren(
         if (isFunction) {
           // Already a function - pass through as-is
           elements.push(child.expression);
-        } else {
-          // Not a function - wrap in arrow function for reactive evaluation
+        } else if (needsReactiveWrapper(child.expression, t)) {
+          // Expression contains calls/reactive deps - wrap in arrow function
           // This allows t_element to detect reactive content and use insert()
           elements.push(t.arrowFunctionExpression([], child.expression));
+        } else {
+          // Static value (string, number, identifier) - no wrapping needed
+          elements.push(child.expression);
         }
       }
     } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
