@@ -73,6 +73,14 @@ export function transformAttributes(
             }
           }
 
+          // Reactive string style: template literal containing signal calls
+          // e.g. style={`background: ${isDragging() ? 'cyan' : 'black'}`}
+          // → style: () => `background: ${isDragging() ? 'cyan' : 'black'}`
+          // t_element will wire this via style.cssText for live updates
+          if (keyName === 'style' && t.isTemplateLiteral(value) && value.expressions.length > 0) {
+            value = t.arrowFunctionExpression([], value);
+          }
+
           // Special handling for style attribute with object expression
           if (keyName === 'style' && t.isObjectExpression(value)) {
             // Process style object properties to wrap reactive values

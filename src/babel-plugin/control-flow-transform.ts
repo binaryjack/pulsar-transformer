@@ -38,9 +38,12 @@ export function createControlFlowTransform(t: typeof BabelTypes) {
         return;
       }
 
-      // Handle <For> (compile-time - transform to .map())
+      // Handle <For> — commonly used as import alias for ForRegistry.
+      // Routes to the reactive runtime path so that signal-backed arrays
+      // (e.g. tasks()) subscribe to changes and the DOM updates on setTasks().
+      // We preserve the original tag identifier so the call matches the import alias.
       if (tagName === 'For') {
-        transformFor(path, t);
+        transformRegistryList(path, t, 'For');
         return;
       }
 
