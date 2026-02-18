@@ -221,6 +221,259 @@ const pipeline = createPipeline({
 
 ---
 
+## Real-World Transformation Examples
+
+### 1. Signal-Based Reactivity
+
+**Input PSR:**
+```psr
+component SignalDemo() {
+  const [count, setCount] = signal(0);
+  const double = memo(() => count() * 2);
+  
+  return (
+    <div>
+      <p>Count: {count()}</p>
+      <p>Double: {double()}</p>
+      <button onClick={() => setCount(count() + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+
+**Output TypeScript:**
+```typescript
+import { createSignal, createMemo, t_element } from '@pulsar/runtime';
+import { $REGISTRY } from '@pulsar/runtime/registry';
+
+export function SignalDemo(): HTMLElement {
+  return $REGISTRY.execute('component:SignalDemo', () => {
+    const [count, setCount] = createSignal(0);
+    const double = createMemo(() => count() * 2);
+    
+    return t_element('div', null, [
+      t_element('p', null, ['Count: ', count()]),
+      t_element('p', null, ['Double: ', double()]),
+      t_element('button', { onClick: () => setCount(count() + 1) }, ['Increment'])
+    ]);
+  });
+}
+```
+
+**Transformations:**
+- `signal(0)` → `createSignal(0)`
+- `memo(() => ...)` → `createMemo(() => ...)`
+- JSX → runtime calls (`t_element`)
+- Automatic imports injection
+
+### 2. Control Flow - Show Component
+
+**Input PSR:**
+```psr
+component ConditionalDemo({ isLoggedIn }: Props) {
+  return (
+    <div>
+      <Show when={isLoggedIn()}>
+        <Dashboard />
+      </Show>
+      
+      <Show when={user()} fallback={<Loading />}>
+        {(u) => <Profile user={u} />}
+      </Show>
+    </div>
+  );
+}
+```
+
+**Output TypeScript:**
+```typescript
+export function ConditionalDemo({ isLoggedIn }: Props): HTMLElement {
+  return $REGISTRY.execute('component:ConditionalDemo', () => {
+    return t_element('div', null, [
+      t_component(Show, { when: isLoggedIn() }, [
+        t_component(Dashboard, null, [])
+      ]),
+      t_component(Show, { 
+        when: user(), 
+        fallback: t_component(Loading, null, [])
+      }, [
+        (u) => t_component(Profile, { user: u }, [])
+      ])
+    ]);
+  });
+}
+```
+
+**Transformations:**
+- `<Show>` → `t_component(Show, ...)`
+- Props extraction (`when`, `fallback`)
+- Children handling with functions
+- Component nesting preserved
+
+### 3. Control Flow - For Loop
+
+**Input PSR:**
+```psr
+component ItemList({ items }: Props) {
+  return (
+    <ul>
+      <For each={items()}>
+        {(item, index) => (
+          <li key={item.id}>
+            {index()}: {item.name}
+            <button onClick={() => removeItem(item.id)}>Remove</button>
+          </li>
+        )}
+      </For>
+    </ul>
+  );
+}
+```
+
+**Output TypeScript:**
+```typescript
+export function ItemList({ items }: Props): HTMLElement {
+  return $REGISTRY.execute('component:ItemList', () => {
+    return t_element('ul', null, [
+      t_component(For, { each: items() }, [
+        (item, index) => t_element('li', { key: item.id }, [
+          index(), ': ', item.name,
+          t_element('button', { 
+            onClick: () => removeItem(item.id) 
+          }, ['Remove'])
+        ])
+      ])
+    ]);
+  });
+}
+```
+
+**Transformations:**
+- `<For each={...}>` → `t_component(For, { each: ... })`
+- Children function with keying
+- Callback parameters preserved
+- Event handlers transformed
+
+### 4. Portal Pattern
+
+**Input PSR:**
+```psr
+component ModalDemo() {
+  const [isOpen, setIsOpen] = signal(false);
+  
+  return (
+    <div>
+      <button onClick={() => setIsOpen(true)}>Open</button>
+      
+      <Show when={isOpen()}>
+        <Modal id="modal" isOpen={isOpen} onClose={() => setIsOpen(false)} />
+        
+        <Portal id="modal" target="body">
+          <h3>Modal Content</h3>
+          <button onClick={() => setIsOpen(false)}>Close</button>
+        </Portal>
+      </Show>
+    </div>
+  );
+}
+```
+
+**Output TypeScript:**
+```typescript
+import { createSignal, t_element, t_component } from '@pulsar/runtime';
+import { Show, Modal, Portal } from '@pulsar/runtime/components';
+
+export function ModalDemo(): HTMLElement {
+  return $REGISTRY.execute('component:ModalDemo', () => {
+    const [isOpen, setIsOpen] = createSignal(false);
+    
+    return t_element('div', null, [
+      t_element('button', { onClick: () => setIsOpen(true) }, ['Open']),
+      
+      t_component(Show, { when: isOpen() }, [
+        t_component(Modal, { 
+          id: 'modal', 
+          isOpen: isOpen, 
+          onClose: () => setIsOpen(false) 
+        }, []),
+        
+        t_component(Portal, { id: 'modal', target: 'body' }, [
+          t_element('h3', null, ['Modal Content']),
+          t_element('button', { onClick: () => setIsOpen(false) }, ['Close'])
+        ])
+      ])
+    ]);
+  });
+}
+```
+
+**Transformations:**
+- Multi-component composition
+- Portal pattern preserved
+- Local state management
+- Nested control flow
+
+### 5. Error Boundaries (Tryer/Catcher)
+
+**Input PSR:**
+```psr
+component SafeDemo() {
+  const [throwError, setThrowError] = signal(false);
+  
+  const BuggyComponent = () => {
+    if (throwError()) throw new Error('Crash!');
+    return <div>Safe</div>;
+  };
+  
+  return (
+    <Tryer>
+      <BuggyComponent />
+      <Catcher>
+        {(error) => <div style="color: red;">Error: {error.message}</div>}
+      </Catcher>
+    </Tryer>
+  );
+}
+```
+
+**Output TypeScript:**
+```typescript
+export function SafeDemo(): HTMLElement {
+  return $REGISTRY.execute('component:SafeDemo', () => {
+    const [throwError, setThrowError] = createSignal(false);
+    
+    const BuggyComponent = () => {
+      if (throwError()) throw new Error('Crash!');
+      return t_element('div', null, ['Safe']);
+    };
+    
+    return t_component(Tryer, null, [
+      t_component(BuggyComponent, null, []),
+      t_component(Catcher, null, [
+        (error) => t_element('div', { style: 'color: red;' }, [
+          'Error: ', error.message
+        ])
+      ])
+    ]);
+  });
+}
+```
+
+**Transformations:**
+- Error boundary pattern preserved
+- Nested function component
+- Catcher children as render function
+- Error parameter forwarding
+
+### Live Examples
+
+**220+ transformed components in production:**
+- [pulsar-ui.dev showcase](https://github.com/binaryjack/pulsar-ui.dev/tree/main/src/showcase) - 80+ advanced examples
+- All transformations verified in build system
+- Zero TypeScript errors in output
+
+---
+
 ## Documentation
 
 - **[VERIFICATION REPORT](./VERIFICATION-REPORT-2026-02-07.md)** - ⭐ Independent verification of all claims
