@@ -23,9 +23,12 @@ export function createControlFlowTransform(t: typeof BabelTypes) {
 
       if (!tagName) return;
 
-      // Handle <Show> (compile-time - transform to ternary)
+      // Handle <Show> — route through the same reactive runtime path as ShowRegistry.
+      // <Show> is commonly used as an import alias for ShowRegistry, so it must produce
+      // a ShowRegistry({when, children: () => ...}) call (reactive), NOT a static ternary.
+      // We preserve the original tag identifier so the call matches whatever the user imported.
       if (tagName === 'Show') {
-        transformShow(path, t);
+        transformShowRegistry(path, t, 'Show');
         return;
       }
 
@@ -131,8 +134,14 @@ function transformShow(path: NodePath<BabelTypes.JSXElement>, t: typeof BabelTyp
 /**
  * Transform <ShowRegistry when={condition} fallback={fallback}>{children}</ShowRegistry>
  * To: ShowRegistry({ when: condition, fallback: () => fallback, children: () => children })
+ *
+ * Also used for <Show> (same logic, different emitted identifier so it matches the import alias).
  */
-function transformShowRegistry(path: NodePath<BabelTypes.JSXElement>, t: typeof BabelTypes) {
+function transformShowRegistry(
+  path: NodePath<BabelTypes.JSXElement>,
+  t: typeof BabelTypes,
+  componentName = 'ShowRegistry'
+) {
   const openingElement = path.node.openingElement;
   const attributes = openingElement.attributes;
 
@@ -146,9 +155,16 @@ function transformShowRegistry(path: NodePath<BabelTypes.JSXElement>, t: typeof 
       // Handle "when"
       if (name === 'when') {
         if (attr.value && t.isJSXExpressionContainer(attr.value)) {
-          props.push(
-            t.objectProperty(t.identifier('when'), attr.value.expression as BabelTypes.Expression)
-          );
+          let whenExpr = attr.value.expression as BabelTypes.Expression;
+          // Unwrap zero-arg signal getter call: isOpen() → isOpen
+          if (
+            t.isCallExpression(whenExpr) &&
+            whenExpr.arguments.length === 0 &&
+            t.isIdentifier(whenExpr.callee)
+          ) {
+            whenExpr = whenExpr.callee as BabelTypes.Identifier;
+          }
+          props.push(t.objectProperty(t.identifier('when'), whenExpr));
         }
         continue;
       }
@@ -228,7 +244,7 @@ function transformShowRegistry(path: NodePath<BabelTypes.JSXElement>, t: typeof 
 
   props.push(t.objectProperty(t.identifier('children'), childrenExpr));
 
-  const componentCall = t.callExpression(t.identifier('ShowRegistry'), [t.objectExpression(props)]);
+  const componentCall = t.callExpression(t.identifier(componentName), [t.objectExpression(props)]);
   path.replaceWith(componentCall);
 }
 
@@ -310,8 +326,18 @@ function transformFor(path: NodePath<BabelTypes.JSXElement>, t: typeof BabelType
     }
   }
 
-  // Create: arrayExpr.map(callback)
-  const mapCall = t.callExpression(t.memberExpression(arrayExpr, t.identifier('map')), [callback]);
+  // If `each` is a function (arrow or regular), call it first to get the array.
+  // e.g. each={() => columns}  → resolvedArray = (() => columns)()  → columns.map(...)
+  //      each={items()}        → already an array expression, use as-is
+  const isEachFunction =
+    t.isArrowFunctionExpression(arrayExpr) || t.isFunctionExpression(arrayExpr);
+
+  const resolvedArray = isEachFunction ? t.callExpression(arrayExpr, []) : arrayExpr;
+
+  // Create: resolvedArray.map(callback)
+  const mapCall = t.callExpression(t.memberExpression(resolvedArray, t.identifier('map')), [
+    callback,
+  ]);
 
   path.replaceWith(mapCall as any);
 }
@@ -357,7 +383,7 @@ function transformRegistryList(
         let value: BabelTypes.Expression;
         if (t.isJSXExpressionContainer(attr.value)) {
           const expr = attr.value.expression as BabelTypes.Expression;
-          
+
           // Special handling for "each" attribute - wrap in arrow function for reactivity
           if (name === 'each') {
             // Check if already a function
