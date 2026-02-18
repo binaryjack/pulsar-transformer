@@ -230,7 +230,7 @@ const pipeline = createPipeline({
 component SignalDemo() {
   const [count, setCount] = signal(0);
   const double = memo(() => count() * 2);
-  
+
   return (
     <div>
       <p>Count: {count()}</p>
@@ -250,7 +250,7 @@ export function SignalDemo(): HTMLElement {
   return $REGISTRY.execute('component:SignalDemo', () => {
     const [count, setCount] = createSignal(0);
     const double = createMemo(() => count() * 2);
-    
+
     return t_element('div', null, [
       t_element('p', null, ['Count: ', count()]),
       t_element('p', null, ['Double: ', double()]),
@@ -276,7 +276,7 @@ component ConditionalDemo({ isLoggedIn }: Props) {
       <Show when={isLoggedIn()}>
         <Dashboard />
       </Show>
-      
+
       <Show when={user()} fallback={<Loading />}>
         {(u) => <Profile user={u} />}
       </Show>
@@ -293,8 +293,8 @@ export function ConditionalDemo({ isLoggedIn }: Props): HTMLElement {
       t_component(Show, { when: isLoggedIn() }, [
         t_component(Dashboard, null, [])
       ]),
-      t_component(Show, { 
-        when: user(), 
+      t_component(Show, {
+        when: user(),
         fallback: t_component(Loading, null, [])
       }, [
         (u) => t_component(Profile, { user: u }, [])
@@ -338,8 +338,8 @@ export function ItemList({ items }: Props): HTMLElement {
       t_component(For, { each: items() }, [
         (item, index) => t_element('li', { key: item.id }, [
           index(), ': ', item.name,
-          t_element('button', { 
-            onClick: () => removeItem(item.id) 
+          t_element('button', {
+            onClick: () => removeItem(item.id)
           }, ['Remove'])
         ])
       ])
@@ -360,14 +360,14 @@ export function ItemList({ items }: Props): HTMLElement {
 ```psr
 component ModalDemo() {
   const [isOpen, setIsOpen] = signal(false);
-  
+
   return (
     <div>
       <button onClick={() => setIsOpen(true)}>Open</button>
-      
+
       <Show when={isOpen()}>
         <Modal id="modal" isOpen={isOpen} onClose={() => setIsOpen(false)} />
-        
+
         <Portal id="modal" target="body">
           <h3>Modal Content</h3>
           <button onClick={() => setIsOpen(false)}>Close</button>
@@ -386,17 +386,17 @@ import { Show, Modal, Portal } from '@pulsar/runtime/components';
 export function ModalDemo(): HTMLElement {
   return $REGISTRY.execute('component:ModalDemo', () => {
     const [isOpen, setIsOpen] = createSignal(false);
-    
+
     return t_element('div', null, [
       t_element('button', { onClick: () => setIsOpen(true) }, ['Open']),
-      
+
       t_component(Show, { when: isOpen() }, [
-        t_component(Modal, { 
-          id: 'modal', 
-          isOpen: isOpen, 
-          onClose: () => setIsOpen(false) 
+        t_component(Modal, {
+          id: 'modal',
+          isOpen: isOpen,
+          onClose: () => setIsOpen(false)
         }, []),
-        
+
         t_component(Portal, { id: 'modal', target: 'body' }, [
           t_element('h3', null, ['Modal Content']),
           t_element('button', { onClick: () => setIsOpen(false) }, ['Close'])
@@ -419,12 +419,12 @@ export function ModalDemo(): HTMLElement {
 ```psr
 component SafeDemo() {
   const [throwError, setThrowError] = signal(false);
-  
+
   const BuggyComponent = () => {
     if (throwError()) throw new Error('Crash!');
     return <div>Safe</div>;
   };
-  
+
   return (
     <Tryer>
       <BuggyComponent />
@@ -441,12 +441,12 @@ component SafeDemo() {
 export function SafeDemo(): HTMLElement {
   return $REGISTRY.execute('component:SafeDemo', () => {
     const [throwError, setThrowError] = createSignal(false);
-    
+
     const BuggyComponent = () => {
       if (throwError()) throw new Error('Crash!');
       return t_element('div', null, ['Safe']);
     };
-    
+
     return t_component(Tryer, null, [
       t_component(BuggyComponent, null, []),
       t_component(Catcher, null, [
