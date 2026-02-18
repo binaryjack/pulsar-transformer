@@ -42,11 +42,33 @@ export function createJSXTransform(t: typeof BabelTypes): VisitorObj {
         const attributes = transformAttributes(openingElement.attributes, t, componentNameStr);
         const children = transformChildren(element.children, t);
 
+        // Components that need lazy children evaluation to avoid eagerly calling
+        // Portal/component constructors before their DOM targets exist.
+        // Includes common import aliases (ShowRegistry as Show, etc.)
+        const lazyChildrenComponents = new Set(['ShowRegistry', 'Show']);
+
         // Add children to props if present
         let propsWithChildren: BabelTypes.ObjectExpression;
         if (children.elements.length === 0) {
           // No children
           propsWithChildren = attributes;
+        } else if (lazyChildrenComponents.has(componentNameStr)) {
+          // Show/ShowRegistry: wrap children in arrow function so they are only
+          // evaluated when the condition is true, not at initial render time.
+          // This prevents Portal targets from being queried before sibling Modal mounts.
+          const childrenBody: BabelTypes.Expression =
+            children.elements.length === 1 &&
+            children.elements[0] &&
+            !t.isSpreadElement(children.elements[0])
+              ? (children.elements[0] as BabelTypes.Expression)
+              : children;
+          propsWithChildren = t.objectExpression([
+            ...attributes.properties,
+            t.objectProperty(
+              t.identifier('children'),
+              t.arrowFunctionExpression([], childrenBody)
+            ),
+          ]);
         } else if (children.elements.length === 1) {
           // Single child - pass directly (not as array)
           const singleChild = children.elements[0];

@@ -25,8 +25,9 @@ export function transformAttributes(
   const properties: Array<BabelTypes.ObjectProperty | BabelTypes.SpreadElement> = [];
 
   // Control flow components that need reactive props unwrapped
-  const needsEachUnwrap = new Set(['ForRegistry', 'Index']);
-  const needsWhenUnwrap = new Set(['ShowRegistry']);
+  // Includes common import aliases (e.g. ShowRegistry as Show, ForRegistry as For)
+  const needsEachUnwrap = new Set(['ForRegistry', 'Index', 'For']);
+  const needsWhenUnwrap = new Set(['ShowRegistry', 'Show']);
 
   for (const attr of attributes) {
     if (t.isJSXSpreadAttribute(attr)) {
