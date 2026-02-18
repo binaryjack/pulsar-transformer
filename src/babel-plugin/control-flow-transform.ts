@@ -156,14 +156,27 @@ function transformShowRegistry(
       if (name === 'when') {
         if (attr.value && t.isJSXExpressionContainer(attr.value)) {
           let whenExpr = attr.value.expression as BabelTypes.Expression;
-          // Unwrap zero-arg signal getter call: isOpen() → isOpen
-          if (
+
+          const isAlreadyFunction =
+            t.isArrowFunctionExpression(whenExpr) || t.isFunctionExpression(whenExpr);
+          const isIdentifier = t.isIdentifier(whenExpr);
+          const isSimpleGetter =
             t.isCallExpression(whenExpr) &&
-            whenExpr.arguments.length === 0 &&
-            t.isIdentifier(whenExpr.callee)
-          ) {
-            whenExpr = whenExpr.callee as BabelTypes.Identifier;
+            (whenExpr as BabelTypes.CallExpression).arguments.length === 0 &&
+            t.isIdentifier((whenExpr as BabelTypes.CallExpression).callee);
+
+          if (isAlreadyFunction || isIdentifier) {
+            // Already lazy — pass as-is
+          } else if (isSimpleGetter) {
+            // Unwrap zero-arg signal getter: isOpen() → isOpen
+            whenExpr = (whenExpr as BabelTypes.CallExpression).callee as BabelTypes.Identifier;
+          } else {
+            // Complex expression (binary, logical, member, etc.) — wrap in arrow so it
+            // evaluates lazily inside the wire callback and subscribes to signals it reads:
+            // activeTooltip() === 'button1'  →  () => activeTooltip() === 'button1'
+            whenExpr = t.arrowFunctionExpression([], whenExpr);
           }
+
           props.push(t.objectProperty(t.identifier('when'), whenExpr));
         }
         continue;
