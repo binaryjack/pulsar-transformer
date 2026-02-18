@@ -64,10 +64,7 @@ export function createJSXTransform(t: typeof BabelTypes): VisitorObj {
               : children;
           propsWithChildren = t.objectExpression([
             ...attributes.properties,
-            t.objectProperty(
-              t.identifier('children'),
-              t.arrowFunctionExpression([], childrenBody)
-            ),
+            t.objectProperty(t.identifier('children'), t.arrowFunctionExpression([], childrenBody)),
           ]);
         } else if (children.elements.length === 1) {
           // Single child - pass directly (not as array)
