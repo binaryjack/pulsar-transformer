@@ -41,9 +41,16 @@ export default function pulsarBabelPlugin(api: PluginAPI): PluginObj {
             ExportNamedDeclaration: componentTransform.ExportNamedDeclaration,
           });
 
-          // Second pass: Transform control flow components
+          // Give the control-flow transform access to the program path so it
+          // can call addImport() for auto-injected specifiers (Tryer, ForRegistry,
+          // ShowRegistry) when compiler-sugar transforms fire.
+          controlFlowTransform.setProgram(path);
+
+          // Second pass: Transform control flow components + compiler-sugar
+          // expression slots ({signal().map(...)}, ternaries, &&, <boundary>)
           path.traverse({
             JSXElement: controlFlowTransform.JSXElement,
+            JSXExpressionContainer: controlFlowTransform.JSXExpressionContainer,
           });
         },
         exit(path: any) {

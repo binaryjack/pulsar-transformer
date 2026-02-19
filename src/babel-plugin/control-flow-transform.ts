@@ -10,13 +10,32 @@
  * - <ForRegistry each={items}>{item => <div/>}</ForRegistry> → ForRegistry({ fallback: () => null, children: (item, index) => children })
  * - <Index each={items}>{item => <div/>}</Index> → Index({ fallback: () => null, children: (item, index) => children })
  * - <Switch fallback={<div/>}><Match when={x}>{content}</Match></Switch> → ternary chain
+ *
+ * Compiler-sugar auto-transforms (JSXExpressionContainer):
+ * - {signal().map(cb)}            → ForRegistry({ each: () => signal(), children: cb })
+ * - {cond() ? <A/> : <B/>}       → ShowRegistry({ when: cond, children: () => <A/>, fallback: () => <B/> })
+ * - {cond() && <A/>}             → ShowRegistry({ when: cond, children: () => <A/>, fallback: () => null })
+ *
+ * JSX boundary element:
+ * - <boundary fallback={<F/>}>{children}</boundary> → Tryer({ fallback: (_e,_r) => <F/>, children: () => children })
  */
 
 import type { NodePath } from '@babel/traverse';
 import type * as BabelTypes from '@babel/types';
+import { addImport } from './jsx-transform/add-import.js';
+import { needsReactiveWrapper } from './needs-reactive-wrapper.js';
 
 export function createControlFlowTransform(t: typeof BabelTypes) {
+  // Program path set once by the plugin before traversal so transforms
+  // can call addImport() to auto-inject required specifiers.
+  let _program: NodePath<BabelTypes.Program> | null = null;
+
   return {
+    /** Called by the plugin's Program.enter before the second pass traversal. */
+    setProgram(path: NodePath<BabelTypes.Program>): void {
+      _program = path;
+    },
+
     JSXElement(path: NodePath<BabelTypes.JSXElement>) {
       const openingElement = path.node.openingElement;
       const tagName = getJSXElementName(openingElement.name, t);
@@ -64,6 +83,25 @@ export function createControlFlowTransform(t: typeof BabelTypes) {
         transformSwitch(path, t);
         return;
       }
+
+      // Handle <boundary fallback={...}>{children}</boundary>
+      // Compiler sugar for Tryer error-boundary component.
+      if (tagName === 'boundary') {
+        transformBoundary(path, t, _program);
+        return;
+      }
+    },
+
+    /**
+     * Compiler-sugar transforms inside JSX expression slots:
+     *   {signal().map(cb)}       → ForRegistry
+     *   {cond() ? <A/> : <B/>}  → ShowRegistry
+     *   {cond() && <A/>}        → ShowRegistry
+     */
+    JSXExpressionContainer(path: NodePath<BabelTypes.JSXExpressionContainer>) {
+      if (tryTransformMapToForRegistry(path, t, _program)) return;
+      if (tryTransformTernaryToShowRegistry(path, t, _program)) return;
+      tryTransformAndToShowRegistry(path, t, _program);
     },
   };
 }
@@ -539,6 +577,225 @@ function transformSwitch(path: NodePath<BabelTypes.JSXElement>, t: typeof BabelT
 
   path.replaceWith(result as any);
 }
+
+// ---------------------------------------------------------------------------
+// New compiler-sugar helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * <boundary fallback={<Fallback/>}>{children}</boundary>
+ * → Tryer({ fallback: (_error, _reset) => <Fallback/>, children: () => children })
+ *
+ * fallback can also be a function already: (error, reset) => <Fallback error={error}/>
+ */
+function transformBoundary(
+  path: NodePath<BabelTypes.JSXElement>,
+  t: typeof BabelTypes,
+  program: NodePath<BabelTypes.Program> | null
+): void {
+  const attrs = path.node.openingElement.attributes;
+  const props: BabelTypes.ObjectProperty[] = [];
+
+  // Extract fallback
+  const fallbackAttr = attrs.find(
+    (a): a is BabelTypes.JSXAttribute =>
+      t.isJSXAttribute(a) && t.isJSXIdentifier(a.name) && a.name.name === 'fallback'
+  );
+
+  if (fallbackAttr?.value) {
+    let fbExpr: BabelTypes.Expression = t.nullLiteral();
+    if (t.isJSXExpressionContainer(fallbackAttr.value)) {
+      fbExpr = fallbackAttr.value.expression as BabelTypes.Expression;
+    }
+    const isFunc = t.isArrowFunctionExpression(fbExpr) || t.isFunctionExpression(fbExpr);
+    props.push(
+      t.objectProperty(
+        t.identifier('fallback'),
+        isFunc
+          ? fbExpr
+          : t.arrowFunctionExpression(
+              [t.identifier('_error'), t.identifier('_reset')],
+              fbExpr
+            )
+      )
+    );
+  }
+
+  // Extract children
+  const rawChildren = path.node.children.filter(
+    (c) => !t.isJSXText(c) || (c as BabelTypes.JSXText).value.trim() !== ''
+  );
+
+  let childrenExpr: BabelTypes.Expression;
+  if (rawChildren.length === 0) {
+    childrenExpr = t.arrowFunctionExpression([], t.nullLiteral());
+  } else if (rawChildren.length === 1) {
+    const c = rawChildren[0];
+    if (t.isJSXExpressionContainer(c)) {
+      const inner = c.expression as BabelTypes.Expression;
+      const isFunc = t.isArrowFunctionExpression(inner) || t.isFunctionExpression(inner);
+      childrenExpr = isFunc ? inner : t.arrowFunctionExpression([], inner);
+    } else {
+      childrenExpr = t.arrowFunctionExpression([], c as any);
+    }
+  } else {
+    childrenExpr = t.arrowFunctionExpression(
+      [],
+      t.jsxFragment(t.jsxOpeningFragment(), t.jsxClosingFragment(), rawChildren as any[]) as any
+    );
+  }
+
+  props.push(t.objectProperty(t.identifier('children'), childrenExpr));
+
+  if (program) addImport(program, 'Tryer', '@pulsar-framework/pulsar.dev', t);
+
+  path.replaceWith(t.callExpression(t.identifier('Tryer'), [t.objectExpression(props)]));
+}
+
+/**
+ * {signal().map(callback)}  inside a JSXExpressionContainer
+ * → ForRegistry({ each: () => signal(), children: callback })
+ *
+ * Only fires when the .map() source is a call expression (signal getter).
+ * Static array `.map()` calls are left alone.
+ */
+function tryTransformMapToForRegistry(
+  path: NodePath<BabelTypes.JSXExpressionContainer>,
+  t: typeof BabelTypes,
+  program: NodePath<BabelTypes.Program> | null
+): boolean {
+  const expr = path.node.expression;
+  if (!t.isCallExpression(expr)) return false;
+
+  const callee = expr.callee;
+  if (!t.isMemberExpression(callee)) return false;
+
+  const prop = callee.property;
+  if (!t.isIdentifier(prop) || prop.name !== 'map') return false;
+
+  const source = callee.object;
+  // Must be any call expression — covers `items()`, `getFiltered(x())`, etc.
+  if (!t.isCallExpression(source)) return false;
+
+  const callback = expr.arguments[0] as BabelTypes.Expression | undefined;
+  if (!callback) return false;
+
+  if (program) addImport(program, 'ForRegistry', '@pulsar-framework/pulsar.dev', t);
+
+  const callExpr = t.callExpression(t.identifier('ForRegistry'), [
+    t.objectExpression([
+      t.objectProperty(
+        t.identifier('each'),
+        t.arrowFunctionExpression([], source)  // () => signal()
+      ),
+      t.objectProperty(t.identifier('children'), callback),
+    ]),
+  ]);
+
+  path.replaceWith(callExpr as any);
+  return true;
+}
+
+/**
+ * Prepare the `when` prop value for ShowRegistry from a condition expression:
+ * - `cond()`         → identifer `cond`   (zero-arg simple getter)
+ * - complex expr     → `() => complexExpr`
+ */
+function prepareWhen(
+  condition: BabelTypes.Expression,
+  t: typeof BabelTypes
+): BabelTypes.Expression {
+  const isSimpleGetter =
+    t.isCallExpression(condition) &&
+    condition.arguments.length === 0 &&
+    t.isIdentifier(condition.callee);
+  return isSimpleGetter
+    ? (condition.callee as BabelTypes.Identifier)
+    : t.arrowFunctionExpression([], condition);
+}
+
+/**
+ * {cond() ? <A/> : <B/>}  inside a JSXExpressionContainer
+ * → ShowRegistry({ when: cond, children: () => <A/>, fallback: () => <B/> })
+ *
+ * Only fires when:
+ *  - condition contains a reactive call (needsReactiveWrapper)
+ *  - at least one branch is a JSX element / fragment
+ */
+function tryTransformTernaryToShowRegistry(
+  path: NodePath<BabelTypes.JSXExpressionContainer>,
+  t: typeof BabelTypes,
+  program: NodePath<BabelTypes.Program> | null
+): boolean {
+  const expr = path.node.expression;
+  if (!t.isConditionalExpression(expr)) return false;
+
+  const { test, consequent, alternate } = expr;
+  if (!needsReactiveWrapper(test, t)) return false;
+
+  const isJSX = (n: BabelTypes.Node) => t.isJSXElement(n) || t.isJSXFragment(n);
+  if (!isJSX(consequent) && !isJSX(alternate)) return false;
+
+  const wrapBranch = (node: BabelTypes.Expression): BabelTypes.Expression =>
+    t.isArrowFunctionExpression(node) || t.isFunctionExpression(node)
+      ? node
+      : t.arrowFunctionExpression([], node as any);
+
+  if (program) addImport(program, 'ShowRegistry', '@pulsar-framework/pulsar.dev', t);
+
+  const callExpr = t.callExpression(t.identifier('ShowRegistry'), [
+    t.objectExpression([
+      t.objectProperty(t.identifier('when'), prepareWhen(test, t)),
+      t.objectProperty(t.identifier('children'), wrapBranch(consequent)),
+      t.objectProperty(t.identifier('fallback'), wrapBranch(alternate)),
+    ]),
+  ]);
+
+  path.replaceWith(callExpr as any);
+  return true;
+}
+
+/**
+ * {cond() && <A/>}  inside a JSXExpressionContainer
+ * → ShowRegistry({ when: cond, children: () => <A/>, fallback: () => null })
+ *
+ * Only fires when the right operand is JSX.
+ */
+function tryTransformAndToShowRegistry(
+  path: NodePath<BabelTypes.JSXExpressionContainer>,
+  t: typeof BabelTypes,
+  program: NodePath<BabelTypes.Program> | null
+): boolean {
+  const expr = path.node.expression;
+  if (!t.isLogicalExpression(expr) || expr.operator !== '&&') return false;
+
+  const { left, right } = expr;
+  if (!needsReactiveWrapper(left, t)) return false;
+  if (!t.isJSXElement(right) && !t.isJSXFragment(right)) return false;
+
+  if (program) addImport(program, 'ShowRegistry', '@pulsar-framework/pulsar.dev', t);
+
+  const callExpr = t.callExpression(t.identifier('ShowRegistry'), [
+    t.objectExpression([
+      t.objectProperty(t.identifier('when'), prepareWhen(left, t)),
+      t.objectProperty(
+        t.identifier('children'),
+        t.arrowFunctionExpression([], right as any)
+      ),
+      t.objectProperty(
+        t.identifier('fallback'),
+        t.arrowFunctionExpression([], t.nullLiteral())
+      ),
+    ]),
+  ]);
+
+  path.replaceWith(callExpr as any);
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Existing utility (unchanged)
+// ---------------------------------------------------------------------------
 
 /**
  * Get JSX element name as string
