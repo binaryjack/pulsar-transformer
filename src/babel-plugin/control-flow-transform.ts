@@ -698,10 +698,18 @@ function tryTransformMapToForRegistry(
       : null;
 
   if (firstParam && t.isIdentifier(firstParam)) {
-    // (item) => item.id
+    // (item) => item?.id ?? item
+    // - objects with .id  → item.id (stable numeric/string key)
+    // - primitives        → item itself (string/number is its own key)
+    // - objects without .id → falls back to the object reference
+    const paramId = t.identifier(firstParam.name);
     const keyFn = t.arrowFunctionExpression(
       [t.identifier(firstParam.name)],
-      t.memberExpression(t.identifier(firstParam.name), t.identifier('id'))
+      t.logicalExpression(
+        '??',
+        t.optionalMemberExpression(paramId, t.identifier('id'), false, true),
+        t.identifier(firstParam.name)
+      )
     );
     objProps.push(t.objectProperty(t.identifier('key'), keyFn));
   }
