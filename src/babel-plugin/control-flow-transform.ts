@@ -20,10 +20,10 @@
  * - <boundary fallback={<F/>}>{children}</boundary> → Tryer({ fallback: (_e,_r) => <F/>, children: () => children })
  */
 
-import type { NodePath } from '@babel/traverse';
-import type * as BabelTypes from '@babel/types';
-import { addImport } from './jsx-transform/add-import.js';
-import { needsReactiveWrapper } from './needs-reactive-wrapper.js';
+import type { NodePath } from '@babel/traverse'
+import type * as BabelTypes from '@babel/types'
+import { addImport } from './jsx-transform/add-import.js'
+import { needsReactiveWrapper } from './needs-reactive-wrapper.js'
 
 export function createControlFlowTransform(t: typeof BabelTypes) {
   // Program path set once by the plugin before traversal so transforms
@@ -682,14 +682,34 @@ function tryTransformMapToForRegistry(
 
   if (program) addImport(program, 'ForRegistry', '@pulsar-framework/pulsar.dev', t);
 
+  // Auto-derive key from the callback's first parameter: (item) => item.id
+  // The param name is already in the callback — no guessing needed.
+  const objProps: BabelTypes.ObjectProperty[] = [
+    t.objectProperty(
+      t.identifier('each'),
+      t.arrowFunctionExpression([], source) // () => signal()
+    ),
+  ];
+
+  const firstParam =
+    (t.isArrowFunctionExpression(callback) || t.isFunctionExpression(callback)) &&
+    callback.params.length > 0
+      ? callback.params[0]
+      : null;
+
+  if (firstParam && t.isIdentifier(firstParam)) {
+    // (item) => item.id
+    const keyFn = t.arrowFunctionExpression(
+      [t.identifier(firstParam.name)],
+      t.memberExpression(t.identifier(firstParam.name), t.identifier('id'))
+    );
+    objProps.push(t.objectProperty(t.identifier('key'), keyFn));
+  }
+
+  objProps.push(t.objectProperty(t.identifier('children'), callback));
+
   const callExpr = t.callExpression(t.identifier('ForRegistry'), [
-    t.objectExpression([
-      t.objectProperty(
-        t.identifier('each'),
-        t.arrowFunctionExpression([], source)  // () => signal()
-      ),
-      t.objectProperty(t.identifier('children'), callback),
-    ]),
+    t.objectExpression(objProps),
   ]);
 
   path.replaceWith(callExpr as any);
@@ -732,6 +752,13 @@ function tryTransformTernaryToShowRegistry(
 
   const { test, consequent, alternate } = expr;
   if (!needsReactiveWrapper(test, t)) return false;
+
+  // Do NOT transform nested ternaries (A ? B : C ? D : E):
+  // the alternate branch has its own reactive condition that must stay live.
+  // ShowRegistry can only subscribe to one `when` — converting here would
+  // make ShowRegistry subscribe only to `test`, losing reactivity for the
+  // inner condition entirely.
+  if (t.isConditionalExpression(alternate)) return false;
 
   const isJSX = (n: BabelTypes.Node) => t.isJSXElement(n) || t.isJSXFragment(n);
   if (!isJSX(consequent) && !isJSX(alternate)) return false;
