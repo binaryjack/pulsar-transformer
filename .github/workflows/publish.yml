@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
@@ -48,6 +49,6 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG="latest"
           fi
-          pnpm publish --no-git-checks --tag "$TAG"
+          pnpm publish --no-git-checks --provenance --tag "$TAG"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
