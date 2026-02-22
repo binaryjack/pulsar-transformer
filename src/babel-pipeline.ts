@@ -44,6 +44,15 @@ function preprocessPSR(source: string): string {
 }
 
 /**
+ * Detect whether source contains JSX syntax.
+ * Cheap string scan — avoids full parse for non-component .psr files.
+ */
+function containsJSX(source: string): boolean {
+  // Match opening JSX tags: <Foo, <div, <br/>, </Foo>
+  return /<[A-Za-z/]/.test(source);
+}
+
+/**
  * Transform PSR source using Babel
  */
 export async function transformWithBabelPipeline(
@@ -52,6 +61,33 @@ export async function transformWithBabelPipeline(
 ): Promise<IPipelineResult> {
   const startTime = perf.now();
   const diagnostics: IDiagnostic[] = [];
+
+  // Passthrough: .psr files with no JSX are treated as plain TypeScript.
+  // Skip all Pulsar-specific transformation — just strip TS syntax via Babel.
+  if (!containsJSX(source)) {
+    try {
+      const ast = parse(source, {
+        sourceType: 'module',
+        plugins: ['typescript'],
+        sourceFilename: options.filePath || 'input.psr',
+      });
+      const output = generate(ast, { comments: true }, source);
+      const totalTime = perf.now() - startTime;
+      return {
+        code: output.code,
+        diagnostics: [],
+        metrics: {
+          preprocessorTime: 0,
+          lexerTime: 0,
+          parserTime: 0,
+          transformTime: totalTime,
+          totalTime,
+        },
+      };
+    } catch (error: any) {
+      // Fall through to full pipeline on parse failure
+    }
+  }
 
   try {
     // Step 1: Preprocess PSR syntax
@@ -139,4 +175,3 @@ export async function transformWithBabelPipeline(
     };
   }
 }
-

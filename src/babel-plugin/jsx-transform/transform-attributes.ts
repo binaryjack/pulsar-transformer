@@ -33,9 +33,10 @@ export function transformAttributes(
     if (t.isJSXSpreadAttribute(attr)) {
       properties.push(t.spreadElement(attr.argument));
     } else if (t.isJSXAttribute(attr)) {
-      // Use identifier for key (unquoted) instead of string literal
+      // Use identifier for simple names, string literal for names with hyphens/special chars
       const keyName = t.isJSXIdentifier(attr.name) ? attr.name.name : 'unknown';
-      const key = t.identifier(keyName);
+      const isValidIdentifier = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(keyName);
+      const key = isValidIdentifier ? t.identifier(keyName) : t.stringLiteral(keyName);
 
       let value: BabelTypes.Expression;
 
