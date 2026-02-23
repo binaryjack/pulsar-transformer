@@ -39,17 +39,18 @@
     "@babel/traverse": "^7.29.0",
     "@babel/types": "^7.29.0",
     "acorn": "^8.14.0",
-    "acorn-jsx": "^5.3.2",
-    "typescript": "^5.9.3"
+    "acorn-jsx": "^5.3.2"
   },
   "devDependencies": {
     "@pulsar-framework/pulsar.dev": "workspace:0.7.0-alpha",
     "@types/babel__generator": "^7.27.0",
     "@types/babel__traverse": "^7.28.0",
     "@types/jsdom": "^21.1.7",
-    "@vitest/coverage-v8": "^2.1.8",
+    "@types/node": "^20.19.30",
+    "@vitest/coverage-v8": "^4.0.18",
     "jsdom": "^25.0.1",
-    "vitest": "^2.1.8"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   },
   "keywords": [
     "pulsar",

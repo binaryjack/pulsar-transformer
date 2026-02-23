@@ -47,12 +47,20 @@ export function createJSXTransform(t: typeof BabelTypes): VisitorObj {
         // Includes common import aliases (ShowRegistry as Show, etc.)
         const lazyChildrenComponents = new Set(['ShowRegistry', 'Show']);
 
+        // Context Providers (Foo.Provider) must also be lazy: children must execute
+        // AFTER Provider pushes the context value onto _syncStack, not before.
+        const isContextProvider =
+          t.isMemberExpression(componentName) &&
+          t.isIdentifier((componentName as BabelTypes.MemberExpression).property) &&
+          ((componentName as BabelTypes.MemberExpression).property as BabelTypes.Identifier)
+            .name === 'Provider';
+
         // Add children to props if present
         let propsWithChildren: BabelTypes.ObjectExpression;
         if (children.elements.length === 0) {
           // No children
           propsWithChildren = attributes;
-        } else if (lazyChildrenComponents.has(componentNameStr)) {
+        } else if (lazyChildrenComponents.has(componentNameStr) || isContextProvider) {
           // Show/ShowRegistry: wrap children in arrow function so they are only
           // evaluated when the condition is true, not at initial render time.
           // This prevents Portal targets from being queried before sibling Modal mounts.

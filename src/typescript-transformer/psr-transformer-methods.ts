@@ -3,9 +3,9 @@
  * Pattern: Utility functions for transformation operations
  */
 
-import * as ts from 'typescript'
-import type { IPSRTransformer } from './psr-transformer.types.js'
-import { TransformationPhaseEnum } from './transformation-tracker.types.js'
+import * as ts from 'typescript';
+import type { IPSRTransformer } from './psr-transformer.types.js';
+import { TransformationPhaseEnum } from './transformation-tracker.types.js';
 
 /**
  * Transform JSX self-closing element
@@ -101,7 +101,7 @@ export function transformControlFlowComponent(
  * <ShowRegistry when={condition} fallback={<div>fallback</div>}>
  *   <div>content</div>
  * </ShowRegistry>
- * 
+ *
  * Becomes:
  * ShowRegistry({ when: condition, fallback: () => <div>fallback</div>, children: () => <div>content</div> })
  */
@@ -148,10 +148,9 @@ export function transformShowComponent(
 
   // Transform children and wrap in arrow function for deferred evaluation
   const childrenArray: ts.ArrayLiteralExpression = this.transformJSXChildren(node.children);
-  const childrenExpression = childrenArray.elements.length === 1 
-    ? childrenArray.elements[0]
-    : childrenArray;
-  
+  const childrenExpression =
+    childrenArray.elements.length === 1 ? childrenArray.elements[0] : childrenArray;
+
   const childrenFunction = ts.factory.createArrowFunction(
     undefined,
     undefined,
@@ -171,7 +170,9 @@ export function transformShowComponent(
   );
 
   if (this.tracker) {
-    this.tracker.completeStep(stepId, 'CallExpression (ShowRegistry)', { hasFallback: !!fallbackAttr });
+    this.tracker.completeStep(stepId, 'CallExpression (ShowRegistry)', {
+      hasFallback: !!fallbackAttr,
+    });
   }
 
   return callExpression;
@@ -182,7 +183,7 @@ export function transformShowComponent(
  * <ForRegistry each={items()} fallback={<div>empty</div>}>
  *   {(item) => <div>{item.name}</div>}
  * </ForRegistry>
- * 
+ *
  * Becomes:
  * ForRegistry({ each: items(), fallback: () => <div>empty</div>, children: (item) => t_element('div', {}, [item.name]) })
  */
@@ -259,7 +260,9 @@ export function transformForComponent(
   );
 
   if (this.tracker) {
-    this.tracker.completeStep(stepId, 'CallExpression (ForRegistry)', { hasFallback: !!fallbackAttr });
+    this.tracker.completeStep(stepId, 'CallExpression (ForRegistry)', {
+      hasFallback: !!fallbackAttr,
+    });
   }
 
   return callExpression;
@@ -270,7 +273,7 @@ export function transformForComponent(
  * <Index each={colors()}>
  *   {(color, index) => <div>Index: {index} - {color()}</div>}
  * </Index>
- * 
+ *
  * Becomes:
  * Index({ each: colors(), children: (color, index) => t_element('div', {}, ['Index: ', index, ' - ', color()]) })
  */
@@ -350,6 +353,96 @@ export function transformIndexComponent(
   }
 
   return callExpression;
+}
+
+/**
+ * Transform context provider element
+ * <SomeContext.Provider value={v}>
+ *   <Child />
+ * </SomeContext.Provider>
+ *
+ * Becomes:
+ * SomeContext.Provider({ value: v, children: () => Child({}) })
+ *
+ * Wrapping children in an arrow function is the critical fix:
+ * the Provider sets the context signal BEFORE calling children(),
+ * so useContext() inside children reads the correct value.
+ */
+export function transformContextProvider(
+  this: IPSRTransformer,
+  node: ts.JsxElement
+): ts.CallExpression {
+  const tagName = this.getJSXTagName(node);
+  const stepId = `context-provider-${tagName}-${++this.transformationCount!}`;
+
+  if (this.tracker) {
+    this.tracker.startStep(
+      stepId,
+      `Transform context provider: ${tagName}`,
+      TransformationPhaseEnum.JSX_TRANSFORM,
+      'JsxElement (ContextProvider)'
+    );
+  }
+
+  // 'value' prop is required on every Provider
+  const valueAttr = this.getJSXAttributeValue(node, 'value');
+  if (!valueAttr) {
+    throw new Error(`Context Provider <${tagName}> requires a "value" attribute`);
+  }
+
+  const propsProperties: ts.ObjectLiteralElementLike[] = [
+    ts.factory.createPropertyAssignment('value', valueAttr),
+  ];
+
+  // Transform children first, then wrap in () => ... so the Provider
+  // executes setContextValue(value) before children() is ever called.
+  const childrenArray = this.transformJSXChildren(node.children);
+  const childrenExpression: ts.Expression =
+    childrenArray.elements.length === 1
+      ? (childrenArray.elements[0] as ts.Expression)
+      : childrenArray;
+
+  const childrenFunction = ts.factory.createArrowFunction(
+    undefined,
+    undefined,
+    [],
+    undefined,
+    ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+    childrenExpression
+  );
+  propsProperties.push(ts.factory.createPropertyAssignment('children', childrenFunction));
+
+  const propsObject = ts.factory.createObjectLiteralExpression(propsProperties, true);
+
+  // Use the original tagName AST node directly as the callee so dot-notation
+  // (e.g. FormContext.Provider) is preserved without string-splitting.
+  // Cast required: JsxTagNameExpression includes JsxNamespacedName which is not
+  // an Expression, but Provider tags will always be Identifier or PropertyAccess.
+  const calleeNode = node.openingElement.tagName as unknown as ts.Expression;
+
+  const callExpression = ts.factory.createCallExpression(calleeNode, undefined, [propsObject]);
+
+  if (this.tracker) {
+    this.tracker.completeStep(stepId, 'CallExpression (Provider with deferred children)', {
+      tagName,
+    });
+  }
+
+  return callExpression;
+}
+
+/**
+ * Transform useContext call
+ * useContext(SomeContext) — no AST rewrite needed; the runtime signal read
+ * inside useContext() handles reactivity. This method exists so the visitor
+ * branch does not throw when it encounters useContext() in a .psr file.
+ */
+export function transformUseContextCall(
+  this: IPSRTransformer,
+  node: ts.CallExpression
+): ts.CallExpression {
+  // Identity transform — preserve the call as-is.
+  return node;
 }
 
 /**
@@ -618,4 +711,3 @@ export function injectImports(this: IPSRTransformer, sourceFile: ts.SourceFile):
 
   return updatedSourceFile;
 }
-
