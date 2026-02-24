@@ -47,13 +47,15 @@ export function createJSXTransform(t: typeof BabelTypes): VisitorObj {
         // Includes common import aliases (ShowRegistry as Show, etc.)
         const lazyChildrenComponents = new Set(['ShowRegistry', 'Show']);
 
-        // Context Providers (Foo.Provider) must also be lazy: children must execute
+        // Context Providers must also be lazy: children must execute
         // AFTER Provider pushes the context value onto _syncStack, not before.
+        // Matches: Foo.Provider (member expression) AND XxxProvider (identifier ending in Provider)
         const isContextProvider =
-          t.isMemberExpression(componentName) &&
-          t.isIdentifier((componentName as BabelTypes.MemberExpression).property) &&
-          ((componentName as BabelTypes.MemberExpression).property as BabelTypes.Identifier)
-            .name === 'Provider';
+          (t.isMemberExpression(componentName) &&
+            t.isIdentifier((componentName as BabelTypes.MemberExpression).property) &&
+            ((componentName as BabelTypes.MemberExpression).property as BabelTypes.Identifier)
+              .name === 'Provider') ||
+          (t.isIdentifier(componentName) && /Provider$/.test(componentName.name));
 
         // Add children to props if present
         let propsWithChildren: BabelTypes.ObjectExpression;
