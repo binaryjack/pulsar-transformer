@@ -4,6 +4,7 @@
  */
 
 import type * as BabelTypes from '@babel/types';
+import { needsReactiveWrapper } from '../needs-reactive-wrapper.js';
 
 /**
  * Transforms JSX attributes into a Babel object expression
@@ -110,6 +111,33 @@ export function transformAttributes(
               return prop;
             });
             value = t.objectExpression(styleProps);
+          }
+
+          // Auto-wrap reactive expressions for all non-special attributes.
+          // Mirrors the same logic already applied in transform-children.ts so that
+          // signal calls inside attribute values are also tracked by the effect system.
+          //
+          // Skipped when:
+          //   - value is already a function (user-provided arrow or function expr)
+          //   - event handler (onXxx) — intentionally a plain function reference
+          //   - style — handled above with dedicated logic
+          //   - control-flow special attrs (each/when) — already unwrapped to signal refs
+          //
+          // Example: stroke={selectedId() === line.id ? 'a' : 'b'}
+          //   → stroke: () => selectedId() === line.id ? 'a' : 'b'
+          //   → wired via $REGISTRY.wire(el, 'stroke', getter) → setAttribute on change
+          const isAlreadyFunction =
+            t.isArrowFunctionExpression(value) || t.isFunctionExpression(value);
+          const isEventHandler = keyName.startsWith('on');
+          const isStyleAttr = keyName === 'style';
+          const isControlFlowSpecial =
+            (needsEachUnwrap.has(componentName) && keyName === 'each') ||
+            (needsWhenUnwrap.has(componentName) && keyName === 'when');
+
+          if (!isAlreadyFunction && !isEventHandler && !isStyleAttr && !isControlFlowSpecial) {
+            if (needsReactiveWrapper(value, t)) {
+              value = t.arrowFunctionExpression([], value);
+            }
           }
         } else {
           value = t.nullLiteral();
