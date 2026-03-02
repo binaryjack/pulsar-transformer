@@ -129,12 +129,16 @@ export function transformAttributes(
           const isAlreadyFunction =
             t.isArrowFunctionExpression(value) || t.isFunctionExpression(value);
           const isEventHandler = keyName.startsWith('on');
-          const isStyleAttr = keyName === 'style';
+          // Only skip auto-wrap for style OBJECT — its individual properties were already
+          // wrapped above. Style template literals are already wrapped (isAlreadyFunction).
+          // Style ternaries / other expressions must fall through to auto-wrap so they get
+          // wired via style.cssText in the runtime.
+          const isStyleObject = keyName === 'style' && t.isObjectExpression(value);
           const isControlFlowSpecial =
             (needsEachUnwrap.has(componentName) && keyName === 'each') ||
             (needsWhenUnwrap.has(componentName) && keyName === 'when');
 
-          if (!isAlreadyFunction && !isEventHandler && !isStyleAttr && !isControlFlowSpecial) {
+          if (!isAlreadyFunction && !isEventHandler && !isStyleObject && !isControlFlowSpecial) {
             if (needsReactiveWrapper(value, t)) {
               value = t.arrowFunctionExpression([], value);
             }
