@@ -20,10 +20,10 @@
  * - <boundary fallback={<F/>}>{children}</boundary> → Tryer({ fallback: (_e,_r) => <F/>, children: () => children })
  */
 
-import type { NodePath } from '@babel/traverse'
-import type * as BabelTypes from '@babel/types'
-import { addImport } from './jsx-transform/add-import.js'
-import { needsReactiveWrapper } from './needs-reactive-wrapper.js'
+import type { NodePath } from '@babel/traverse';
+import type * as BabelTypes from '@babel/types';
+import { addImport } from './jsx-transform/add-import.js';
+import { needsReactiveWrapper } from './needs-reactive-wrapper.js';
 
 export function createControlFlowTransform(t: typeof BabelTypes) {
   // Program path set once by the plugin before traversal so transforms
@@ -616,10 +616,7 @@ function transformBoundary(
         t.identifier('fallback'),
         isFunc
           ? fbExpr
-          : t.arrowFunctionExpression(
-              [t.identifier('_error'), t.identifier('_reset')],
-              fbExpr
-            )
+          : t.arrowFunctionExpression([t.identifier('_error'), t.identifier('_reset')], fbExpr)
       )
     );
   }
@@ -719,9 +716,7 @@ function tryTransformMapToForRegistry(
 
   objProps.push(t.objectProperty(t.identifier('children'), callback));
 
-  const callExpr = t.callExpression(t.identifier('ForRegistry'), [
-    t.objectExpression(objProps),
-  ]);
+  const callExpr = t.callExpression(t.identifier('ForRegistry'), [t.objectExpression(objProps)]);
 
   path.replaceWith(callExpr as any);
   return true;
@@ -816,14 +811,8 @@ function tryTransformAndToShowRegistry(
   const callExpr = t.callExpression(t.identifier('ShowRegistry'), [
     t.objectExpression([
       t.objectProperty(t.identifier('when'), prepareWhen(left, t)),
-      t.objectProperty(
-        t.identifier('children'),
-        t.arrowFunctionExpression([], right as any)
-      ),
-      t.objectProperty(
-        t.identifier('fallback'),
-        t.arrowFunctionExpression([], t.nullLiteral())
-      ),
+      t.objectProperty(t.identifier('children'), t.arrowFunctionExpression([], right as any)),
+      t.objectProperty(t.identifier('fallback'), t.arrowFunctionExpression([], t.nullLiteral())),
     ]),
   ]);
 
