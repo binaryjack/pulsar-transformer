@@ -14,6 +14,8 @@ export interface IPipelineResult {
   code: string;
   diagnostics: IDiagnostic[];
   metrics?: IPipelineMetrics;
+  /** Source map mapping generated TypeScript back to the original PSR source. */
+  map?: Record<string, unknown> | null;
 }
 
 export interface IDiagnostic {

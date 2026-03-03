@@ -167,12 +167,15 @@ export async function transformWithBabelPipeline(
       console.log('\n=== TRANSFORMATION COMPLETE ===');
     }
 
-    // Step 4: Generate code
+    // Step 4: Generate code with sourcemaps so the vite plugin can chain
+    // PSR → TS → JS and give debuggers full fidelity to the original .psr source.
     const output = generate(
       ast,
       {
         retainLines: false,
         comments: true,
+        sourceMaps: true,
+        sourceFileName: options.filePath || 'input.psr',
         jsescOption: {
           quotes: 'single',
           minimal: true,
@@ -194,6 +197,7 @@ export async function transformWithBabelPipeline(
 
     return {
       code: output.code,
+      map: output.map ?? null,
       diagnostics,
       metrics: {
         preprocessorTime: 0,
