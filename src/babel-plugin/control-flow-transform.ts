@@ -62,18 +62,21 @@ export function createControlFlowTransform(t: typeof BabelTypes) {
       // (e.g. tasks()) subscribe to changes and the DOM updates on setTasks().
       // We preserve the original tag identifier so the call matches the import alias.
       if (tagName === 'For') {
+        if (_program) addImport(_program, 'ForRegistry', '@pulsar-framework/pulsar.dev', t);
         transformRegistryList(path, t, 'For');
         return;
       }
 
       // Handle <ForRegistry> (runtime component)
       if (tagName === 'ForRegistry') {
+        if (_program) addImport(_program, 'ForRegistry', '@pulsar-framework/pulsar.dev', t);
         transformForRegistry(path, t);
         return;
       }
 
       // Handle <Index> (runtime component)
       if (tagName === 'Index') {
+        if (_program) addImport(_program, 'Index', '@pulsar-framework/pulsar.dev', t);
         transformIndex(path, t);
         return;
       }
