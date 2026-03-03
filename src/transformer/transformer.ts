@@ -20,10 +20,11 @@ import type {
 import type { ITransformContext, ITransformResult } from './transformer.types.js';
 
 // Enterprise diagnostic system imports
-import { getTransformerDiagnostics } from './diagnostics.js';
-import { getTransformationTracker } from './state-tracker.js';
-import { getTransformerEdgeCaseDetector } from './edge-cases.js';
 import { getTransformerDebugger } from './debug-tools.js';
+import { createDiagnosticStubs } from './diagnostic-stubs.js';
+import { getTransformerDiagnostics } from './diagnostics.js';
+import { getTransformerEdgeCaseDetector } from './edge-cases.js';
+import { getTransformationTracker } from './state-tracker.js';
 import { getTransformerRecoveryController } from './warning-recovery.js';
 
 /**
@@ -106,13 +107,21 @@ export const Transformer: ITransformer = function (
       timestamp: Date.now(),
     });
   } catch (error) {
-    // Fallback mode - create minimal diagnostic stubs for backward compatibility
-    console.log('[TRANSFORMER] Diagnostic system not available, using fallback mode');
-    this.diagnostics = null as any;
-    this.stateTracker = null as any;
-    this.edgeDetector = null as any;
-    this.debugger = null as any;
-    this.recovery = null as any;
+    // Diagnostic system unavailable — activate typed null-object stubs so that
+    // diagnosticTransform still receives real objects and type safety is preserved.
+    // ZERO_ANY_STRICT_UNIONS: no null as any allowed.
+    const stubs = createDiagnosticStubs();
+    this.diagnostics = stubs.diagnostics as unknown as ReturnType<typeof getTransformerDiagnostics>;
+    this.stateTracker = stubs.stateTracker as unknown as ReturnType<
+      typeof getTransformationTracker
+    >;
+    this.edgeDetector = stubs.edgeDetector as unknown as ReturnType<
+      typeof getTransformerEdgeCaseDetector
+    >;
+    this.debugger = stubs.debugger as unknown as ReturnType<typeof getTransformerDebugger>;
+    this.recovery = stubs.recovery as unknown as ReturnType<
+      typeof getTransformerRecoveryController
+    >;
   }
 } as any;
 
@@ -254,5 +263,3 @@ Transformer.prototype.diagnosticTransform = function <
  * Export prototype for registration
  */
 export const TransformerPrototype = Transformer.prototype;
-
-

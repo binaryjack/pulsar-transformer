@@ -7,7 +7,9 @@ import babelGeneratorDefault from '@babel/generator';
 import * as babel from '@babel/parser';
 import babelTraverseDefault from '@babel/traverse';
 import * as t from '@babel/types';
+import { adaptBabelAst } from './babel-ast-adapter.js';
 import pulsarPlugin from './babel-plugin/index.js';
+import { SemanticAnalyzer } from './semantic-analyzer/index.js';
 import type { IDiagnostic, IPipelineOptions, IPipelineResult } from './types.js';
 
 const parse = babel.parse;
@@ -105,9 +107,57 @@ export async function transformWithBabelPipeline(
       sourceFilename: options.filePath || 'input.psr',
     });
 
-    if (options.debug) {
-      console.log('\n=== BABEL AST PARSED ===');
-      console.log(`Nodes: ${ast.program.body.length}`);
+    // Step 2.5: Semantic Analysis
+    // Convert Babel AST → IProgramNode and run Pulsar's SemanticAnalyzer.
+    // Semantic errors/warnings are added to diagnostics but do NOT abort
+    // the pipeline unless the caller sets options.strictSemantic = true.
+    try {
+      const psrAst = adaptBabelAst(ast);
+      const analyzer = new (SemanticAnalyzer as any)(psrAst, options.filePath || 'input.psr');
+      const semanticResult = analyzer.analyze();
+
+      for (const err of semanticResult.errors) {
+        diagnostics.push({
+          type: 'error',
+          phase: 'semantic',
+          message: err.message,
+          line: err.loc?.start?.line,
+          column: err.loc?.start?.column,
+        });
+      }
+
+      for (const warn of semanticResult.warnings) {
+        diagnostics.push({
+          type: 'warning',
+          phase: 'semantic',
+          message: warn.message,
+          line: warn.loc?.start?.line,
+          column: warn.loc?.start?.column,
+        });
+      }
+
+      // Abort pipeline on semantic errors only when strict mode requested
+      if ((options as any).strictSemantic && semanticResult.errors.length > 0) {
+        return {
+          code: '',
+          diagnostics,
+          metrics: {
+            preprocessorTime: 0,
+            lexerTime: 0,
+            parserTime: 0,
+            transformTime: perf.now() - startTime,
+            totalTime: perf.now() - startTime,
+          },
+        };
+      }
+    } catch (_semanticError) {
+      // SemanticAnalyzer failure must never kill the pipeline —
+      // surface as a warning and continue with transformation.
+      diagnostics.push({
+        type: 'warning',
+        phase: 'semantic',
+        message: 'SemanticAnalyzer encountered an internal error — analysis skipped.',
+      });
     }
 
     // Step 3: Transform with Pulsar plugin

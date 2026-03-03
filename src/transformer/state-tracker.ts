@@ -139,7 +139,6 @@ TransformationStateTracker.prototype.startSession = function (
   this.sessions.set(sessionId, session);
   this.activeSession = session;
 
-  console.log(`[TRANSFORMER-TRACKER] Session started: ${sessionId} for ${sourceFile}`);
   return sessionId;
 };
 
@@ -156,10 +155,6 @@ TransformationStateTracker.prototype.endSession = function (
   if (this.activeSession.currentStep) {
     this.endCurrentStep(true);
   }
-
-  console.log(
-    `[TRANSFORMER-TRACKER] Session ended: ${this.activeSession.sessionId} (${this.activeSession.totalDuration?.toFixed(2)}ms)`
-  );
 
   const session = this.activeSession;
   this.activeSession = null;
@@ -200,8 +195,6 @@ TransformationStateTracker.prototype.startStep = function (
     this.activeSession.phases.set(phase, []);
   }
   this.activeSession.phases.get(phase)!.push(step);
-
-  console.log(`[TRANSFORMER-STEP] ${description} (${nodeType})`);
 };
 
 TransformationStateTracker.prototype.completeStep = function (
@@ -347,10 +340,6 @@ TransformationStateTracker.prototype.endCurrentStep = function (
   if (metadata) {
     step.metadata = { ...step.metadata, ...metadata };
   }
-
-  console.log(
-    `[TRANSFORMER-STEP] ${success ? 'COMPLETED' : 'FAILED'} ${step.metadata?.description} (${step.duration.toFixed(2)}ms)`
-  );
 
   if (success) {
     this.activeSession.metadata.transformedNodes++;
