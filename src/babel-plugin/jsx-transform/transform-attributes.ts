@@ -21,7 +21,14 @@ import { needsReactiveWrapper } from '../needs-reactive-wrapper.js';
 export function transformAttributes(
   attributes: Array<BabelTypes.JSXAttribute | BabelTypes.JSXSpreadAttribute>,
   t: typeof BabelTypes,
-  componentName: string = ''
+  componentName: string = '',
+  /**
+   * When true, auto-wrapping reactive values as getter functions is SKIPPED.
+   * Components receive plain JS values in their props — they manage their own
+   * reactivity internally. Auto-wrap only makes sense for native HTML element
+   * attributes which are wired via $REGISTRY.wire() expecting a getter.
+   */
+  isComponent: boolean = false
 ): BabelTypes.ObjectExpression {
   const properties: Array<BabelTypes.ObjectProperty | BabelTypes.SpreadElement> = [];
 
@@ -138,7 +145,19 @@ export function transformAttributes(
             (needsEachUnwrap.has(componentName) && keyName === 'each') ||
             (needsWhenUnwrap.has(componentName) && keyName === 'when');
 
-          if (!isAlreadyFunction && !isEventHandler && !isStyleObject && !isControlFlowSpecial) {
+          // Auto-wrap only for native HTML element attributes, NOT for component props.
+          // Components receive raw JS values; native elements need getter functions
+          // so $REGISTRY.wire() can subscribe to signal changes.
+          // Wrapping component props (e.g. resource={resource()}) would produce
+          // `resource: () => resource()` — the component receives a function
+          // instead of the actual value, silently breaking prop access.
+          if (
+            !isAlreadyFunction &&
+            !isEventHandler &&
+            !isStyleObject &&
+            !isControlFlowSpecial &&
+            !isComponent
+          ) {
             if (needsReactiveWrapper(value, t)) {
               value = t.arrowFunctionExpression([], value);
             }

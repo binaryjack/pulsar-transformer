@@ -39,7 +39,14 @@ export function createJSXTransform(t: typeof BabelTypes): VisitorObj {
         // Component call: Component(props)
         const componentName = getComponentName(openingElement.name, t);
         const componentNameStr = t.isIdentifier(componentName) ? componentName.name : '';
-        const attributes = transformAttributes(openingElement.attributes, t, componentNameStr);
+        // Pass isComponent=true: component props must NOT be auto-wrapped as getters.
+        // Components receive plain JS values and manage their own reactivity internally.
+        const attributes = transformAttributes(
+          openingElement.attributes,
+          t,
+          componentNameStr,
+          true
+        );
         const children = transformChildren(element.children, t);
 
         // Components that need lazy children evaluation to avoid eagerly calling
