@@ -49,11 +49,16 @@ export function transformChildren(
           .replaceAll(/\s+/g, ' ') // Collapse multiple spaces to single space
           .trim(); // Remove leading/trailing spaces after normalization
 
-        // CRITICAL: If original text ended with space before an expression, preserve it
-        // e.g., "Index: {expr}" should keep the space: "Index: " not "Index:"
+        // CRITICAL: Preserve trailing spaces
         const endsWithSpace = /\s$/.test(text.replaceAll(/[\n\r\t]+$/g, ''));
         if (endsWithSpace && processedText) {
           processedText += ' ';
+        }
+
+        // CRITICAL: Preserve leading spaces
+        const startsWithSpace = /^\s/.test(text.replaceAll(/^[\n\r\t]+/g, ''));
+        if (startsWithSpace && processedText) {
+          processedText = ' ' + processedText;
         }
       } else {
         // Pure whitespace - only preserve if it's on a single line (between inline elements)

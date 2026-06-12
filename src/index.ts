@@ -191,5 +191,4 @@ export type {
   ISymbol,
   ISymbolTable,
 } from './semantic-analyzer/index.js';
-export { createTransformer, Transformer, type ITransformer } from './transformer/index.js';
-export type { ITransformContext, ITransformError, ITransformResult } from './transformer/index.js';
+

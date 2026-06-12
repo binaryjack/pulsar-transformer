@@ -8,6 +8,7 @@ import { createComponentTransform } from './component-transform.js'
 import { createControlFlowTransform } from './control-flow-transform.js'
 import { createJSXTransform } from './jsx-transform/index.js'
 import { createSignalTransform } from './signal-transform.js'
+import { createImportTransform } from './import-transform.js'
 
 interface PluginAPI {
   types: typeof BabelTypes;
@@ -24,6 +25,7 @@ export default function pulsarBabelPlugin(api: PluginAPI): PluginObj {
   const jsxTransform = createJSXTransform(t);
   const componentTransform = createComponentTransform(t);
   const signalTransform = createSignalTransform(t);
+  const importTransform = createImportTransform(t);
 
   return {
     name: 'pulsar-transform',
@@ -36,9 +38,10 @@ export default function pulsarBabelPlugin(api: PluginAPI): PluginObj {
 
       Program: {
         enter(path: any) {
-          // First pass: Wrap components with $REGISTRY.execute()
+          // First pass: Wrap components with $REGISTRY.execute() and transform imports
           path.traverse({
             ExportNamedDeclaration: componentTransform.ExportNamedDeclaration,
+            ImportDeclaration: importTransform.ImportDeclaration,
           });
 
           // Give the control-flow transform access to the program path so it
