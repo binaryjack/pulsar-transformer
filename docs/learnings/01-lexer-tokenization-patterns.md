@@ -43,7 +43,7 @@ RBRACE
 
 ### Framework-Specific Tokens
 
-**Solid.js/Pulsar:**
+**Solid.js/Synetics:**
 
 - `signal`, `createSignal`, `createEffect`, `createMemo`
 - JSX tokens: `<`, `>`, `</`, `/>`
@@ -179,7 +179,7 @@ function scanInCurrentState(lexer: IStatefulLexer): IToken {
 
 ---
 
-## JSX Tokenization (Critical for Pulsar)
+## JSX Tokenization (Critical for Synetics)
 
 ### JSX State Transitions
 

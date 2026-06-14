@@ -1,4 +1,4 @@
-# Main Implementation Sequence - Pulsar Transformer Features
+# Main Implementation Sequence - Synetics Transformer Features
 
 **Date:** 2026-02-11 (Updated post-validation)  
 **Purpose:** Sequential implementation roadmap for PSR transformer features  
@@ -31,7 +31,7 @@ Original plan had **36 features** with **19-week timeline**.
 
 ### Current Implementation Status
 
-**Pulsar Transformer Pipeline (3-Phase Monolithic):**
+**Synetics Transformer Pipeline (3-Phase Monolithic):**
 
 ```
 PSR Source Code

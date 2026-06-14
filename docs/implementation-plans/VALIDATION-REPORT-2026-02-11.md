@@ -11,7 +11,7 @@
 
 **CRITICAL FINDING:** 22 out of 36 plans (61%) confuse **Runtime Framework Features** with **Transformer Features**.
 
-**What this means:** Over half the plans ask to "implement" or "transform" features that **ALREADY EXIST** in the Pulsar runtime (`@synetics/synetics.dev`). The transformer's job is NOT to implement these features—the transformer merely needs to **parse and transform PSR syntax to JavaScript**, letting the runtime handle behavior.
+**What this means:** Over half the plans ask to "implement" or "transform" features that **ALREADY EXIST** in the Synetics runtime (`@synetics/synetics.dev`). The transformer's job is NOT to implement these features—the transformer merely needs to **parse and transform PSR syntax to JavaScript**, letting the runtime handle behavior.
 
 ---
 

@@ -1,4 +1,4 @@
-# Pulsar Transformer
+# Synetics Transformer
 
 **Production-ready PSR → TypeScript transformation pipeline**
 
@@ -51,7 +51,7 @@
 
 ## Overview
 
-The Pulsar Transformer converts PSR (Pulsar Syntax) source code into optimized TypeScript through a **3-phase compilation pipeline**:
+The Synetics Transformer converts PSR (Synetics Syntax) source code into optimized TypeScript through a **3-phase compilation pipeline**:
 
 ```
 PSR Source → Lexer → Parser → CodeGenerator → TypeScript
@@ -78,13 +78,13 @@ PSR Source → Lexer → Parser → CodeGenerator → TypeScript
 ### Installation
 
 ```bash
-npm install @pulsar/transformer
+npm install @synetics/transformer
 ```
 
 ### Basic Usage
 
 ```typescript
-import { createPipeline } from '@pulsar/transformer';
+import { createPipeline } from '@synetics/transformer';
 
 const pipeline = createPipeline();
 
@@ -102,8 +102,8 @@ console.log(result.code);
 **Output**:
 
 ```typescript
-import { createSignal, t_element } from '@pulsar/runtime';
-import { $REGISTRY } from '@pulsar/runtime/registry';
+import { createSignal, t_element } from '@synetics/runtime';
+import { $REGISTRY } from '@synetics/runtime/registry';
 
 export function Counter(): HTMLElement {
   return $REGISTRY.execute('component:Counter', () => {
@@ -243,8 +243,8 @@ component SignalDemo() {
 
 **Output TypeScript:**
 ```typescript
-import { createSignal, createMemo, t_element } from '@pulsar/runtime';
-import { $REGISTRY } from '@pulsar/runtime/registry';
+import { createSignal, createMemo, t_element } from '@synetics/runtime';
+import { $REGISTRY } from '@synetics/runtime/registry';
 
 export function SignalDemo(): HTMLElement {
   return $REGISTRY.execute('component:SignalDemo', () => {
@@ -380,8 +380,8 @@ component ModalDemo() {
 
 **Output TypeScript:**
 ```typescript
-import { createSignal, t_element, t_component } from '@pulsar/runtime';
-import { Show, Modal, Portal } from '@pulsar/runtime/components';
+import { createSignal, t_element, t_component } from '@synetics/runtime';
+import { Show, Modal, Portal } from '@synetics/runtime/components';
 
 export function ModalDemo(): HTMLElement {
   return $REGISTRY.execute('component:ModalDemo', () => {
@@ -547,7 +547,7 @@ pnpm test pipeline
 
 ```typescript
 // vite.config.ts
-import { syneticsPlugin } from '@pulsar/vite-plugin';
+import { syneticsPlugin } from '@synetics/vite-plugin';
 
 export default {
   plugins: [syneticsPlugin()]
@@ -562,7 +562,7 @@ module.exports = {
     rules: [
       {
         test: /\.syn$/,
-        use: '@pulsar/webpack-loader'
+        use: '@synetics/webpack-loader'
       }
     ]
   }
@@ -572,7 +572,7 @@ module.exports = {
 ### ESBuild Plugin
 
 ```typescript
-import { syneticsPlugin } from '@pulsar/esbuild-plugin';
+import { syneticsPlugin } from '@synetics/esbuild-plugin';
 
 build({
   plugins: [syneticsPlugin()]
@@ -687,7 +687,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for development guidelines.
       transform(code, id) {
         if (id.endsWith('.tsx') || id.endsWith('.jsx')) {
           // Apply transformer
-          return transformWithPulsar(code, id);
+          return transformWithSynetics(code, id);
         }
       },
     },

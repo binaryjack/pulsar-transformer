@@ -373,7 +373,7 @@ interface IObjectPattern extends INode {
 
 ---
 
-## JSX AST Nodes (Critical for Pulsar)
+## JSX AST Nodes (Critical for Synetics)
 
 ### From React, Solid.js, Svelte
 

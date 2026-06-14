@@ -14,7 +14,7 @@
 
 1. **Start VS Code Extension Tracer:**
    - Open Command Palette (`Ctrl+Shift+P`)
-   - Run: `Pulsar: Start Tracer`
+   - Run: `Synetics: Start Tracer`
 
 2. **Run test:**
 
@@ -35,7 +35,7 @@
    ```
 
 3. **Check VS Code:**
-   - View → Output → "Pulsar Tracer"
+   - View → Output → "Synetics Tracer"
    - You should see real-time events!
 
 ## Option 2: With Mock Server

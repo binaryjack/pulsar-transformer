@@ -6,7 +6,7 @@
 
 ## Overview
 
-The Pulsar Transformer converts PSR (Pulsar Syntax) source code into optimized TypeScript through a **5-phase pipeline**:
+The Synetics Transformer converts PSR (Synetics Syntax) source code into optimized TypeScript through a **5-phase pipeline**:
 
 ALWAYS READ `C:\Users\Piana Tadeo\source\repos\visual-schema-builder\packages\synetics-transformer\docs\rules.md`
 before starting a session
@@ -170,8 +170,8 @@ Based on industry-standard compiler architecture and reactive framework patterns
 │      Generate unique component IDs                            │
 │                                                               │
 │  Output:                                                      │
-│    import { createSignal, t_element } from '@pulsar/runtime';│
-│    import { $REGISTRY } from '@pulsar/runtime/registry';     │
+│    import { createSignal, t_element } from '@synetics/runtime';│
+│    import { $REGISTRY } from '@synetics/runtime/registry';     │
 │                                                               │
 │    export function Counter(): HTMLElement {                   │
 │      return $REGISTRY.execute('component:Counter', () => {   │

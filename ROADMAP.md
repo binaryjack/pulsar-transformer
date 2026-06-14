@@ -1,4 +1,4 @@
-# Pulsar Transformer Roadmap
+# Synetics Transformer Roadmap
 
 **Current Version**: v1.0.0-alpha.6  
 **Target Release**: v1.0.0 (Q2 2026)

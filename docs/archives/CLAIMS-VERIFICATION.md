@@ -70,7 +70,7 @@ Get-Content src/index.ts | Select-String "Phase"
 **Update README to match:**
 
 ```markdown
-The Pulsar Transformer converts PSR source code through a **X-phase compilation pipeline**:
+The Synetics Transformer converts PSR source code through a **X-phase compilation pipeline**:
 ```
 
 ---

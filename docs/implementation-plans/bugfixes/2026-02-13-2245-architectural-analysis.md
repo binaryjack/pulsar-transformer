@@ -283,7 +283,7 @@ class JSXTransformationStrategy implements ITransformationStrategy {
   }
 
   transform(node: IJSXElement, context: ITransformContext): IASTNode {
-    // Pure JSX → React/Solid/Pulsar transformation
+    // Pure JSX → React/Solid/Synetics transformation
     // No code generation mixed in!
     return transformedNode;
   }
@@ -478,7 +478,7 @@ interface IPhaseFactory {
   createCodeGenerator(config: ICodeGeneratorConfig): ICodeGenerator;
 }
 
-class PulsarPhaseFactory implements IPhaseFactory {
+class SyneticsPhaseFactory implements IPhaseFactory {
   createLexer(config: ILexerConfig): ILexer {
     const lexer = new StateMachineLexer(config.source);
     lexer.addScanner(new OperatorScanner());
@@ -615,7 +615,7 @@ class ConfigurablePipeline {
 | **Code Duplication**         | ~40%        | ~5%                           | **88% reduction**   |
 | **Test Coverage Possible**   | ~60%        | ~95%                          | **58% improvement** |
 | **Adding New Features**      | 4-8 hours   | 1-2 hours                     | **75% faster**      |
-| **Framework Support**        | Pulsar only | Pulsar + React + Vue + Svelte | **4x expansion**    |
+| **Framework Support**        | Synetics only | Synetics + React + Vue + Svelte | **4x expansion**    |
 
 ---
 
@@ -640,7 +640,7 @@ class ConfigurablePipeline {
 
 - Plugin system is pure addition
 - Factory pattern enables new output targets
-- **Zero impact** on existing Pulsar output
+- **Zero impact** on existing Synetics output
 
 ### RISK MITIGATION
 
@@ -675,4 +675,4 @@ The current transformer architecture has **fundamental design flaws** that make 
 
 **Recommendation:** **Implement Phase 1 patterns immediately** to fix current architectural debt, then proceed with Phase 2 & 3 for advanced capabilities.
 
-This architectural overhaul will create a **world-class transformer** capable of supporting the entire Pulsar ecosystem's evolution for years to come.
+This architectural overhaul will create a **world-class transformer** capable of supporting the entire Synetics ecosystem's evolution for years to come.
