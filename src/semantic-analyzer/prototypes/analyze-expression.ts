@@ -13,7 +13,19 @@ export function analyzeExpression(this: ISemanticAnalyzer, node: any): void {
       // Variable reference - mark as used
       this.markSymbolUsed(node.name);
       const symbol = this.resolveSymbol(node.name);
-      if (!symbol) {
+      
+      const knownGlobals = [
+        'console', 'window', 'document', 'Symbol', 'Math', 'JSON', 
+        'Object', 'Array', 'String', 'Number', 'Boolean', 'Date', 'RegExp',
+        'Promise', 'Map', 'Set', 'WeakMap', 'WeakSet', 'Error', 'TypeError',
+        'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval',
+        'requestAnimationFrame', 'cancelAnimationFrame', 'fetch',
+        'URL', 'URLSearchParams', 'FormData', 'Blob', 'File',
+        'navigator', 'location', 'history', 'localStorage', 'sessionStorage',
+        'Event', 'CustomEvent', 'process', 'globalThis', 'undefined', 'NaN', 'Infinity'
+      ];
+      
+      if (!symbol && !knownGlobals.includes(node.name)) {
         this.addError('undeclared-variable', `Undeclared variable '${node.name}'`, node);
       }
       break;
